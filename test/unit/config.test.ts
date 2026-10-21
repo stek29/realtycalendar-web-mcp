@@ -1,0 +1,32 @@
+import { describe, expect, it } from 'vitest'
+import { accessAllows, parseConfig } from '../../src/config.js'
+import { memoryCache } from '../../src/cache.js'
+
+describe('parseConfig', () => {
+  it('defaults to read and Europe/Moscow with a random key', () => {
+    const c = parseConfig({})
+    expect(c.access).toBe('read')
+    expect(c.timezone).toBe('Europe/Moscow')
+    expect(c.confirmKey.length).toBe(32)
+  })
+  it('rejects unknown access levels and time zones', () => {
+    expect(() => parseConfig({ RC_ACCESS: 'admin' })).toThrow(/RC_ACCESS/)
+    expect(() => parseConfig({ RC_TIMEZONE: 'Mars/Base' })).toThrow(/RC_TIMEZONE/)
+  })
+  it('orders access levels', () => {
+    expect(accessAllows('read', 'read')).toBe(true)
+    expect(accessAllows('read', 'book')).toBe(false)
+    expect(accessAllows('full', 'edit')).toBe(true)
+  })
+})
+
+describe('memoryCache', () => {
+  it('expires entries', async () => {
+    let t = 0
+    const c = memoryCache(() => t)
+    await c.set('k', 1, 10)
+    expect(await c.get('k')).toBe(1)
+    t = 10_000
+    expect(await c.get('k')).toBeUndefined()
+  })
+})

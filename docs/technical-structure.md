@@ -63,6 +63,7 @@ src/
   context.ts              Context type + makeContext(rcToken, config, cache)
   config.ts               Config type + parse(env-like record)
   cache.ts                Cache interface + in-memory implementation
+  log.ts                  Logger: structured JSON lines, every line through domain/redact.ts
   cli/
     main.ts               login / logout / check
   platforms/
