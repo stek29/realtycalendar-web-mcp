@@ -1,0 +1,18 @@
+# RealtyCalendar login for local tests (username:password) — never commit
+.rc-credentials
+
+# local secrets and tokens
+.env
+.env.*
+*.token
+
+# build and dependencies
+node_modules/
+dist/
+coverage/
+
+# runtime logs (audit log contains booking data)
+*.log
+audit*.jsonl
+
+.DS_Store

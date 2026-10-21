@@ -1,0 +1,17 @@
+GET                /v2/ads/banners
+POST               /v2/ads/banners/{}/events
+GET                apartments/{}/price
+GET                arrivals_departures/by_deposits
+POST               carts
+POST               carts/copy_link
+GET                carts/history
+POST               expenses
+GET                info
+GET                info/sms_limit
+GET                messages
+PUT                messages/read_all
+PUT                messages/{}/read
+POST               settings/payments/info
+GET                token
+GET                updates/unread_count
+DELETE             {}v2_sign_upsign_inusers/sign_out
