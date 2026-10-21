@@ -46,8 +46,9 @@ create or change bookings; tell the user to do it in RealtyCalendar."
 
 All name matching is done by the server, tolerant of Russian endings:
 - normalise: lowercase, `ё`→`е`, drop `№`, `номер`, `комната` and room suffixes (`22-й`, `22-м`, `22-го` → `22`);
-- split into words; a query word matches a target word when one is a prefix of the other with ≥ 4 common characters,
-  or for words of ≤ 4 letters, when they are equal ("улучшенную" ~ "улучшенный", "Петровой" ~ "Петрова");
+- split into words; a query word matches a target word when one is a prefix of the other with ≥ 4 common characters
+  (a stem: "улучшен" ~ "улучшенный"), or when they share ≥ 4 leading characters and each has at most 3 letters left
+  after them (an ending: "улучшенную" ~ "улучшенный", "Петровой" ~ "Петрова"); words under 4 characters must be equal;
 - every query word must match some target word.
 
 | Parameter | Accepts | Several matches |
