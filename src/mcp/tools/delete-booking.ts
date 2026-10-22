@@ -32,6 +32,7 @@ export const deleteBooking = defineWriteTool({
         will_fail: false,
       },
       blocked: false,
+      audit: { booking_id: raw.id, fields: ['is_delete'], before: raw },
       paid,
       catalog,
       today: t,

@@ -54,8 +54,8 @@ From tested behaviour (mcp-user-stories.md) and the reviews:
   refuse (`RC_SCHEMA_DRIFT`). Writes to the same booking id are serialised in-process. Deleted bookings → `DELETED`.
 - `apartment_id` always derived from the target room (or the explicit category).
 - `send_confirm_email`, `send_link_prepaid` always `false`; no payment writes in v1.
-- **Audit log** per confirmed write: time, tool, booking id, client id / user, changed fields, RC status, and the full
-  pre-write GET body (for manual undo). v1: local JSONL file, mode 0600, 30-day rotation. Hosted: the platform's log
+- **Audit log** per confirmed write: time, tool, booking id, RC user id, written fields, result (`ok` or the error
+  code), and the full pre-write GET body (for manual undo); fields in plan-m3.md §4. v1: local JSONL file, mode 0600, 30-day rotation. Hosted: the platform's log
   sink, redacted (no database).
 
 ## Security against prompt injection

@@ -30,6 +30,8 @@ export interface Catalog {
   categories: Category[]
   sources: Source[]
   currency: string
+  /** The RC user behind the token (for the audit log). */
+  userId: number
 }
 
 /** Sources that are not booking sites (the hotel's own channels). */
@@ -65,7 +67,7 @@ export function buildCatalog(apartments: Apartments, maxGuests: ReadonlyMap<numb
       }
     })
     .sort((a, b) => a.number.localeCompare(b.number, 'ru', { numeric: true }))
-  return { categories, sources: info.agency.sources_list, currency: info.agency.currency }
+  return { categories, sources: info.agency.sources_list, currency: info.agency.currency, userId: info.id }
 }
 
 /** "02. Двухместный улучшенный номер с двуспальной кроватью" → "02 Двухместный улучшенный". */

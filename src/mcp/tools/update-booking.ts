@@ -227,6 +227,7 @@ export const updateBooking = defineWriteTool({
         ...(quote != null ? { quote } : {}),
       },
       blocked: check?.will_fail ?? false,
+      audit: { booking_id: raw.id, fields: changed, before: raw },
       body: applyChanges(body, set),
       paid,
       catalog,

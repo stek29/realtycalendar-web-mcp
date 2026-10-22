@@ -62,6 +62,7 @@ src/
     cimd.ts               client allowlist + CIMD document fetch/validation
     login.tsx             login page
   context.ts              Context type + makeContext(rcToken, config, cache)
+  audit.ts                AuditEntry, AuditSink (write audit log; the stdio platform provides a file sink)
   config.ts               Config type + parse(env-like record)
   cache.ts                Cache interface + in-memory implementation
   log.ts                  Logger: structured JSON lines, every line through domain/redact.ts
@@ -69,6 +70,7 @@ src/
     main.ts               login / logout / check
   platforms/
     stdio.ts              v1 entrypoint
+    audit-file.ts         audit log as daily JSONL files (0600), 30 days kept
     node.ts               hosted entrypoint (M4)
 test/
   fixtures/               scrubbed RC responses
@@ -104,7 +106,8 @@ parseConfig(env: Record<string, string | undefined>): Config        // RC_ACCESS
 interface Cache { get<T>(key: string): Promise<T | undefined>; set<T>(key: string, value: T, ttlSec: number): Promise<void> }
 
 // context.ts — built per connection (stdio) or per request (HTTP); never shared between users
-interface Context { rc: RcClient; catalog(): Promise<Catalog>; now(): Date; config: Config; log: Logger }
+interface Context { rc: RcClient; catalog(): Promise<Catalog>; now(): Date; config: Config; log: Logger;
+                    audit: AuditSink; withBookingLock<T>(id: number, fn: () => Promise<T>): Promise<T> }
 
 // upstream/client.ts
 class RcClient {

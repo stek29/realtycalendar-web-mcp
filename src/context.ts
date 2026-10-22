@@ -1,3 +1,4 @@
+import { noAudit, type AuditSink } from './audit.js'
 import type { Cache } from './cache.js'
 import type { Config } from './config.js'
 import { buildCatalog, type Catalog } from './domain/catalog.js'
@@ -16,6 +17,7 @@ export interface Context {
   now(): Date
   config: Config
   log: Logger
+  audit: AuditSink
   /** Runs `fn` after any earlier write to the same booking id has finished (writes serialised in-process). */
   withBookingLock<T>(id: number, fn: () => Promise<T>): Promise<T>
 }
@@ -23,6 +25,7 @@ export interface Context {
 export interface ContextOptions {
   fetch?: typeof fetch
   log?: Logger
+  audit?: AuditSink
   now?: () => Date
 }
 
@@ -49,6 +52,7 @@ export function makeContext(rcToken: string, config: Config, cache: Cache, opts:
     rc,
     config,
     log,
+    audit: opts.audit ?? noAudit,
     now: opts.now ?? (() => new Date()),
     async withBookingLock(id, fn) {
       const previous = locks.get(id) ?? Promise.resolve()

@@ -127,9 +127,13 @@ Per confirmed write (architecture.md "Write path"):
 - File sink: `RC_AUDIT_DIR` (default macOS `~/Library/Logs/realtycalendar-web-mcp/`, Linux
   `$XDG_STATE_HOME/realtycalendar-web-mcp/` or `~/.local/state/…`, Windows `%LOCALAPPDATA%\realtycalendar-web-mcp\`),
   one file per day `audit-YYYY-MM-DD.jsonl`, directory 0700, files 0600; files older than 30 days deleted at start.
-- Entry: `time`, `tool`, `booking_id`, RC user id, changed field names, RC HTTP status / error code, and the full
-  pre-write GET body (for manual undo; this is why the file is local and 0600). Written after RC answers, for success
-  and failure alike. Create entries have no pre-write body.
+- Entry: `time`, `tool`, `booking_id` (null for a create that got no id), `rc_user_id`, `fields` (RC field names
+  written), `result` (`ok`, `already_existed` for a repeated create, or the error code), and `before`, the full
+  pre-write GET body (for manual undo; this is why the file is local and 0600). Written by `defineWriteTool` after RC
+  answers, for success and failure alike; previews write nothing. Create entries have no `before`. A failing sink is
+  logged as `audit_failed` and doesn't fail the tool (the write already happened). Read-only connections
+  (`RC_ACCESS=read`) create no audit directory.
+- Code: `src/audit.ts` (types, portable), `src/platforms/audit-file.ts` (file sink).
 - Tests: unit (temp dir, permissions, rotation); live: L1 and L12 of plan-m2 assert an entry each.
 
 ## 5. Packaging and release

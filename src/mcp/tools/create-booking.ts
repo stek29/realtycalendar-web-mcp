@@ -195,6 +195,7 @@ export const createBooking = defineWriteTool({
         quote,
       },
       blocked: duplicate != null || check.will_fail,
+      audit: { booking_id: null, fields: Object.keys(fields) },
       fields,
       duplicate,
       catalog,

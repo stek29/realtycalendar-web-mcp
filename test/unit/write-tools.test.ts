@@ -1,5 +1,6 @@
 // The write tools against the fake RC, following the spec §3 write stories (today = Thu 2054-10-22).
 import { describe, expect, it } from 'vitest'
+import type { AuditEntry } from '../../src/audit.js'
 import { memoryCache } from '../../src/cache.js'
 import { parseConfig, type Access } from '../../src/config.js'
 import { makeContext } from '../../src/context.js'
@@ -11,10 +12,12 @@ const NOW = new Date('2054-10-22T09:00:00+03:00')
 function setup(access: Access = 'full', opts: FakeRcOptions = {}) {
   const rc = fakeRc(opts)
   const lines: string[] = []
+  const audit: AuditEntry[] = []
   const ctx = makeContext('test-token', parseConfig({ RC_ACCESS: access, RC_CONFIRM_KEY: 'k' }), memoryCache(), {
     fetch: rc.fetch,
     now: () => NOW,
     log: { log: (level, event, fields) => lines.push(JSON.stringify({ level, event, ...fields })) },
+    audit: { write: async (e) => void audit.push(e) },
   })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const call = async (name: string, args: Record<string, unknown> = {}): Promise<any> => {
@@ -32,7 +35,7 @@ function setup(access: Access = 'full', opts: FakeRcOptions = {}) {
     return call(name, { ...args, confirm_token: preview.confirm_token })
   }
   const writes = () => rc.calls.filter((c) => !c.startsWith('GET') && !c.includes('group_special_prices'))
-  return { call, write, writes, rc, lines, ctx }
+  return { call, write, writes, rc, lines, ctx, audit }
 }
 
 const codes = (r: { warnings: { code: string }[] }) => r.warnings.map((w) => w.code)
@@ -426,6 +429,28 @@ describe('cancel_booking and delete_booking', () => {
     expect(await call('cancel_booking', { booking_id: 810000176, confirm_token: p.confirm_token })).toMatchObject({
       error: 'DELETED',
     })
+  })
+})
+
+describe('audit log', () => {
+  it('one entry per confirmed write, success and failure; previews write none', async () => {
+    const { call, write, audit } = setup()
+    const created = await write('create_booking', ANNA)
+    await call('update_booking', { booking_id: created.booking.id, notes_append: 'x' }) // preview only
+    await write('update_booking', { booking_id: created.booking.id, notes_append: 'x' })
+    const p = await call('create_booking', { ...ANNA, room: '21' })
+    await write('create_booking', { ...ANNA, room: '21', guest_name: 'Быстрее' })
+    await call('create_booking', { ...ANNA, room: '21', confirm_token: p.confirm_token }) // OCCUPIED
+    expect(audit.map((e) => [e.tool, e.result])).toEqual([
+      ['create_booking', 'ok'],
+      ['update_booking', 'ok'],
+      ['create_booking', 'ok'],
+      ['create_booking', 'OCCUPIED'],
+    ])
+    expect(audit[0]).toMatchObject({ booking_id: created.booking.id, rc_user_id: expect.any(Number) })
+    expect(audit[0]!.before).toBeUndefined()
+    expect(audit[1]).toMatchObject({ fields: ['notes'], before: { id: created.booking.id, notes: null } })
+    expect(audit[3]!.booking_id).toBeNull()
   })
 })
 

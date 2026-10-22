@@ -4,6 +4,7 @@
 // code: a write firewall in the fetch wrapper, a pre-check that the window is empty, and cleanup with a final check.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { z } from 'zod'
+import type { AuditEntry } from '../../src/audit.js'
 import { memoryCache } from '../../src/cache.js'
 import { parseConfig } from '../../src/config.js'
 import { makeContext, type Context } from '../../src/context.js'
@@ -81,11 +82,12 @@ async function windowBookings(ctx: Context) {
 }
 
 describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
+  const audit: AuditEntry[] = []
   const ctx = makeContext(
     process.env.RC_TOKEN ?? '',
     parseConfig({ RC_ACCESS: 'full', RC_CONFIRM_KEY: 'live-test' }),
     memoryCache(),
-    { fetch: firewall(globalThis.fetch.bind(globalThis)) },
+    { fetch: firewall(globalThis.fetch.bind(globalThis)), audit: { write: async (e) => void audit.push(e) } },
   )
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const call = async (name: string, args: Record<string, unknown>): Promise<any> => {
@@ -172,6 +174,7 @@ describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
     })
     const list = await call('list_bookings', { from: FIRST, to: LAST, query: PREFIX })
     expect(list.bookings.map((b: { id: number }) => b.id)).toContain(l1)
+    expect(audit.at(-1)).toMatchObject({ tool: 'create_booking', booking_id: l1, result: 'ok' })
   })
 
   it('L2 the same create again → DUPLICATE, no token', async () => {
@@ -294,6 +297,13 @@ describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
   it('L12 cancel L1: canceled, category 02 bookable again', async () => {
     const { done } = await write('cancel_booking', { booking_id: l1 })
     expect(done.booking.status).toBe('canceled')
+    expect(audit.at(-1)).toMatchObject({
+      tool: 'cancel_booking',
+      booking_id: l1,
+      fields: ['status'],
+      result: 'ok',
+      before: { id: l1, status: 'booked' },
+    })
     const a = await call('check_availability', { check_in: '2055-01-21', check_out: LAST, category: '02' })
     expect(a.categories[0]).toMatchObject({ bookable_count: a.categories[0].capacity, unassigned: [] })
   })

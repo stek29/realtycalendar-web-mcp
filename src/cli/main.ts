@@ -45,7 +45,7 @@ export async function check(env: NodeJS.ProcessEnv, out: (s: string) => void = c
 }
 
 const [command, ...rest] = process.argv.slice(2)
-if (command === undefined) runStdio()
+if (command === undefined) await runStdio()
 else if (command === 'check' && rest.length === 0) process.exitCode = await check(process.env)
 else if (command === '--version') console.log(VERSION)
 else {

@@ -39,6 +39,7 @@ export const cancelBooking = defineWriteTool({
         will_fail: false,
       },
       blocked: false,
+      audit: { booking_id: raw.id, fields: ['status'], before: raw },
       body,
       paid,
       catalog,

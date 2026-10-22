@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { ToolAnnotations } from '@modelcontextprotocol/server'
+import type { AuditEntry } from '../../audit.js'
 import type { Access } from '../../config.js'
 import type { Context } from '../../context.js'
 import { signPlan, verifyPlan } from '../../domain/confirm.js'
@@ -35,6 +36,8 @@ export interface WritePreview {
   view: Record<string, unknown> & { summary: string }
   /** No token: the write can't or shouldn't happen (DUPLICATE, will_fail). */
   blocked: boolean
+  /** For the audit entry: the booking (null for a create), the RC fields written, the GET before the write. */
+  audit: { booking_id: number | null; fields: string[]; before?: unknown }
 }
 
 export interface WriteToolDef<I extends z.ZodObject, P extends WritePreview> {
@@ -96,18 +99,34 @@ export function defineWriteTool<I extends z.ZodObject, P extends WritePreview>(d
             { preview: await show(ctx, p) },
           )
         }
+        const audit = (bookingId: number | null, result: string) =>
+          auditWrite(ctx, { tool: def.name, ...p.audit, booking_id: bookingId, result })
+        let done
         try {
-          return WriteOutput.parse({ preview: false, ...(await def.commit(ctx, args, p)) })
+          done = WriteOutput.parse({ preview: false, ...(await def.commit(ctx, args, p)) })
         } catch (e) {
+          await audit(p.audit.booking_id, e instanceof ToolError ? e.code : 'RC_ERROR')
           // RC refused although the preview didn't foresee it (someone was faster): add what the fresh preview saw.
           if (e instanceof ToolError && e.code === 'OCCUPIED') {
             throw new ToolError(e.code, e.message, e.hint, { ...e.details, conflicts: p.view.conflicts ?? null })
           }
           throw e
         }
+        await audit(done.booking?.id ?? p.audit.booking_id, done.note ? 'already_existed' : 'ok')
+        return done
       }
       const id = def.lockId?.(args)
       return id == null ? confirm() : ctx.withBookingLock(id, confirm)
     },
   })
+}
+
+/** Writes an audit entry after RC answered. A failing sink is logged, never turned into a tool error: the write happened. */
+async function auditWrite(ctx: Context, e: Omit<AuditEntry, 'time' | 'rc_user_id'>): Promise<void> {
+  try {
+    const rcUserId = (await ctx.catalog()).userId
+    await ctx.audit.write({ time: ctx.now().toISOString(), rc_user_id: rcUserId, ...e })
+  } catch (err) {
+    ctx.log.log('error', 'audit_failed', { tool: e.tool, booking_id: e.booking_id, error: String(err) })
+  }
 }
