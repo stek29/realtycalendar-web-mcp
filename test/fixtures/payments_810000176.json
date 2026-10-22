@@ -1,0 +1,44 @@
+{
+ "data": [
+  {
+   "id": 810000085,
+   "event_id": 810000176,
+   "created_at": "2054-10-01T09:01:00.000+03:00",
+   "note": "[note]",
+   "author": {
+    "id": 810000037,
+    "full_name": "Анна Петрова",
+    "title": "Создал"
+   },
+   "status": {
+    "type": "success",
+    "text": "Оплачено вручную",
+    "description": null
+   },
+   "payment": {
+    "type": "income",
+    "label": null,
+    "currency": "₽",
+    "amount": 6000,
+    "deleted": false,
+    "expired": false,
+    "amount_editable": false
+   },
+   "invoice": {
+    "id": 810000042,
+    "title": "Наличные"
+   },
+   "email": null,
+   "payment_link": null,
+   "payment_system": "manual",
+   "manual_refundable": true,
+   "payment_system_refundable": false,
+   "mean_amount": true,
+   "mean_record": true,
+   "use_payment_system": false,
+   "has_refunds": false,
+   "can_delete": false,
+   "can_edit": true
+  }
+ ]
+}

@@ -1,0 +1,169 @@
+{
+ "id": 810000176,
+ "begin_date": "2054-11-25",
+ "end_date": "2054-11-27",
+ "status": "booked",
+ "apartment_id": 810000050,
+ "realty_room_id": null,
+ "is_delete": false,
+ "updated_at": "2054-10-01T10:00:00.000+03:00",
+ "automessages_enabled": false,
+ "additional_services": {
+  "early_checkin": null,
+  "late_checkout": null
+ },
+ "platform_tax": null,
+ "realty_room_title": null,
+ "booking_started": false,
+ "booking_finished": false,
+ "prepaid_amount": 6000,
+ "notes": "[notes]",
+ "preparing": false,
+ "is_external": false,
+ "color": null,
+ "reaction": null,
+ "arrival_time": null,
+ "departure_time": null,
+ "send_link_prepaid": false,
+ "send_confirm_email": false,
+ "attachments": [],
+ "default_prepayment_amount": 0,
+ "default_deposit_amount": 0,
+ "amount": 12000,
+ "deposit_refund_available_amount": 0,
+ "client": {
+  "id": 810000090,
+  "fio": "Мария Смирнова",
+  "phone": "+79990000002",
+  "additional_phone": null,
+  "email": null
+ },
+ "source_id": null,
+ "guest": {
+  "id": 810000081,
+  "fio": "Мария Смирнова",
+  "phone": "+79990000002",
+  "email": null,
+  "additional_phone": null,
+  "notes": null,
+  "attachments": [],
+  "black_list": {
+   "global": null,
+   "local": null
+  },
+  "summary": {
+   "events_info": {
+    "current": 0,
+    "future": 1,
+    "canceled": 0
+   },
+   "lived_info": {
+    "count": 0,
+    "amount": 0,
+    "days": 0
+   },
+   "last_visit": null
+  }
+ },
+ "oki_doki_contract": null,
+ "external": null,
+ "platform_name": null,
+ "audits": [
+  {
+   "record": {
+    "title": "Создание Брони (810000176)"
+   },
+   "remote_address": "[remote_address]",
+   "version": 1,
+   "created_at": "2054-10-01 09:00:00 MSK",
+   "is_auto": false,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": 810000037,
+    "full_name": "Анна Петрова",
+    "email": "guest0@example.com"
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Создание Платежа (810000085)"
+   },
+   "remote_address": "[remote_address]",
+   "version": 2,
+   "created_at": "2054-10-01 09:01:00 MSK",
+   "is_auto": false,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": 810000037,
+    "full_name": "Анна Петрова",
+    "email": "guest0@example.com"
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Создание Гостя (810000090)"
+   },
+   "remote_address": "[remote_address]",
+   "version": 3,
+   "created_at": "2054-10-01 09:02:00 MSK",
+   "is_auto": false,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": 810000037,
+    "full_name": "Анна Петрова",
+    "email": "guest0@example.com"
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Обновление Брони (810000176)"
+   },
+   "remote_address": "[remote_address]",
+   "version": 4,
+   "created_at": "2054-10-01 09:03:00 MSK",
+   "is_auto": false,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": 810000037,
+    "full_name": "Анна Петрова",
+    "email": "guest0@example.com"
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Обновление Брони (810000176)"
+   },
+   "remote_address": "[remote_address]",
+   "version": 5,
+   "created_at": "2054-10-01 09:04:00 MSK",
+   "is_auto": false,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": 810000037,
+    "full_name": "Анна Петрова",
+    "email": "guest0@example.com"
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Обновление Брони (810000176)"
+   },
+   "remote_address": "[remote_address]",
+   "version": 6,
+   "created_at": "2054-10-01 09:05:00 MSK",
+   "is_auto": false,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": 810000037,
+    "full_name": "Анна Петрова",
+    "email": "guest0@example.com"
+   },
+   "changes": []
+  }
+ ]
+}

@@ -1,0 +1,271 @@
+{
+ "apartments": [
+  {
+   "id": 810000052,
+   "type": "Hostel",
+   "archive": false,
+   "title": "01. Стандартный двухместный номер с двуспальной кроватью",
+   "agency_id": 810000009,
+   "prices": {
+    "amount": 7000,
+    "weekend": null,
+    "week_days_price_v2": [],
+    "seasons": []
+   },
+   "rooms": [
+    {
+     "id": 810000029,
+     "apartment_id": 810000052,
+     "title": "5"
+    },
+    {
+     "id": 810000030,
+     "apartment_id": 810000052,
+     "title": "6"
+    },
+    {
+     "id": 0,
+     "apartment_id": 810000052,
+     "title": "Неразобранные"
+    }
+   ],
+   "rates": []
+  },
+  {
+   "id": 810000050,
+   "type": "Hostel",
+   "archive": false,
+   "title": "02. Двухместный улучшенный номер с двуспальной кроватью",
+   "agency_id": 810000009,
+   "prices": {
+    "amount": 8000,
+    "weekend": null,
+    "week_days_price_v2": [],
+    "seasons": []
+   },
+   "rooms": [
+    {
+     "id": 810000019,
+     "apartment_id": 810000050,
+     "title": "21"
+    },
+    {
+     "id": 810000020,
+     "apartment_id": 810000050,
+     "title": "22"
+    },
+    {
+     "id": 810000021,
+     "apartment_id": 810000050,
+     "title": "25"
+    },
+    {
+     "id": 810000022,
+     "apartment_id": 810000050,
+     "title": "32"
+    },
+    {
+     "id": 810000023,
+     "apartment_id": 810000050,
+     "title": "35"
+    },
+    {
+     "id": 0,
+     "apartment_id": 810000050,
+     "title": "Неразобранные"
+    }
+   ],
+   "rates": []
+  },
+  {
+   "id": 810000051,
+   "type": "Hostel",
+   "archive": false,
+   "title": "03. Двухместный улучшенный номер с двумя односпальными кроватями",
+   "agency_id": 810000009,
+   "prices": {
+    "amount": 8000,
+    "weekend": null,
+    "week_days_price_v2": [],
+    "seasons": []
+   },
+   "rooms": [
+    {
+     "id": 810000025,
+     "apartment_id": 810000051,
+     "title": "23"
+    },
+    {
+     "id": 810000026,
+     "apartment_id": 810000051,
+     "title": "24"
+    },
+    {
+     "id": 810000024,
+     "apartment_id": 810000051,
+     "title": "31"
+    },
+    {
+     "id": 810000027,
+     "apartment_id": 810000051,
+     "title": "33"
+    },
+    {
+     "id": 810000028,
+     "apartment_id": 810000051,
+     "title": "34"
+    },
+    {
+     "id": 0,
+     "apartment_id": 810000051,
+     "title": "Неразобранные"
+    }
+   ],
+   "rates": []
+  },
+  {
+   "id": 810000055,
+   "type": "Hostel",
+   "archive": false,
+   "title": "04. Двухместный коттедж",
+   "agency_id": 810000009,
+   "prices": {
+    "amount": 7000,
+    "weekend": null,
+    "week_days_price_v2": [],
+    "seasons": []
+   },
+   "rooms": [],
+   "rates": []
+  },
+  {
+   "id": 810000058,
+   "type": "Hostel",
+   "archive": false,
+   "title": "05. Трехместный стандартный номер",
+   "agency_id": 810000009,
+   "prices": {
+    "amount": 9600,
+    "weekend": null,
+    "week_days_price_v2": [],
+    "seasons": []
+   },
+   "rooms": [
+    {
+     "id": 810000035,
+     "apartment_id": 810000058,
+     "title": "1"
+    },
+    {
+     "id": 810000036,
+     "apartment_id": 810000058,
+     "title": "2"
+    },
+    {
+     "id": 0,
+     "apartment_id": 810000058,
+     "title": "Неразобранные"
+    }
+   ],
+   "rates": []
+  },
+  {
+   "id": 810000053,
+   "type": "Hostel",
+   "archive": false,
+   "title": "06. Двухместный номер с двумя односпальными кроватями и общей ванной",
+   "agency_id": 810000009,
+   "prices": {
+    "amount": 6000,
+    "weekend": null,
+    "week_days_price_v2": [],
+    "seasons": []
+   },
+   "rooms": [
+    {
+     "id": 810000031,
+     "apartment_id": 810000053,
+     "title": "3"
+    },
+    {
+     "id": 810000032,
+     "apartment_id": 810000053,
+     "title": "4"
+    },
+    {
+     "id": 0,
+     "apartment_id": 810000053,
+     "title": "Неразобранные"
+    }
+   ],
+   "rates": []
+  },
+  {
+   "id": 810000054,
+   "type": "Hostel",
+   "archive": false,
+   "title": "07. Двухместный номер эконом-класса с двумя односпальными кроватями и общей ванной",
+   "agency_id": 810000009,
+   "prices": {
+    "amount": 5000,
+    "weekend": null,
+    "week_days_price_v2": [],
+    "seasons": []
+   },
+   "rooms": [
+    {
+     "id": 810000033,
+     "apartment_id": 810000054,
+     "title": "10"
+    },
+    {
+     "id": 810000034,
+     "apartment_id": 810000054,
+     "title": "11"
+    },
+    {
+     "id": 0,
+     "apartment_id": 810000054,
+     "title": "Неразобранные"
+    }
+   ],
+   "rates": []
+  },
+  {
+   "id": 810000057,
+   "type": "Hostel",
+   "archive": false,
+   "title": "08. Семейный номер Делюкс",
+   "agency_id": 810000009,
+   "prices": {
+    "amount": 13000,
+    "weekend": null,
+    "week_days_price_v2": [],
+    "seasons": []
+   },
+   "rooms": [],
+   "rates": []
+  },
+  {
+   "id": 810000056,
+   "type": "Hostel",
+   "archive": false,
+   "title": "09. Стандартный семейный номер",
+   "agency_id": 810000009,
+   "prices": {
+    "amount": 12000,
+    "weekend": null,
+    "week_days_price_v2": [],
+    "seasons": []
+   },
+   "rooms": [],
+   "rates": []
+  }
+ ],
+ "agencies": [
+  {
+   "id": 810000009,
+   "title": "Тестовый отель"
+  }
+ ]
+}

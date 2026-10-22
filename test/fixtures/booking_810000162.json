@@ -1,0 +1,258 @@
+{
+ "id": 810000162,
+ "begin_date": "2054-12-20",
+ "end_date": "2054-12-23",
+ "status": "booked",
+ "apartment_id": 810000050,
+ "realty_room_id": 810000021,
+ "is_delete": false,
+ "updated_at": "2054-10-01T10:00:00.000+03:00",
+ "automessages_enabled": false,
+ "additional_services": {
+  "early_checkin": null,
+  "late_checkout": null
+ },
+ "platform_tax": 23400,
+ "realty_room_title": "25",
+ "booking_started": false,
+ "booking_finished": false,
+ "prepaid_amount": 24000,
+ "notes": "[notes]",
+ "preparing": false,
+ "is_external": true,
+ "color": null,
+ "reaction": null,
+ "arrival_time": null,
+ "departure_time": null,
+ "send_link_prepaid": false,
+ "send_confirm_email": false,
+ "attachments": [],
+ "default_prepayment_amount": 0,
+ "default_deposit_amount": 0,
+ "amount": 24000,
+ "deposit_refund_available_amount": 0,
+ "client": {
+  "id": 810000088,
+  "fio": "Иван Иванов",
+  "phone": null,
+  "additional_phone": null,
+  "email": null
+ },
+ "source_id": 5,
+ "guest": {
+  "id": 810000079,
+  "fio": "Иван Иванов",
+  "phone": null,
+  "email": null,
+  "additional_phone": null,
+  "notes": null,
+  "attachments": [],
+  "black_list": {
+   "global": null,
+   "local": null
+  },
+  "summary": {
+   "events_info": {
+    "current": 0,
+    "future": 1,
+    "canceled": 0
+   },
+   "lived_info": {
+    "count": 0,
+    "amount": 0,
+    "days": 0
+   },
+   "last_visit": null
+  }
+ },
+ "oki_doki_contract": null,
+ "external": {
+  "fields": [
+   {
+    "title": "Бронирование создано до синхронизации с Ostrovok.ru?",
+    "value": "[Бронирование создано до синхронизации с Ostrovok.ru?]",
+    "color": "default"
+   },
+   {
+    "title": "Номер бронирования",
+    "value": "[Номер бронирования]",
+    "color": "default"
+   },
+   {
+    "title": "Статус",
+    "value": "create",
+    "color": "default"
+   },
+   {
+    "title": "Дата бронирования",
+    "value": "2054-10-01",
+    "color": "default"
+   },
+   {
+    "title": "Количество взрослых",
+    "value": "[Количество взрослых]",
+    "color": "default"
+   },
+   {
+    "title": "Rate(Тариф)",
+    "value": "[Rate(Тариф)]",
+    "color": "default"
+   },
+   {
+    "title": "Сумма",
+    "value": "[Сумма]",
+    "color": "default"
+   },
+   {
+    "title": "Полное имя гостя",
+    "value": "[Полное имя гостя]",
+    "color": "default"
+   },
+   {
+    "title": "Валюта",
+    "value": "RUB",
+    "color": "default"
+   },
+   {
+    "title": "Примечания",
+    "value": "[Примечания]",
+    "color": "default"
+   },
+   {
+    "title": "Цены на каждый день пребывания",
+    "value": "[Цены на каждый день пребывания]",
+    "color": "default"
+   },
+   {
+    "title": "Ночные?",
+    "value": "Нет",
+    "color": "default"
+   },
+   {
+    "title": "Бронирование обязательно кредитной картой?",
+    "value": "[Бронирование обязательно кредитной картой?]",
+    "color": "default"
+   },
+   {
+    "title": "Ночные?",
+    "value": "Да",
+    "color": "default"
+   },
+   {
+    "title": "У отеля были проблемы с кредитной карточкой?",
+    "value": "[У отеля были проблемы с кредитной карточкой?]",
+    "color": "default"
+   },
+   {
+    "title": "Менеджер отеля может сообщить об ошибке платежа?",
+    "value": "[Менеджер отеля может сообщить об ошибке платежа?]",
+    "color": "default"
+   },
+   {
+    "title": "Бронирование может быть отменено менеджером отеля?",
+    "value": "[Бронирование может быть отменено менеджером отеля?]",
+    "color": "default"
+   }
+  ],
+  "action_fields": null
+ },
+ "platform_name": "Ostrovok",
+ "audits": [
+  {
+   "record": {
+    "title": "Создание Брони (810000162)"
+   },
+   "remote_address": null,
+   "version": 1,
+   "created_at": "2054-10-01 09:00:00 MSK",
+   "is_auto": true,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": null,
+    "full_name": null,
+    "email": null
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Создание Гостя (810000088)"
+   },
+   "remote_address": null,
+   "version": 2,
+   "created_at": "2054-10-01 09:01:00 MSK",
+   "is_auto": true,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": null,
+    "full_name": null,
+    "email": null
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Обновление Брони (810000162)"
+   },
+   "remote_address": null,
+   "version": 3,
+   "created_at": "2054-10-01 09:02:00 MSK",
+   "is_auto": true,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": null,
+    "full_name": null,
+    "email": null
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Обновление Брони (810000162)"
+   },
+   "remote_address": null,
+   "version": 4,
+   "created_at": "2054-10-01 09:03:00 MSK",
+   "is_auto": true,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": null,
+    "full_name": null,
+    "email": null
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Создание Платежа (810000083)"
+   },
+   "remote_address": "[remote_address]",
+   "version": 5,
+   "created_at": "2054-10-01 09:04:00 MSK",
+   "is_auto": true,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": null,
+    "full_name": null,
+    "email": null
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Обновление Брони (810000162)"
+   },
+   "remote_address": "[remote_address]",
+   "version": 6,
+   "created_at": "2054-10-01 09:05:00 MSK",
+   "is_auto": false,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": 810000037,
+    "full_name": "Анна Петрова",
+    "email": "guest0@example.com"
+   },
+   "changes": []
+  }
+ ]
+}

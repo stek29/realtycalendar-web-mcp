@@ -1,0 +1,416 @@
+{
+ "id": 810000038,
+ "full_name": "Олег Кузнецов",
+ "email": "guest1@example.com",
+ "telephone": "+79990000014",
+ "role": "manager",
+ "agency": {
+  "id": 810000009,
+  "title": "Тестовый отель",
+  "currency": "₽",
+  "sources_list": [
+   {
+    "id": 11766,
+    "title": "Roomook",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 11812,
+    "title": "PrivetTur",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 11836,
+    "title": "DomClick",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 12061,
+    "title": "Tripvenue",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 13132,
+    "title": "Tutu",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 13361,
+    "title": "МирТурбаз",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 13644,
+    "title": "Алеан",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 14837,
+    "title": "Apart Sharing",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 13962,
+    "title": "Roomlink (ранее — Забронируй.ру)",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 15148,
+    "title": "Ozon Travel",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 15424,
+    "title": "Т-Путешествия",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 15529,
+    "title": "EmergingTravel",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 15945,
+    "title": "Glamping",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 16087,
+    "title": "Продление",
+    "background_color": "#FFFFFF",
+    "text_color": "#000000"
+   },
+   {
+    "id": 21,
+    "title": "Модуль бронирования",
+    "background_color": "#FFE000",
+    "text_color": "#000000"
+   },
+   {
+    "id": 3289,
+    "title": "Корзина",
+    "background_color": "#FFE000",
+    "text_color": "#000000"
+   },
+   {
+    "id": 20,
+    "title": "Постоянный гость",
+    "background_color": "#FFE000",
+    "text_color": "#000000"
+   },
+   {
+    "id": 19,
+    "title": "Партнёрство",
+    "background_color": "#BAE52A",
+    "text_color": "#000000"
+   },
+   {
+    "id": 1,
+    "title": "Avito.ru",
+    "background_color": "#00A5FF",
+    "text_color": "#FFFFFF"
+   },
+   {
+    "id": 6,
+    "title": "Sutochno.ru",
+    "background_color": "#EE204E",
+    "text_color": "#FFFFFF"
+   },
+   {
+    "id": 8435,
+    "title": "Яндекс Путешествия",
+    "background_color": "#7F65FB",
+    "text_color": "#FDDF58"
+   },
+   {
+    "id": 5,
+    "title": "Ostrovok.ru",
+    "background_color": "#ABEF80",
+    "text_color": "#0D41D2"
+   },
+   {
+    "id": 8080,
+    "title": "Отелло",
+    "background_color": "#224249",
+    "text_color": "#77E137"
+   },
+   {
+    "id": 4,
+    "title": "cian.ru",
+    "background_color": "#006DFC",
+    "text_color": "#FFFFFF"
+   },
+   {
+    "id": 8012,
+    "title": "Bronevik.com",
+    "background_color": "#A51611",
+    "text_color": "#EE7D00"
+   },
+   {
+    "id": 8013,
+    "title": "OneTwoTrip.com",
+    "background_color": "#212121",
+    "text_color": "#FEC90C"
+   },
+   {
+    "id": 1825,
+    "title": "Tvil.ru",
+    "background_color": "#EF3131",
+    "text_color": "#FFFFFF"
+   },
+   {
+    "id": 2,
+    "title": "Booking.com",
+    "background_color": "#00367F",
+    "text_color": "#FFFFFF"
+   },
+   {
+    "id": 5154,
+    "title": "kufar.by",
+    "background_color": "#00AD64",
+    "text_color": "#FFFFFF"
+   },
+   {
+    "id": 3,
+    "title": "Airbnb",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 7,
+    "title": "Aпaртатор",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 8,
+    "title": "Spiti.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 9,
+    "title": "Лига Квартир",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 10,
+    "title": "tutt.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 11,
+    "title": "Kvartirka.com",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 12,
+    "title": "Gorkvartira.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 13,
+    "title": "Vk.com",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 14,
+    "title": "domiknaden.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 15,
+    "title": "flat.me",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 16,
+    "title": "flatbe.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 17,
+    "title": "Wimdu.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 18,
+    "title": "HomeAway.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 44,
+    "title": "Oktogo.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 1073,
+    "title": "Expedia.com",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 2768,
+    "title": "CBooking",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 4178,
+    "title": "1001kvartira.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 4181,
+    "title": "Zabroniryi.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 4412,
+    "title": "flatsharing.biz",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 4482,
+    "title": "nochleg24.com",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 4539,
+    "title": "locall.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 4558,
+    "title": "vmigrent.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 4571,
+    "title": "edem-v-gosti.ru",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 5826,
+    "title": "kvartirka",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 6085,
+    "title": "Flatsh",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 7759,
+    "title": "2Bags",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 7947,
+    "title": "QQrenta",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 7978,
+    "title": "ЖилиБыли",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 8014,
+    "title": "101Hotels.com",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 8321,
+    "title": "Везде как дома",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 8356,
+    "title": "ГдеКвартира",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 8729,
+    "title": "Forento",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   },
+   {
+    "id": 8851,
+    "title": "Hotelbook",
+    "background_color": "#F3F3F3",
+    "text_color": "#000000"
+   }
+  ],
+  "rent_payment_invoices": [
+   {
+    "id": 810000048,
+    "name": "Перевод"
+   },
+   {
+    "id": 810000042,
+    "name": "Наличные"
+   },
+   {
+    "id": 810000043,
+    "name": "Ostrovok"
+   },
+   {
+    "id": 810000045,
+    "name": "Яндекс Путешествия"
+   },
+   {
+    "id": 810000044,
+    "name": "Суточно"
+   },
+   {
+    "id": 810000046,
+    "name": "Броневик"
+   },
+   {
+    "id": 810000047,
+    "name": "T-Путешествия"
+   }
+  ]
+ }
+}

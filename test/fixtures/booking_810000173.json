@@ -1,0 +1,196 @@
+{
+ "id": 810000173,
+ "begin_date": "2054-11-15",
+ "end_date": "2054-11-18",
+ "status": "booked",
+ "apartment_id": 810000054,
+ "realty_room_id": null,
+ "is_delete": false,
+ "updated_at": "2054-10-01T10:00:00.000+03:00",
+ "automessages_enabled": false,
+ "additional_services": {
+  "early_checkin": null,
+  "late_checkout": null
+ },
+ "platform_tax": 6750,
+ "realty_room_title": null,
+ "booking_started": false,
+ "booking_finished": false,
+ "prepaid_amount": 6000,
+ "notes": "[notes]",
+ "preparing": false,
+ "is_external": false,
+ "color": null,
+ "reaction": null,
+ "arrival_time": "14:00",
+ "departure_time": "12:00",
+ "send_link_prepaid": false,
+ "send_confirm_email": false,
+ "attachments": [],
+ "default_prepayment_amount": 0,
+ "default_deposit_amount": 0,
+ "amount": 18000,
+ "deposit_refund_available_amount": 0,
+ "client": {
+  "id": 810000089,
+  "fio": "Пётр Сидоров",
+  "phone": "+79990000001",
+  "additional_phone": null,
+  "email": null
+ },
+ "source_id": 6,
+ "guest": {
+  "id": 810000080,
+  "fio": "Пётр Сидоров",
+  "phone": "+79990000001",
+  "email": null,
+  "additional_phone": null,
+  "notes": null,
+  "attachments": [],
+  "black_list": {
+   "global": null,
+   "local": null
+  },
+  "summary": {
+   "events_info": {
+    "current": 0,
+    "future": 1,
+    "canceled": 0
+   },
+   "lived_info": {
+    "count": 0,
+    "amount": 0,
+    "days": 0
+   },
+   "last_visit": null
+  }
+ },
+ "oki_doki_contract": null,
+ "external": {
+  "fields": [
+   {
+    "title": "Бронирование создано до синхронизации с Sutochno.ru?",
+    "value": "[Бронирование создано до синхронизации с Sutochno.ru?]",
+    "color": "default"
+   },
+   {
+    "title": "Статус",
+    "value": "Забронировано",
+    "color": "default"
+   },
+   {
+    "title": "Номер бронирования",
+    "value": "[Номер бронирования]",
+    "color": "default"
+   },
+   {
+    "title": "Дата бронирования",
+    "value": "2054-10-01",
+    "color": "default"
+   },
+   {
+    "title": "Гостей",
+    "value": "[Гостей]",
+    "color": "default"
+   },
+   {
+    "title": "Сумма",
+    "value": "[Сумма]",
+    "color": "default"
+   },
+   {
+    "title": "Предоплата",
+    "value": "[Предоплата]",
+    "color": "default"
+   },
+   {
+    "title": "Была предоплата?",
+    "value": "[Была предоплата?]",
+    "color": "default"
+   },
+   {
+    "title": "Валюта",
+    "value": "RUB",
+    "color": "default"
+   },
+   {
+    "title": "Примечания",
+    "value": "[Примечания]",
+    "color": "default"
+   },
+   {
+    "title": "Ссылка на бронь",
+    "value": "[Ссылка на бронь]",
+    "color": "default"
+   }
+  ],
+  "action_fields": null
+ },
+ "platform_name": "Sutochno",
+ "audits": [
+  {
+   "record": {
+    "title": "Создание Гостя (810000089)"
+   },
+   "remote_address": null,
+   "version": 1,
+   "created_at": "2054-10-01 09:00:00 MSK",
+   "is_auto": true,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": null,
+    "full_name": null,
+    "email": null
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Создание Брони (810000173)"
+   },
+   "remote_address": null,
+   "version": 2,
+   "created_at": "2054-10-01 09:01:00 MSK",
+   "is_auto": true,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": null,
+    "full_name": null,
+    "email": null
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Обновление Брони (810000173)"
+   },
+   "remote_address": null,
+   "version": 3,
+   "created_at": "2054-10-01 09:02:00 MSK",
+   "is_auto": true,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": null,
+    "full_name": null,
+    "email": null
+   },
+   "changes": []
+  },
+  {
+   "record": {
+    "title": "Создание Платежа (810000084)"
+   },
+   "remote_address": null,
+   "version": 4,
+   "created_at": "2054-10-01 09:03:00 MSK",
+   "is_auto": true,
+   "auto_text": "[auto_text]",
+   "user": {
+    "id": null,
+    "full_name": null,
+    "email": null
+   },
+   "changes": []
+  }
+ ]
+}

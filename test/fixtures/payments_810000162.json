@@ -1,0 +1,44 @@
+{
+ "data": [
+  {
+   "id": 810000083,
+   "event_id": 810000162,
+   "created_at": "2054-10-01T09:01:00.000+03:00",
+   "note": null,
+   "author": {
+    "id": 810000001,
+    "full_name": "Елена Попова",
+    "title": "Создал"
+   },
+   "status": {
+    "type": "success",
+    "text": "Оплачено на сайте бронирования",
+    "description": null
+   },
+   "payment": {
+    "type": "income",
+    "label": null,
+    "currency": "₽",
+    "amount": 24000,
+    "deleted": false,
+    "expired": false,
+    "amount_editable": false
+   },
+   "invoice": {
+    "id": 810000043,
+    "title": "Ostrovok"
+   },
+   "email": null,
+   "payment_link": null,
+   "payment_system": "booking_platform",
+   "manual_refundable": true,
+   "payment_system_refundable": false,
+   "mean_amount": true,
+   "mean_record": true,
+   "use_payment_system": false,
+   "has_refunds": false,
+   "can_delete": false,
+   "can_edit": true
+  }
+ ]
+}

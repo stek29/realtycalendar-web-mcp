@@ -1,0 +1,1408 @@
+{
+ "items": [
+  {
+   "apartment_id": 810000058,
+   "room_id": 810000035,
+   "events": [
+    {
+     "id": 810000182,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000054,
+   "room_id": 810000033,
+   "events": [
+    {
+     "id": 810000152,
+     "status": "booked",
+     "begin_date": "2054-12-31",
+     "end_date": "2055-01-03",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Елена Попова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000183,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Ольга Новикова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000054,
+   "room_id": 810000034,
+   "events": [
+    {
+     "id": 810000150,
+     "status": "booked",
+     "begin_date": "2054-10-24",
+     "end_date": "2054-10-26",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000184,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Елена Попова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000058,
+   "room_id": 810000036,
+   "events": [
+    {
+     "id": 810000151,
+     "status": "booked",
+     "begin_date": "2054-11-06",
+     "end_date": "2054-11-09",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Анна Петрова",
+      "phone": "+79990000004"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000185,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": 810000019,
+   "events": [
+    {
+     "id": 810000186,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": 810000020,
+   "events": [
+    {
+     "id": 810000187,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": 810000025,
+   "events": [
+    {
+     "id": 810000153,
+     "status": "booked",
+     "begin_date": "2054-11-07",
+     "end_date": "2054-11-09",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000188,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Ольга Новикова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": 810000026,
+   "events": [
+    {
+     "id": 810000154,
+     "status": "booked",
+     "begin_date": "2054-11-07",
+     "end_date": "2054-11-09",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000189,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Елена Попова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": 810000021,
+   "events": [
+    {
+     "id": 810000162,
+     "status": "booked",
+     "begin_date": "2054-12-20",
+     "end_date": "2054-12-23",
+     "amount": 24000,
+     "prepayment": 24000,
+     "is_external": true,
+     "is_delete": false,
+     "source_id": 5,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Иван Иванов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000190,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000053,
+   "room_id": 810000031,
+   "events": [
+    {
+     "id": 810000191,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": 810000024,
+   "events": [
+    {
+     "id": 810000155,
+     "status": "booked",
+     "begin_date": "2054-11-07",
+     "end_date": "2054-11-09",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000158,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000192,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": 810000022,
+   "events": [
+    {
+     "id": 810000159,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000193,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Ольга Новикова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": 810000027,
+   "events": [
+    {
+     "id": 810000156,
+     "status": "booked",
+     "begin_date": "2054-11-07",
+     "end_date": "2054-11-09",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Ольга Новикова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000160,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000194,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Елена Попова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": 810000028,
+   "events": [
+    {
+     "id": 810000157,
+     "status": "booked",
+     "begin_date": "2054-11-07",
+     "end_date": "2054-11-09",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Елена Попова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000161,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Ольга Новикова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000195,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": 810000023,
+   "events": [
+    {
+     "id": 810000163,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Елена Попова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000196,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000053,
+   "room_id": 810000032,
+   "events": [
+    {
+     "id": 810000167,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000197,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000052,
+   "room_id": 810000029,
+   "events": [
+    {
+     "id": 810000179,
+     "status": "booked",
+     "begin_date": "2054-11-02",
+     "end_date": "2054-11-04",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Иван Иванов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000168,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000198,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Ольга Новикова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000052,
+   "room_id": 810000030,
+   "events": [
+    {
+     "id": 810000147,
+     "status": "booked",
+     "begin_date": "2054-12-31",
+     "end_date": "2055-01-02",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000169,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000199,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Елена Попова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000053,
+   "room_id": null,
+   "events": [
+    {
+     "id": 810000170,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Ольга Новикова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000200,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000056,
+   "room_id": null,
+   "events": [
+    {
+     "id": 810000171,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Елена Попова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000205,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000058,
+   "room_id": null,
+   "events": [
+    {
+     "id": 810000172,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000206,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": null,
+   "events": [
+    {
+     "id": 810000176,
+     "status": "booked",
+     "begin_date": "2054-11-25",
+     "end_date": "2054-11-27",
+     "amount": 12000,
+     "prepayment": 6000,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000174,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000207,
+     "status": "booked",
+     "begin_date": "2055-03-05",
+     "end_date": "2055-03-07",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Ольга Новикова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000052,
+   "room_id": null,
+   "events": [
+    {
+     "id": 810000175,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000055,
+   "room_id": null,
+   "events": [
+    {
+     "id": 810000149,
+     "status": "booked",
+     "begin_date": "2055-01-12",
+     "end_date": "2055-01-14",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000177,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Ольга Новикова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000054,
+   "room_id": null,
+   "events": [
+    {
+     "id": 810000173,
+     "status": "booked",
+     "begin_date": "2054-11-15",
+     "end_date": "2054-11-18",
+     "amount": 18000,
+     "prepayment": 6000,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": 6,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Пётр Сидоров",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000201,
+     "status": "booked",
+     "begin_date": "2054-12-31",
+     "end_date": "2055-01-03",
+     "amount": 18000,
+     "prepayment": 0,
+     "is_external": true,
+     "is_delete": false,
+     "source_id": 5,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    },
+    {
+     "id": 810000178,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Елена Попова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000057,
+   "room_id": null,
+   "events": [
+    {
+     "id": 810000180,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": null,
+   "events": [
+    {
+     "id": 810000181,
+     "status": "booked",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,475 @@
+{
+ "items": [
+  {
+   "apartment_id": 810000058,
+   "room_id": 810000035,
+   "events": [
+    {
+     "id": 810000146,
+     "status": "canceled",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000054,
+   "room_id": 810000033,
+   "events": [
+    {
+     "id": 810000148,
+     "status": "canceled",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Мария Смирнова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000054,
+   "room_id": 810000034,
+   "events": [
+    {
+     "id": 810000164,
+     "status": "canceled",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Сергей Васильев",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000058,
+   "room_id": 810000036,
+   "events": [
+    {
+     "id": 810000165,
+     "status": "canceled",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 12000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Ольга Новикова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": 810000019,
+   "events": [
+    {
+     "id": 810000166,
+     "status": "canceled",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 14000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Елена Попова",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": 810000020,
+   "events": [
+    {
+     "id": 810000204,
+     "status": "canceled",
+     "begin_date": "2055-03-01",
+     "end_date": "2055-03-03",
+     "amount": 16000,
+     "prepayment": 0,
+     "is_external": false,
+     "is_delete": false,
+     "source_id": null,
+     "arrival_time": null,
+     "departure_time": null,
+     "client": {
+      "fio": "Олег Кузнецов",
+      "phone": "+79990000003"
+     },
+     "short_notes": "",
+     "updated_at": "2054-10-01T09:00:00.000+03:00"
+    }
+   ],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": 810000025,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": 810000026,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": 810000021,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000053,
+   "room_id": 810000031,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": 810000024,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": 810000022,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": 810000027,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": 810000028,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": 810000023,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000053,
+   "room_id": 810000032,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000052,
+   "room_id": 810000029,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000052,
+   "room_id": 810000030,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000053,
+   "room_id": null,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000056,
+   "room_id": null,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000058,
+   "room_id": null,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000050,
+   "room_id": null,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000052,
+   "room_id": null,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000055,
+   "room_id": null,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000054,
+   "room_id": null,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000057,
+   "room_id": null,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  },
+  {
+   "apartment_id": 810000051,
+   "room_id": null,
+   "events": [],
+   "special_prices": [
+    {
+     "begin_date": "2055-04-05",
+     "end_date": "2055-04-07",
+     "closed": true,
+     "is_delete": false
+    }
+   ]
+  }
+ ]
+}
