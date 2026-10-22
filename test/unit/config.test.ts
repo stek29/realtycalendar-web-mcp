@@ -13,6 +13,11 @@ describe('parseConfig', () => {
     expect(() => parseConfig({ RC_ACCESS: 'admin' })).toThrow(/RC_ACCESS/)
     expect(() => parseConfig({ RC_TIMEZONE: 'Mars/Base' })).toThrow(/RC_TIMEZONE/)
   })
+  it('protects booking-site bookings unless RC_SITE_BOOKINGS=allow', () => {
+    expect(parseConfig({}).siteBookings).toBe('protect')
+    expect(parseConfig({ RC_SITE_BOOKINGS: 'allow' }).siteBookings).toBe('allow')
+    expect(() => parseConfig({ RC_SITE_BOOKINGS: 'yes' })).toThrow(/RC_SITE_BOOKINGS/)
+  })
   it('orders access levels', () => {
     expect(accessAllows('read', 'read')).toBe(true)
     expect(accessAllows('read', 'book')).toBe(false)

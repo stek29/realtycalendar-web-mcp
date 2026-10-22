@@ -17,7 +17,9 @@ const USAGE = `realtycalendar-web-mcp ${VERSION}
 
 Environment: RC_TOKEN (required), RC_ACCESS=read|book|edit|full (default read),
 RC_TIMEZONE (default Europe/Moscow), RC_CONFIRM_KEY,
-RC_AUDIT=summary|full (default summary; full adds the booking before each write, with guest data).`
+RC_AUDIT=summary|full (default summary; full adds the booking before each write, with guest data),
+RC_SITE_BOOKINGS=protect|allow (default protect: no new dates, category, status or price for bookings from booking
+sites, and no cancelling or deleting them).`
 
 /** GET /v2/info with RC_TOKEN. Returns the exit code. */
 export async function check(env: NodeJS.ProcessEnv, out: (s: string) => void = console.log): Promise<number> {
@@ -40,7 +42,7 @@ export async function check(env: NodeJS.ProcessEnv, out: (s: string) => void = c
     out(`Token works.`)
     out(`User:   ${info.full_name ?? '—'} (RealtyCalendar role: ${info.role ?? '—'})`)
     out(`Agency: ${info.agency.title} (id ${info.agency.id})`)
-    out(`Access: ${config.access} (RC_ACCESS)`)
+    out(`Access: ${config.access} (RC_ACCESS), booking-site bookings: ${config.siteBookings} (RC_SITE_BOOKINGS)`)
     return 0
   } catch (e) {
     if (e instanceof ToolError && e.code === 'AUTH') out('Token rejected by RealtyCalendar (401): get a new one.')

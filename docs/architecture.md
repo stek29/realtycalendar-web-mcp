@@ -93,6 +93,8 @@ write needs a confirm token from a preview the user saw.
   `DELETE /v2/sign_in` with the MCP's token, which ends only that session ✅.
 - `RC_ACCESS=read|book|edit|full` (default `read`; levels in spec §1): tools above the level are not registered
   **and** their handlers refuse calls (second guard if a client cached the tool list).
+- `RC_SITE_BOOKINGS=protect|allow` (default `protect`, D40): writes don't change what a booking site sold. Hosted, it
+  can become per connection (an OAuth scope picked on the login page), like per-user access levels.
 - Publish with npm provenance.
 
 ## Hosted: stateless OAuth

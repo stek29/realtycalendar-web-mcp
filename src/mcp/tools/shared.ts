@@ -141,3 +141,18 @@ export async function bookingForWrite(ctx: Context, id: number) {
     state: { version: Math.max(0, ...raw.audits.map((a) => a.version)) },
   }
 }
+
+/**
+ * RC_SITE_BOOKINGS=protect (D40): a booking from a booking site keeps what the site sold. RC doesn't send such
+ * changes to the site, so the two would disagree.
+ */
+export function guardSiteBooking(ctx: Context, raw: { id: number; platform_name: string | null }, what: string): void {
+  const site = raw.platform_name
+  if (ctx.config.siteBookings !== 'protect' || !site) return
+  throw new ToolError(
+    'SITE_BOOKING',
+    `Booking ${raw.id} is from ${site}: this connection can't ${what}, because RealtyCalendar doesn't send that to ${site}. Nothing was changed.`,
+    `Tell the user to do it on ${site}`,
+    { platform: site },
+  )
+}

@@ -3,7 +3,7 @@ import { fromBooking } from '../../domain/bookings.js'
 import { bookingLine, bookingSite, hasPayments, type Warning } from '../../domain/warnings.js'
 import { deleteBooking as rcDelete } from '../../upstream/api.js'
 import { defineWriteTool } from './define.js'
-import { bookingForWrite, today } from './shared.js'
+import { bookingForWrite, guardSiteBooking, today } from './shared.js'
 
 export const deleteBookingTools = defineWriteTool({
   name: 'delete_booking',
@@ -17,6 +17,7 @@ export const deleteBookingTools = defineWriteTool({
 
   async preview(ctx, args) {
     const { catalog, raw, paid, before, state } = await bookingForWrite(ctx, args.booking_id)
+    guardSiteBooking(ctx, raw, 'delete it')
     const warnings: Warning[] = []
     if (raw.platform_name) warnings.push(bookingSite(raw.platform_name, 'deleting it here'))
     if (paid !== 0) warnings.push(hasPayments(paid, catalog.currency))

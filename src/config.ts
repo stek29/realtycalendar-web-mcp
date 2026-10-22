@@ -1,6 +1,9 @@
 import { AUDIT_DETAILS, type AuditDetail } from './audit.js'
 export const ACCESS_LEVELS = ['read', 'book', 'edit', 'full'] as const
 export type Access = (typeof ACCESS_LEVELS)[number]
+export const SITE_BOOKINGS = ['protect', 'allow'] as const
+/** protect: no changes to a booking-site booking that RC doesn't send to the site (D40). */
+export type SiteBookings = (typeof SITE_BOOKINGS)[number]
 
 export interface Config {
   access: Access
@@ -9,11 +12,13 @@ export interface Config {
   rcBaseUrl: string
   /** RC_AUDIT: how much of each write the audit line carries. */
   audit: AuditDetail
+  /** RC_SITE_BOOKINGS: whether writes may change what a booking site sold (dates, category, status, price). */
+  siteBookings: SiteBookings
 }
 
 export const RC_BASE_URL = 'https://realtycalendar.ru/v2/'
 
-/** Reads RC_ACCESS, RC_TIMEZONE, RC_CONFIRM_KEY, RC_AUDIT from an env-like record. Throws on invalid values. */
+/** Reads RC_ACCESS, RC_TIMEZONE, RC_CONFIRM_KEY, RC_AUDIT, RC_SITE_BOOKINGS from an env-like record. Throws on invalid values. */
 export function parseConfig(env: Record<string, string | undefined>): Config {
   const access = (env.RC_ACCESS?.trim() || 'read') as Access
   if (!ACCESS_LEVELS.includes(access)) {
@@ -31,7 +36,11 @@ export function parseConfig(env: Record<string, string | undefined>): Config {
   if (!AUDIT_DETAILS.includes(audit)) {
     throw new Error(`RC_AUDIT must be one of ${AUDIT_DETAILS.join(', ')}; got "${env.RC_AUDIT}"`)
   }
-  return { access, timezone, confirmKey, rcBaseUrl: RC_BASE_URL, audit }
+  const siteBookings = (env.RC_SITE_BOOKINGS?.trim() || 'protect') as SiteBookings
+  if (!SITE_BOOKINGS.includes(siteBookings)) {
+    throw new Error(`RC_SITE_BOOKINGS must be one of ${SITE_BOOKINGS.join(', ')}; got "${env.RC_SITE_BOOKINGS}"`)
+  }
+  return { access, timezone, confirmKey, rcBaseUrl: RC_BASE_URL, audit, siteBookings }
 }
 
 /** True when a tool of `level` is allowed under `access`. */

@@ -99,8 +99,9 @@ oauth/ is used only by platforms/node.ts (and later worker.ts)
 ```ts
 // config.ts
 type Access = 'read' | 'book' | 'edit' | 'full'
-interface Config { access: Access; timezone: string; confirmKey: Uint8Array; rcBaseUrl: string; audit: 'summary' | 'full' }
-parseConfig(env: Record<string, string | undefined>): Config        // RC_ACCESS, RC_TIMEZONE, RC_CONFIRM_KEY, RC_AUDIT
+interface Config { access: Access; timezone: string; confirmKey: Uint8Array; rcBaseUrl: string; audit: 'summary' | 'full';
+                  siteBookings: 'protect' | 'allow' }
+parseConfig(env: Record<string, string | undefined>): Config  // RC_ACCESS, RC_TIMEZONE, RC_CONFIRM_KEY, RC_AUDIT, RC_SITE_BOOKINGS
 
 // cache.ts — in-memory now; Workers would use the Cache API behind the same interface
 interface Cache { get<T>(key: string): Promise<T | undefined>; set<T>(key: string, value: T, ttlSec: number): Promise<void> }

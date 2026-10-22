@@ -5,7 +5,7 @@ import { bookingLine, bookingSite, hasPayments, type Warning } from '../../domai
 import { applyChanges, putBodyFromGet } from '../../domain/writes.js'
 import { putBooking } from '../../upstream/api.js'
 import { defineWriteTool } from './define.js'
-import { bookingForWrite, today } from './shared.js'
+import { bookingForWrite, guardSiteBooking, today } from './shared.js'
 
 export const cancelBookingTools = defineWriteTool({
   name: 'cancel_booking',
@@ -21,6 +21,7 @@ export const cancelBookingTools = defineWriteTool({
   async preview(ctx, args) {
     const { catalog, raw, paid, before, state } = await bookingForWrite(ctx, args.booking_id)
     if (raw.status === 'canceled') throw new ToolError('VALIDATION', `Booking ${raw.id} is already canceled`)
+    guardSiteBooking(ctx, raw, 'cancel it')
     const body = applyChanges(putBodyFromGet(raw), { status: 'canceled' })
     const warnings: Warning[] = []
     if (raw.platform_name) warnings.push(bookingSite(raw.platform_name, 'the cancellation'))

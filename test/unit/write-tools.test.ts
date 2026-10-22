@@ -9,11 +9,12 @@ import { fakeRc, type FakeRcOptions } from '../fake-rc.js'
 
 const NOW = new Date('2054-10-22T09:00:00+03:00')
 
-function setup(access: Access = 'full', opts: FakeRcOptions = {}) {
+function setup(access: Access = 'full', opts: FakeRcOptions = {}, env: Record<string, string> = {}) {
   const rc = fakeRc(opts)
   const lines: string[] = []
   const audit: AuditEntry[] = []
-  const ctx = makeContext('test-token', parseConfig({ RC_ACCESS: access, RC_CONFIRM_KEY: 'k' }), memoryCache(), {
+  const config = parseConfig({ RC_ACCESS: access, RC_CONFIRM_KEY: 'k', ...env })
+  const ctx = makeContext('test-token', config, memoryCache(), {
     fetch: rc.fetch,
     now: () => NOW,
     log: { log: (level, event, fields) => lines.push(JSON.stringify({ level, event, ...fields })) },
@@ -37,6 +38,8 @@ function setup(access: Access = 'full', opts: FakeRcOptions = {}) {
   const writes = () => rc.calls.filter((c) => !c.startsWith('GET') && !c.includes('group_special_prices'))
   return { call, write, writes, rc, lines, ctx, audit }
 }
+
+const ALLOW_SITE = { RC_SITE_BOOKINGS: 'allow' }
 
 const codes = (r: { warnings: { code: string }[] }) => r.warnings.map((w) => w.code)
 
@@ -395,8 +398,8 @@ describe('update_booking', () => {
     expect(detail.guest_name).toBe('Анна Петрова')
   })
 
-  it('BOOKING_SITE on a booking-site booking', async () => {
-    const { call } = setup()
+  it('BOOKING_SITE on a booking-site booking (RC_SITE_BOOKINGS=allow)', async () => {
+    const { call } = setup('full', {}, ALLOW_SITE)
     const p = await call('preview_update_booking', { booking_id: 810000162, check_out: '2055-01-09' })
     expect(codes(p)).toContain('BOOKING_SITE')
     const notes = await call('preview_update_booking', { booking_id: 810000162, notes_append: 'x' })
@@ -433,9 +436,52 @@ describe('update_booking', () => {
   })
 })
 
-describe('cancel_booking and delete_booking', () => {
-  it('U6c: cancel a booking-site booking with payments', async () => {
+describe('RC_SITE_BOOKINGS=protect (default, D40)', () => {
+  const SITE = 810000162 // Ostrovok, room 25, 2–8 Jan 2055
+
+  it.each([
+    [{ check_out: '2055-01-09' }, /check_out/],
+    [{ total: 1000 }, /total/],
+    [{ status: 'request' }, /status/],
+    [{ category: '03' }, /category/],
+    [{ room: '23' }, /category/],
+  ])('refuses %o in preview and write', async (changes, field) => {
+    const { call, writes } = setup()
+    const p = await call('preview_update_booking', { booking_id: SITE, ...changes })
+    expect(p).toMatchObject({ isError: true, error: 'SITE_BOOKING', platform: 'Ostrovok' })
+    expect(p.message).toMatch(field)
+    expect(await call('update_booking', { booking_id: SITE, ...changes, confirm_token: 'x.y' })).toMatchObject({
+      error: 'SITE_BOOKING',
+    })
+    expect(writes()).toEqual([])
+  })
+
+  it('refuses cancel and delete', async () => {
+    const { call } = setup()
+    for (const tool of ['preview_cancel_booking', 'preview_delete_booking', 'cancel_booking']) {
+      expect(await call(tool, { booking_id: SITE, confirm_token: 'x.y' })).toMatchObject({ error: 'SITE_BOOKING' })
+    }
+  })
+
+  it('allows notes, times and a room in the same category', async () => {
     const { call, write } = setup()
+    await write('update_booking', { booking_id: SITE, notes_append: 'x', arrival_time: '15:00' })
+    const room = (await call('list_rooms')).categories
+      .find((c: { rooms: { title: string }[] }) => c.rooms.some((r) => r.title === '25'))
+      .rooms.find((r: { title: string }) => r.title !== '25').title
+    const free = await call('preview_update_booking', { booking_id: SITE, room })
+    expect(free.isError).toBeUndefined()
+  })
+
+  it('leaves bookings not from a booking site alone', async () => {
+    const { call } = setup()
+    expect((await call('preview_cancel_booking', { booking_id: 810000176 })).confirm_token).toBeTruthy()
+  })
+})
+
+describe('cancel_booking and delete_booking', () => {
+  it('U6c: cancel a booking-site booking with payments (RC_SITE_BOOKINGS=allow)', async () => {
+    const { call, write } = setup('full', {}, ALLOW_SITE)
     const p = await call('preview_cancel_booking', { booking_id: 810000162 })
     expect(codes(p)).toEqual(expect.arrayContaining(['BOOKING_SITE', 'HAS_PAYMENTS']))
     expect(p.summary).toMatch(/^Отменить бронь 810000162: 25,/)
@@ -447,7 +493,7 @@ describe('cancel_booking and delete_booking', () => {
   })
 
   it('U6d: delete; then update and delete again → DELETED', async () => {
-    const { call, write } = setup()
+    const { call, write } = setup('full', {}, ALLOW_SITE)
     const r = await write('delete_booking', { booking_id: 810000162 })
     expect(r).toMatchObject({ preview: false, deleted: true })
     expect(await call('preview_update_booking', { booking_id: 810000162, notes_append: 'x' })).toMatchObject({

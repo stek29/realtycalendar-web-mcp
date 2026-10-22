@@ -8,7 +8,16 @@ import { bookingLine, bookingSite, money, pastDates, stayWarnings, type Warning 
 import { appendNote, applyChanges, putBodyFromGet, updatedAmount, type BookingFields } from '../../domain/writes.js'
 import { getGrid, getPrice, getStayRules, putBooking } from '../../upstream/api.js'
 import { defineWriteTool } from './define.js'
-import { bookingForWrite, checkRange, dateInput, NAME_HINT, timeInput, today, withCatalog } from './shared.js'
+import {
+  bookingForWrite,
+  checkRange,
+  guardSiteBooking,
+  dateInput,
+  NAME_HINT,
+  timeInput,
+  today,
+  withCatalog,
+} from './shared.js'
 
 const MAX_NIGHTS = 62
 
@@ -47,6 +56,8 @@ const SITE_FIELDS = new Set<keyof BookingFields>([
   'end_date',
   'amount',
 ])
+/** What a booking site sold; RC_SITE_BOOKINGS=protect keeps these (a room within the category is not sold). */
+const SOLD = new Set<keyof BookingFields>(['apartment_id', 'status', 'begin_date', 'end_date', 'amount'])
 const PLACEMENT = new Set<keyof BookingFields>(['apartment_id', 'realty_room_id', 'status', 'begin_date', 'end_date'])
 
 const CHANGE_ARGS = [
@@ -141,6 +152,8 @@ export const updateBookingTools = defineWriteTool({
     if (!changed.length) {
       throw new ToolError('VALIDATION', 'Nothing would change: the booking already has these values')
     }
+    const sold = changed.filter((k) => SOLD.has(k))
+    if (sold.length) guardSiteBooking(ctx, raw, `change its ${sold.map((k) => FIELD_NAMES[k]).join(', ')}`)
 
     const category = categoryById(catalog, set.apartment_id)!
     const t = today(ctx).today

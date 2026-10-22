@@ -10,6 +10,7 @@ export type ErrorCode =
   | 'RANGE_TOO_LONG'
   | 'PREVIEW_STALE'
   | 'ACCESS_DENIED'
+  | 'SITE_BOOKING'
   | 'VALIDATION'
   | 'RC_SCHEMA_DRIFT'
   | 'RC_ERROR'

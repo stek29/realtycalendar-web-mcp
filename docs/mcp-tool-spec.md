@@ -130,6 +130,7 @@ MCP tool errors (`isError: true`) with `{ "error": CODE, "message": "…", "hint
 | `INVALID_DATES` | bad format, check_out ≤ check_in, RC 422 on dates ✅ | |
 | `RANGE_TOO_LONG` | over the tool's limit, or RC 400 "date range" ✅ | "Split or narrow the range" |
 | `PREVIEW_STALE` | confirm_token doesn't match the arguments, the booking changed since the preview, or it expired | "Show the new preview (included) and ask again" |
+| `SITE_BOOKING` | `RC_SITE_BOOKINGS=protect` (default, D40): new dates, category, status or price, or a cancel or delete, on a booking from a booking site | "Tell the user to do it on {site}"; `platform` |
 | `ACCESS_DENIED` | a tool above the connection's access level (only if a client calls a tool it wasn't offered) | "Tell the user this connection can't do it; they can do it in RealtyCalendar" |
 | `VALIDATION` | missing/conflicting inputs, other RC 422 | `rc_errors` only after redaction |
 | `RC_SCHEMA_DRIFT` | RC response doesn't match the expected shape | "RealtyCalendar changed; report to the admin" |
@@ -219,7 +220,8 @@ owner `full`. The confirm-token preview applies at every write level.
 
 v1 (env): `RC_TOKEN` (required), `RC_ACCESS=read|book|edit|full` (default `read`), `RC_TIMEZONE` (default
 `Europe/Moscow`), `RC_CONFIRM_KEY` (HMAC key; random per process if unset), `RC_AUDIT=summary|full` (audit line
-detail, default `summary`; plan-m3.md §4). Hosted: the same `RC_ACCESS` per
+detail, default `summary`; plan-m3.md §4), `RC_SITE_BOOKINGS=protect|allow` (default `protect`: bookings from booking
+sites keep their dates, category, status and price and can't be cancelled or deleted here; D40). Hosted: the same `RC_ACCESS` per
 deployment; per-user levels can come later.
 
 ## 2. Tools
