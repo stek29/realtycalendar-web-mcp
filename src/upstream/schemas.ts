@@ -45,7 +45,7 @@ export const GridEventSchema = z.object({
   arrival_time: text,
   departure_time: text,
   client: z.object({ fio: text, phone: text }).nullable(),
-  client_notes: text,
+  short_notes: text, // = the booking's notes (the detail's `notes`)
   updated_at: z.string(),
 })
 export type GridEvent = z.infer<typeof GridEventSchema>

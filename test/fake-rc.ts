@@ -121,7 +121,7 @@ function blankEvent(): GridEvent {
     arrival_time: null,
     departure_time: null,
     client: { fio: 'Иван Иванов', phone: null },
-    client_notes: '',
+    short_notes: '',
     updated_at: '2054-10-22T12:00:00.000+03:00',
   }
 }
