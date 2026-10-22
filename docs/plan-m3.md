@@ -170,6 +170,20 @@ Nothing is published (owner, D42): no npm package, and no Docker image for stdio
 - Audit entries written in the live write tests.
 - v0.1.0 tagged; README setup from a checkout.
 
+## TODO (M4): when the tools should not be called
+
+The evals only check that our tools are called; nothing checks that they are left alone. Context-free prompts like
+"Что свободно на выходные?" call `check_availability`, and the descriptions push that way ("In the user's hotel",
+Russian trigger phrases). In Claude web or ChatGPT with other connectors (calendar, mail), that prompt more likely
+means the user's own weekend. Before the M4 release:
+- Re-read the descriptions for over-triggering: say what the tools are for (one hotel's rooms and bookings in
+  RealtyCalendar) rather than matching bare phrases; keep the trigger phrases tied to hotel words.
+- Prompts: give most cases the context a real hotel user has (a mention of rooms, guests, the hotel), keep a few bare
+  ones, and add negative cases where the right answer calls no tool (personal calendar, "кто свободен из
+  сотрудников", general questions); grading supports `forbid` already.
+- Run some cases with a second, decoy MCP server (e.g. a fake calendar with "free/busy" tools) to measure picking
+  the right one.
+
 ## Later (M4 candidate): MCP elicitation
 
 Not in v1 (D36). Elicitation lets the server ask the user directly in a client-rendered dialog the model can't answer,
