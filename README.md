@@ -17,7 +17,7 @@ Needs Node 22+.
 2. **Build** from a checkout of the release tag:
 
    ```sh
-   git checkout v1.0.0
+   git checkout v0.1.0
    npm ci && npm run build
    ```
 
@@ -74,7 +74,8 @@ Claude Code: `claude mcp add realtycalendar -e RC_TOKEN=… -e RC_ACCESS=edit --
 Don't put the write tools in `allowedTools`.
 
 Codex (`~/.codex/config.toml`). Codex refuses MCP tools that aren't read-only unless the server sets
-`default_tools_approval_mode`: `prompt` asks you before each call; `approve` runs them without asking (tests only).
+`default_tools_approval_mode`: `prompt` should ask you before each call (not tested); `approve` runs them without
+asking (tests only).
 
 ```toml
 [mcp_servers.realtycalendar]

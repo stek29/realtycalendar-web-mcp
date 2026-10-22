@@ -148,7 +148,7 @@ Per confirmed write (architecture.md "Write path"), one JSON line:
 
 Nothing is published (owner, D42): no npm package, and no Docker image for stdio. v1 is run with Node from a checkout.
 
-- `package.json`: version `1.0.0`, `bin`, `engines.node >= 22`; tag `v1.0.0` in git.
+- `package.json`: version `0.1.0`, `bin`, `engines.node >= 22`; tag `v0.1.0` in git.
 - README: setup from a checkout (`npm ci && npm run build`, client config `node /path/to/dist/main.js`), `login` /
   `check`, access levels, the dedicated RC user recommendation, a short personal-data note for hotels
   (architecture.md "Personal data").
@@ -162,7 +162,7 @@ Nothing is published (owner, D42): no npm package, and no Docker image for stdio
 - Live read-only client check passes; Claude Desktop check done by the owner.
 - `login` / `check` / `logout` verified by the owner. ✅ 2054-10-22, `scripts/test-session.sh` (D45)
 - Audit entries written in the live write tests.
-- v1.0.0 tagged; README setup from a checkout.
+- v0.1.0 tagged; README setup from a checkout.
 
 ## Later (M4 candidate): MCP elicitation
 

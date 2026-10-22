@@ -191,7 +191,7 @@ The password is never stored or logged. The CLI is the only place besides the ho
 |---|---|---|
 | M1 | Repo + `docs/`, config/context/cache, `upstream/` client + schemas, fixtures + fake RC, catalog + matching, the 4 read tools, stdio, `check` command | Claude Desktop answers U1–U4, U9, U10, U12, R1–R3 against the live account with `RC_ACCESS=read` |
 | M2 | `defineWriteTool`; create / update / cancel / delete (S2, S3 answered and S9 settled by the 2054-10-22 baseline, mcp-user-stories.md) | Live write tests pass and leave the calendar clean; S3 (no-op PUT keeps booking and guest) passes before update/cancel ship |
-| M3 | Evals for all spec §3 prompts, `login` / `logout`, audit log, release prep | Evals green; v1.0.0 tagged |
+| M3 | Evals for all spec §3 prompts, `login` / `logout`, audit log, release prep | Evals green; v0.1.0 tagged |
 | M4 | `oauth/` + `platforms/node.ts`, Dockerfile (HTTP only) | Connects from Claude and ChatGPT via CIMD; runs in Kubernetes / docker compose |
 
 ## Later: Cloudflare Workers (postponed)
