@@ -1,10 +1,12 @@
-// One typed function per RC endpoint. Write endpoints come with M2.
+// One typed function per RC endpoint.
 import { z } from 'zod'
 import type { RcClient } from './client.js'
 import {
   ApartmentInfoSchema,
   ApartmentsSchema,
+  BookingRawSchema,
   BookingSchema,
+  DraftSchema,
   GridSchema,
   InfoSchema,
   PaymentsSchema,
@@ -59,6 +61,25 @@ export const getPrice = (rc: RcClient, apartmentId: number, begin: string, end: 
   rc.get(`apartments/${apartmentId}/price`, { begin_date: begin, end_date: end }, PriceSchema)
 
 export const getBooking = (rc: RcClient, id: number) => rc.get(`event_calendars/${id}`, {}, BookingSchema)
+
+/** The booking with every key RC sent, for building a PUT body (domain/writes.ts). */
+export const getBookingRaw = (rc: RcClient, id: number) => rc.get(`event_calendars/${id}`, {}, BookingRawSchema)
+
+// Writes: never retried (RcClient.send).
+
+/** Step 1 of a create: a draft, invisible and not blocking the room until its PUT (spec §2.5). */
+export const createDraft = (
+  rc: RcClient,
+  d: { status: string; apartment_id: number; realty_room_id: number | null; begin_date: string; end_date: string },
+) => rc.send('POST', 'event_calendars', { event_calendar: d }, DraftSchema)
+
+/** Full-body save; RC rejects partial bodies. Returns the booking in the GET shape. */
+export const putBooking = (rc: RcClient, id: number, body: unknown) =>
+  rc.send('PUT', `event_calendars/${id}`, body, BookingSchema)
+
+/** Soft delete; returns the booking with is_delete: true. */
+export const deleteBooking = (rc: RcClient, id: number) =>
+  rc.send('DELETE', `event_calendars/${id}`, undefined, BookingSchema)
 
 export const getPayments = (rc: RcClient, id: number) => rc.get(`event_calendars/${id}/payments`, {}, PaymentsSchema)
 

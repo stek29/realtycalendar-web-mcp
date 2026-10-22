@@ -123,6 +123,22 @@ export const BookingSchema = z.object({
 })
 export type Booking = z.infer<typeof BookingSchema>
 
+const personFull = person.extend({ additional_phone: text })
+
+/** A booking read for a write: the fields the PUT body is built from, unknown keys kept for the drift check. */
+export const BookingRawSchema = BookingSchema.extend({
+  client: personFull.nullable(),
+  guest: personFull.nullable(),
+  color: z.string().nullable(),
+  reaction: z.string().nullable(),
+  platform_tax: z.number().nullable(),
+  additional_services: z.object({ early_checkin: z.unknown(), late_checkout: z.unknown() }),
+}).loose()
+export type BookingRaw = z.infer<typeof BookingRawSchema>
+
+/** POST event_calendars returns the draft in the detail shape; only the id is used. */
+export const DraftSchema = z.object({ id: z.number() })
+
 export const PaymentsSchema = z.object({
   data: z.array(
     z.object({
