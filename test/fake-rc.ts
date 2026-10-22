@@ -502,6 +502,8 @@ export interface SignInRc {
   live: Set<string>
   /** Usernames of every sign-in attempt. */
   signIns: string[]
+  /** Headers of every request, in order. */
+  headers: Headers[]
   setPassword(password: string): void
 }
 
@@ -509,10 +511,12 @@ export interface SignInRc {
 export function signInRc(user: { username: string; password: string }, rc: FakeRc = fakeRc()): SignInRc {
   const live = new Set<string>()
   const signIns: string[] = []
+  const seen: Headers[] = []
   let password = user.password
   let n = 0
   const fetch: typeof globalThis.fetch = async (input, init) => {
     const url = new URL(input instanceof Request ? input.url : input)
+    seen.push(new Headers(init?.headers))
     if (url.pathname === '/v2/sign_in' && init?.method === 'POST') {
       const body = JSON.parse(String(init.body)) as { username: string; password: string }
       signIns.push(body.username)
@@ -528,5 +532,5 @@ export function signInRc(user: { username: string; password: string }, rc: FakeR
     }
     return rc.fetch(input, init)
   }
-  return { fetch, live, signIns, setPassword: (p) => (password = p) }
+  return { fetch, live, signIns, headers: seen, setPassword: (p) => (password = p) }
 }

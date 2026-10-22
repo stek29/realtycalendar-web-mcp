@@ -9,9 +9,19 @@ import { streamAudit } from './audit.js'
 import type { Cache } from './cache.js'
 import type { Config } from './config.js'
 import { makeContext, type Context } from './context.js'
-import { jsonLogger } from './log.js'
+import { newRequestId } from './ids.js'
+import { jsonLogger, type Logger } from './log.js'
 import { createMcpServer } from './mcp/server.js'
-import { bearer, oauthApp, unauthorized, type HttpEnv, type OAuthOptions } from './oauth/app.js'
+import {
+  bearer,
+  clientLabel,
+  oauthApp,
+  requestFields,
+  unauthorized,
+  upstreamIdentity,
+  type HttpEnv,
+  type OAuthOptions,
+} from './oauth/app.js'
 
 export interface HostedOptions extends Omit<OAuthOptions, 'maxAccess' | 'rcBaseUrl' | 'log'> {
   /** Server-wide config; `access` is the highest level a connection may pick, `confirmKey` comes from the server key. */
@@ -36,14 +46,16 @@ export function hostedApp(o: HostedOptions): Hono<HttpEnv> {
   // One access line per request: path without the query (codes and states ride in it), status, the real client IP.
   app.use('*', async (c, next) => {
     const started = Date.now()
+    c.set('requestId', newRequestId())
     c.set('ip', clientIp(o.socketIp?.(c), c.req.header('X-Forwarded-For'), o.trustProxyHops ?? 0))
     await next()
+    c.res.headers.set('X-Request-Id', c.get('requestId'))
     log.log(c.res.status >= 500 ? 'error' : 'info', 'http', {
+      ...requestFields(c),
       method: c.req.method,
       path: c.req.path,
       status: c.res.status,
       duration_ms: Date.now() - started,
-      ip: c.get('ip'),
       user_agent: c.req.header('User-Agent')?.slice(0, 200),
     })
   })
@@ -76,11 +88,17 @@ export function hostedApp(o: HostedOptions): Hono<HttpEnv> {
   app.all('/mcp', async (c) => {
     const auth = await bearer(c.req.raw, oauth)
     if (auth instanceof Response) return auth
+    c.set('client', clientLabel(auth.clientId))
+    c.set('account', auth.account)
     let rcRejected = false
+    const identity = upstreamIdentity(o.publicUrl, c)
     const ctx = makeContext(auth.rcToken, { ...o.config, access: auth.access }, o.cache, {
       fetch: o.fetch,
       now: o.now,
-      log: jsonLogger(o.write, [auth.rcToken, auth.token]),
+      // Tool and RC lines carry the request's fields too: one request, one user, all their lines.
+      log: withFields(jsonLogger(o.write, [auth.rcToken, auth.token]), requestFields(c)),
+      userAgent: identity.userAgent,
+      rcHeaders: identity.headers,
       audit: streamAudit(o.write, o.config.audit),
       onUnauthorized: () => (rcRejected = true),
     })
@@ -106,4 +124,8 @@ export function hostedApp(o: HostedOptions): Hono<HttpEnv> {
     return c.json({ error: 'server_error' }, 500)
   })
   return app
+}
+
+function withFields(base: Logger, fields: Record<string, unknown>): Logger {
+  return { log: (level, event, extra) => base.log(level, event, { ...fields, ...extra }) }
 }

@@ -18,7 +18,8 @@ Stack, repository layout, module interfaces, entrypoints and build order:
 ## RC client
 
 - Base `https://realtycalendar.ru/v2/`, headers `X-User-Token`, `X-Locale: ru`, `Content-Type: application/json`,
-  an honest `User-Agent` (`realtycalendar-web-mcp/<version>`).
+  an honest `User-Agent` (`realtycalendar-web-mcp/<version>`). Hosted adds the deployment and client to the
+  User-Agent, the client IP as `X-Forwarded-For` and our `X-Request-Id`, so RC can trace abuse through us (D57).
 - Query: Rails arrays (`statuses[]=…`), `apartment_ids` comma-joined; chunk ids by 10 when > 50 (as the web app).
 - Error mapping per spec §1: 401 → `AUTH`; 404 → `NOT_FOUND`; 422 "На данные числа объект занят" → `OCCUPIED`;
   422 "Комната не найдена" → `ROOM_NOT_IN_CATEGORY` (logged as an invariant violation — the server derives the

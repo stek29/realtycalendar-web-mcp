@@ -14,6 +14,8 @@ export interface RcClientOptions {
   timeoutMs?: number
   /** Delay before the one GET retry; tests set 0. */
   retryDelayMs?: () => number
+  /** Extra headers on every request, e.g. X-Forwarded-For and X-Request-Id in hosted mode; can't override ours. */
+  headers?: Record<string, string>
   /** Called when RC answers 401; hosted turns the whole HTTP request into a 401 (architecture.md "Hosted"). */
   onUnauthorized?: () => void
 }
@@ -88,6 +90,7 @@ export class RcClient {
           this.fetch(new URL(pathAndQuery, this.opts.baseUrl), {
             method,
             headers: {
+              ...this.opts.headers,
               // No token only for sign-in.
               ...(this.token ? { 'X-User-Token': this.token } : {}),
               'X-Locale': 'ru',

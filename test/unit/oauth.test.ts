@@ -401,7 +401,7 @@ describe('tokens and RC sessions', () => {
     const other = await seal(
       { keys: s.keys, issuer: PUBLIC, audience: 'https://other.example/mcp', now: () => new Date() },
       'access',
-      { client_id: CLAUDE, scope: '', access: 'read', rc_token: 'rc-1' },
+      { client_id: CLAUDE, scope: '', access: 'read', sub: 'x', rc_token: 'rc-1' },
     )
     expect((await s.mcp(other, 'tools/list')).status).toBe(401)
   })
@@ -494,5 +494,48 @@ describe('client IP and access log', () => {
       body: 'grant_type=refresh_token&refresh_token=' + 'a'.repeat(20_000),
     })
     expect(res.status).toBe(413)
+  })
+})
+
+describe('identifiable upstream traffic and correlated logs', () => {
+  it('tells RC who we are, which client and which IP; every line of a request shares its id', async () => {
+    const s = await setup()
+    const tokens = await s.connect()
+    const login = s.rc.headers[0]!
+    expect(login.get('User-Agent')).toMatch(
+      /^realtycalendar-web-mcp\/[\d.]+ \(\+https:\/\/rc\.example\.test; via claude\.ai\)$/,
+    )
+    expect(login.get('X-Forwarded-For')).toBe('10.0.0.5') // the test's socket address, no proxy header sent
+
+    const res = await s.req('/mcp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json, text/event-stream',
+        'Mcp-Protocol-Version': '2025-06-18',
+        Authorization: `Bearer ${tokens.access_token}`,
+        'X-Forwarded-For': '6.6.6.6, 203.0.113.10',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'list_rooms', arguments: {} },
+      }),
+    })
+    const requestId = res.headers.get('X-Request-Id')!
+    expect(requestId).toMatch(/^[a-z]{12}$/)
+    const rcCall = s.rc.headers.at(-1)!
+    expect(rcCall.get('X-Request-Id')).toBe(requestId)
+    expect(rcCall.get('X-Forwarded-For')).toBe('203.0.113.10')
+
+    const events = s.lines.map((l) => JSON.parse(l))
+    const mine = events.filter((e) => e.request_id === requestId)
+    expect(mine.map((e) => e.event)).toEqual(expect.arrayContaining(['rc_request', 'tool', 'http']))
+    for (const e of mine) expect(e).toMatchObject({ ip: '203.0.113.10', client: 'claude.ai' })
+    const account = mine[0].account
+    expect(account).toMatch(/^[a-z]{10}$/)
+    expect(events.find((e) => e.event === 'oauth_login').account).toBe(account)
+    expect(JSON.stringify(events)).not.toContain(USER)
   })
 })

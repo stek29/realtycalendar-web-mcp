@@ -12,6 +12,7 @@ import { RcClient } from '../upstream/client.js'
 import { redirectAllowed, type ClientInfo, type ClientRegistry } from './cimd.js'
 import type { ServerKeys } from './keys.js'
 import { errorPage, loginPage } from './login.js'
+import { accountId } from '../ids.js'
 import { open, seal, TTL, type TokenScope } from './tokens.js'
 
 export interface OAuthOptions {
@@ -28,14 +29,45 @@ export interface OAuthOptions {
   log?: Logger
 }
 
-/** Request variables set by hosted.ts: the client IP for logs. */
-export type HttpEnv = { Variables: { ip: string | undefined } }
+/** Request variables set by hosted.ts for logs and RC calls; `client` and `account` once the caller is known. */
+export type HttpEnv = {
+  Variables: { ip: string | undefined; requestId: string; client?: string; account?: string }
+}
+
+/** Fields every log line of a request carries, so one request's lines (and one user's) can be found together. */
+export function requestFields(c: HonoContext<HttpEnv>) {
+  return { request_id: c.get('requestId'), ip: c.get('ip'), client: c.get('client'), account: c.get('account') }
+}
+
+/**
+ * How our calls look to RealtyCalendar, so its side can tell our traffic apart and trace abuse: a User-Agent with the
+ * version, the deployment and the MCP client, the client IP we saw as X-Forwarded-For, and our request id.
+ */
+export function upstreamIdentity(publicUrl: string, c: HonoContext<HttpEnv>) {
+  const client = c.get('client')
+  const ip = c.get('ip')
+  return {
+    userAgent: `realtycalendar-web-mcp/${VERSION} (+${urls(publicUrl).issuer}${client ? `; via ${client}` : ''})`,
+    headers: { 'X-Request-Id': c.get('requestId'), ...(ip ? { 'X-Forwarded-For': ip } : {}) },
+  }
+}
+
+/** claude.ai, chatgpt.com: the host of a CIMD client id. */
+export function clientLabel(clientId: string): string {
+  try {
+    return new URL(clientId).host
+  } catch {
+    return 'unknown'
+  }
+}
 
 export interface Bearer {
   token: string
   rcToken: string
   access: Access
   clientId: string
+  /** Pseudonym of the RC login (ids.ts accountId). */
+  account: string
   scopes: string[]
   expiresAt: number
 }
@@ -80,6 +112,7 @@ export async function bearer(req: Request, o: OAuthOptions): Promise<Bearer | Re
     rcToken: claims.rc_token,
     access,
     clientId: claims.client_id,
+    account: claims.sub,
     scopes: claims.scope ? claims.scope.split(' ') : [],
     expiresAt: (claims as unknown as { exp: number }).exp,
   }
@@ -90,8 +123,8 @@ export function oauthApp(o: OAuthOptions): Hono<HttpEnv> {
   const u = urls(o.publicUrl)
   const ts = scopeOf(o)
   const log = o.log ?? silentLogger
-  const rc = (token: string) =>
-    new RcClient(token, { baseUrl: o.rcBaseUrl, fetch: o.fetch, log, userAgent: `realtycalendar-web-mcp/${VERSION}` })
+  const rc = (c: HonoContext<HttpEnv>, token: string) =>
+    new RcClient(token, { baseUrl: o.rcBaseUrl, fetch: o.fetch, log, ...upstreamIdentity(o.publicUrl, c) })
 
   // Browser-based clients (MCP Inspector) read metadata and call /token cross-origin.
   const openCors = cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'], maxAge: 600 })
@@ -134,6 +167,7 @@ export function oauthApp(o: OAuthOptions): Hono<HttpEnv> {
     // Before the client and redirect URI are known good, errors are shown here, never redirected (RFC 6749 §4.1.2.1).
     const client = q.client_id ? await o.clients.get(q.client_id) : undefined
     if (!client) return c.html(errorPage('Это приложение не может подключаться к серверу.'), 400)
+    c.set('client', clientLabel(client.client_id))
     const redirectUri = q.redirect_uri ?? (client.redirect_uris.length === 1 ? client.redirect_uris[0]! : '')
     if (!redirectAllowed(client, redirectUri)) {
       return c.html(errorPage('Адрес возврата не совпадает с адресами приложения.'), 400)
@@ -174,6 +208,7 @@ export function oauthApp(o: OAuthOptions): Hono<HttpEnv> {
     const cookie = getCookie(c, COOKIE, 'host')
     const login = cookie ? await open(ts, 'login', cookie) : undefined
     if (!login) return c.html(errorPage('Время на вход истекло или вход начат в другом браузере.'), 400)
+    c.set('client', clientLabel(login.client_id))
     const client = await o.clients.get(login.client_id)
     if (!client) return c.html(errorPage('Это приложение не может подключаться к серверу.'), 400)
     const form = await c.req.parseBody()
@@ -191,15 +226,17 @@ export function oauthApp(o: OAuthOptions): Hono<HttpEnv> {
     const again = (error: string, status: 200 | 502 = 200) =>
       c.html(loginPage({ ...pageProps(client, login.redirect_uri, o.maxAccess), access, username, error }), status)
     if (!username || !password) return again('Введите логин и пароль.')
+    const sub = await accountId(username)
+    c.set('account', sub)
     let rcToken: string
     try {
-      rcToken = (await signIn(rc(''), username, password)).auth_token
+      rcToken = (await signIn(rc(c, ''), username, password)).auth_token
     } catch (e) {
       if (e instanceof ToolError && (e.code === 'AUTH' || e.code === 'VALIDATION')) {
-        log.log('info', 'oauth_login_rejected', { ip: c.get('ip'), client_id: client.client_id })
+        log.log('info', 'oauth_login_rejected', { ...requestFields(c), client_id: client.client_id })
         return again('Неверный логин или пароль RealtyCalendar.')
       }
-      log.log('warn', 'oauth_login_failed', { ip: c.get('ip'), client_id: client.client_id, error: String(e) })
+      log.log('warn', 'oauth_login_failed', { ...requestFields(c), client_id: client.client_id, error: String(e) })
       return again('RealtyCalendar сейчас недоступен. Попробуйте ещё раз.', 502)
     }
     const code = await seal(ts, 'code', {
@@ -208,11 +245,12 @@ export function oauthApp(o: OAuthOptions): Hono<HttpEnv> {
       access,
       redirect_uri: login.redirect_uri,
       code_challenge: login.code_challenge,
+      sub,
       rc_token: rcToken,
       rc_user: username,
       rc_password: password,
     })
-    log.log('info', 'oauth_login', { ip: c.get('ip'), client_id: client.client_id, access })
+    log.log('info', 'oauth_login', { ...requestFields(c), client_id: client.client_id, access })
     return back({ code })
   })
 
@@ -233,29 +271,33 @@ export function oauthApp(o: OAuthOptions): Hono<HttpEnv> {
     if (f('grant_type') === 'authorization_code') {
       const code = await open(ts, 'code', f('code') ?? '')
       if (!code) return fail('invalid_grant', 'Code is invalid or expired')
+      c.set('client', clientLabel(code.client_id))
+      c.set('account', code.sub)
       if (f('client_id') !== code.client_id) return fail('invalid_grant', 'Code was issued to another client')
       if (f('redirect_uri') !== code.redirect_uri) return fail('invalid_grant', 'redirect_uri does not match')
       const verifier = f('code_verifier')
       if (!verifier || (await s256(verifier)) !== code.code_challenge) {
         return fail('invalid_grant', 'PKCE verification failed')
       }
-      log.log('info', 'oauth_token', { ip: c.get('ip'), client_id: code.client_id, grant: 'authorization_code' })
+      log.log('info', 'oauth_token', { ...requestFields(c), client_id: code.client_id, grant: 'authorization_code' })
       return c.json(await issue(code))
     }
 
     if (f('grant_type') === 'refresh_token') {
       const refresh = await open(ts, 'refresh', f('refresh_token') ?? '')
       if (!refresh) return fail('invalid_grant', 'Refresh token is invalid or expired')
+      c.set('client', clientLabel(refresh.client_id))
+      c.set('account', refresh.sub)
       if (f('client_id') !== undefined && f('client_id') !== refresh.client_id) {
         return fail('invalid_grant', 'Refresh token was issued to another client')
       }
       let rcToken = refresh.rc_token
       try {
-        await getInfo(rc(rcToken))
+        await getInfo(rc(c, rcToken))
       } catch (e) {
         if (!(e instanceof ToolError && e.code === 'AUTH')) {
           log.log('warn', 'oauth_refresh_rc_unavailable', {
-            ip: c.get('ip'),
+            ...requestFields(c),
             client_id: refresh.client_id,
             error: String(e),
           })
@@ -263,18 +305,22 @@ export function oauthApp(o: OAuthOptions): Hono<HttpEnv> {
         }
         // The RC session died: sign in again with the stored login.
         try {
-          rcToken = (await signIn(rc(''), refresh.rc_user, refresh.rc_password)).auth_token
-          log.log('info', 'oauth_rc_relogin', { ip: c.get('ip'), client_id: refresh.client_id })
+          rcToken = (await signIn(rc(c, ''), refresh.rc_user, refresh.rc_password)).auth_token
+          log.log('info', 'oauth_rc_relogin', { ...requestFields(c), client_id: refresh.client_id })
         } catch (e2) {
           if (e2 instanceof ToolError && (e2.code === 'AUTH' || e2.code === 'VALIDATION')) {
-            log.log('info', 'oauth_relogin_rejected', { ip: c.get('ip'), client_id: refresh.client_id })
+            log.log('info', 'oauth_relogin_rejected', { ...requestFields(c), client_id: refresh.client_id })
             return fail('invalid_grant', 'RealtyCalendar login no longer works; reconnect')
           }
-          log.log('warn', 'oauth_relogin_failed', { ip: c.get('ip'), client_id: refresh.client_id, error: String(e2) })
+          log.log('warn', 'oauth_relogin_failed', {
+            ...requestFields(c),
+            client_id: refresh.client_id,
+            error: String(e2),
+          })
           return fail('temporarily_unavailable', 'RealtyCalendar is not reachable', 503)
         }
       }
-      log.log('info', 'oauth_token', { ip: c.get('ip'), client_id: refresh.client_id, grant: 'refresh_token' })
+      log.log('info', 'oauth_token', { ...requestFields(c), client_id: refresh.client_id, grant: 'refresh_token' })
       return c.json(await issue({ ...refresh, rc_token: rcToken }))
     }
 
@@ -285,11 +331,12 @@ export function oauthApp(o: OAuthOptions): Hono<HttpEnv> {
     client_id: string
     scope: string
     access: Access
+    sub: string
     rc_token: string
     rc_user: string
     rc_password: string
   }) {
-    const common = { client_id: g.client_id, scope: g.scope, access: g.access }
+    const common = { client_id: g.client_id, scope: g.scope, access: g.access, sub: g.sub }
     return {
       access_token: await seal(ts, 'access', { ...common, rc_token: g.rc_token }),
       token_type: 'Bearer',

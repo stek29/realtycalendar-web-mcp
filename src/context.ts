@@ -27,6 +27,10 @@ export interface ContextOptions {
   log?: Logger
   audit?: AuditSink
   now?: () => Date
+  /** Replaces the default User-Agent (hosted adds the deployment URL and the client). */
+  userAgent?: string
+  /** Extra headers on RC requests (hosted: X-Forwarded-For, X-Request-Id). */
+  rcHeaders?: Record<string, string>
   /** RC answered 401 (hosted: the request becomes an HTTP 401). */
   onUnauthorized?: () => void
 }
@@ -37,7 +41,8 @@ export function makeContext(rcToken: string, config: Config, cache: Cache, opts:
     baseUrl: config.rcBaseUrl,
     fetch: opts.fetch,
     log,
-    userAgent: `realtycalendar-web-mcp/${VERSION}`,
+    userAgent: opts.userAgent ?? `realtycalendar-web-mcp/${VERSION}`,
+    headers: opts.rcHeaders,
     onUnauthorized: opts.onUnauthorized,
   })
   let loading: Promise<Catalog> | undefined

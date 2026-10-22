@@ -22,6 +22,8 @@ export interface LoginClaims extends Common {
 
 /** Code and refresh token carry the RC login so a dead RC token can be replaced by signing in again. */
 export interface CodeClaims extends Common {
+  /** Pseudonym of the RC login for logs (ids.ts accountId). */
+  sub: string
   redirect_uri: string
   code_challenge: string
   rc_token: string
@@ -30,10 +32,12 @@ export interface CodeClaims extends Common {
 }
 
 export interface AccessClaims extends Common {
+  sub: string
   rc_token: string
 }
 
 export interface RefreshClaims extends Common {
+  sub: string
   rc_token: string
   rc_user: string
   rc_password: string
