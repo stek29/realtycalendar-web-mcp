@@ -4,19 +4,18 @@ import { ToolError } from '../../domain/errors.js'
 import { bookingLine, bookingSite, hasPayments, type Warning } from '../../domain/warnings.js'
 import { applyChanges, putBodyFromGet } from '../../domain/writes.js'
 import { putBooking } from '../../upstream/api.js'
-import { defineWriteTool, WRITE_ANNOTATIONS } from './define.js'
+import { defineWriteTool } from './define.js'
 import { bookingForWrite, today } from './shared.js'
 
-export const cancelBooking = defineWriteTool({
+export const cancelBookingTools = defineWriteTool({
   name: 'cancel_booking',
   level: 'edit',
   title: 'Cancel booking',
   description:
-    "WRITE: GUEST CANCELLED. The guest cancelled or won't come (отменить, отмена, гость отказался, не приедет, снять " +
+    "GUEST CANCELLED. The guest cancelled or won't come (отменить, отмена, гость отказался, не приедет, снять " +
     'бронь). Sets status "canceled": the record stays and the room is freed. Use this, not delete_booking, unless the ' +
-    'user says the booking was entered by mistake. Call without confirm_token for a preview first.',
+    'user says the booking was entered by mistake.',
   input: z.object({ booking_id: z.number().int().positive().describe('Booking id, e.g. from list_bookings') }),
-  annotations: WRITE_ANNOTATIONS.change,
   lockId: (args) => args.booking_id,
 
   async preview(ctx, args) {

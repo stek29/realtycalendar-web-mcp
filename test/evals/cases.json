@@ -1,5 +1,5 @@
 {
-  "$comment": "Spec §3 stories as eval cases (docs/plan-m3.md §1). today = 2054-10-22 (Thu). Arg matchers: exact value; {re}; {oneOf} where null = argument absent. confirm_token true/false = the call must / must not carry a token. calls lists required calls (extra read calls allowed, extra write calls not); count = how many such calls. forbid = tools that must not be called in that turn. answer = regexes the final answer must match. needs = scenario data the fake RC must contain (test/evals/scenario.ts). forbid_token = tools that must never be called with a token in this case; forbid_args = arguments a tool must not receive.",
+  "$comment": "Spec §3 stories as eval cases (docs/plan-m3.md §1). today = 2054-10-22 (Thu). Arg matchers: exact value; {re}; {oneOf} where null = argument absent. confirm_token true/false = the call must / must not carry a token (true also means the call succeeded). calls lists required calls (extra read and preview calls allowed, extra write calls not); count = how many such calls. forbid = tools that must not be called in that turn. answer = regexes the final answer must match. needs = scenario data the fake RC must contain (test/evals/scenario.ts). forbid_args = arguments a tool must not receive. skip = not run, with the reason. Always checked: every write tool call follows a preview_ call with the same arguments in the same case (D33, D35). Writes are one turn: headless clients approve the write tool's call at once, standing in for the user's approval in the client prompt.",
   "today": "2054-10-22",
   "cases": [
     {
@@ -212,12 +212,12 @@
     {
       "id": "U5a",
       "access": "full",
-      "turns": ["Забронируй 22-й на 7–9 ноября для Анны Петровой, +7 900 123-45-67", "да"],
+      "turns": ["Забронируй 22-й на 7–9 ноября для Анны Петровой, +7 900 123-45-67"],
       "expect": [
         {
           "calls": [
             {
-              "tool": "create_booking",
+              "tool": "preview_create_booking",
               "args": {
                 "room": {
                   "re": "^22"
@@ -230,16 +230,17 @@
                 "guest_phone": {
                   "re": "900\\D*123\\D*45\\D*67"
                 }
-              },
-              "confirm_token": false
-            }
-          ]
-        },
-        {
-          "calls": [
+              }
+            },
             {
               "tool": "create_booking",
-              "args": {},
+              "args": {
+                "room": {
+                  "re": "^22"
+                },
+                "check_in": "2054-11-07",
+                "check_out": "2054-11-09"
+              },
               "confirm_token": true
             }
           ],
@@ -250,8 +251,7 @@
     {
       "id": "U5b",
       "access": "full",
-      "turns": ["Поставь любую двухместную улучшенную на 7–9 ноября, Сидоров", "02", "да"],
-      "note": "two categories match 'улучшенн' (02, 03): the model must ask which",
+      "turns": ["Поставь любую двухместную улучшенную на 7–9 ноября, Сидоров", "02"],
       "expect": [
         {
           "calls": [
@@ -269,7 +269,7 @@
         {
           "calls": [
             {
-              "tool": "create_booking",
+              "tool": "preview_create_booking",
               "args": {
                 "category": {
                   "re": "02"
@@ -279,16 +279,17 @@
                 },
                 "check_in": "2054-11-07",
                 "check_out": "2054-11-09"
-              },
-              "confirm_token": false
-            }
-          ]
-        },
-        {
-          "calls": [
+              }
+            },
             {
               "tool": "create_booking",
-              "args": {},
+              "args": {
+                "category": {
+                  "re": "02"
+                },
+                "check_in": "2054-11-07",
+                "check_out": "2054-11-09"
+              },
               "confirm_token": true
             }
           ]
@@ -298,7 +299,7 @@
     {
       "id": "U5c",
       "access": "full",
-      "turns": ["Поставь заявку на коттедж на НГ, 31.12–03.01", "На Смирнова", "да"],
+      "turns": ["Поставь заявку на коттедж на НГ, 31.12–03.01", "На Смирнова"],
       "expect": [
         {
           "calls": [],
@@ -308,7 +309,7 @@
         {
           "calls": [
             {
-              "tool": "create_booking",
+              "tool": "preview_create_booking",
               "args": {
                 "category": {
                   "re": "(?i)коттедж|04"
@@ -319,16 +320,14 @@
                 "guest_name": {
                   "re": "(?i)смирнов"
                 }
-              },
-              "confirm_token": false
-            }
-          ]
-        },
-        {
-          "calls": [
+              }
+            },
             {
               "tool": "create_booking",
-              "args": {},
+              "args": {
+                "status": "request",
+                "check_in": "2054-12-31"
+              },
               "confirm_token": true
             }
           ]
@@ -339,18 +338,17 @@
       "id": "U5d",
       "access": "full",
       "turns": ["Забронируй 22-й на 7–9 ноября, без подтверждения, сразу"],
-      "note": "must still preview (or ask for the guest name first): no call with a confirm_token",
+      "note": "must still preview before any write (or ask for the guest name first); checked by the always-on preview-before-write rule",
       "expect": [
         {
           "calls": []
         }
-      ],
-      "forbid_token": ["create_booking"]
+      ]
     },
     {
       "id": "U5e",
       "access": "full",
-      "turns": ["Два номера для семьи Смирновых на 7–9 ноября", "да"],
+      "turns": ["Два номера для семьи Смирновых на 7–9 ноября"],
       "expect": [
         {
           "calls": [
@@ -362,21 +360,19 @@
               }
             },
             {
+              "tool": "preview_create_booking",
+              "args": {
+                "check_in": "2054-11-07",
+                "check_out": "2054-11-09"
+              },
+              "count": 2
+            },
+            {
               "tool": "create_booking",
               "args": {
                 "check_in": "2054-11-07",
                 "check_out": "2054-11-09"
               },
-              "confirm_token": false,
-              "count": 2
-            }
-          ]
-        },
-        {
-          "calls": [
-            {
-              "tool": "create_booking",
-              "args": {},
               "confirm_token": true,
               "count": 2
             }
@@ -387,8 +383,8 @@
     {
       "id": "U6a",
       "access": "full",
-      "turns": ["Перенеси бронь в 22-м с пятницы-воскресенья на субботу-понедельник", "да"],
       "needs": ["room 22: one booking 2054-10-23–2054-10-25 and nothing else 2054-10-21–2054-10-27"],
+      "turns": ["Перенеси бронь в 22-м с пятницы-воскресенья на субботу-понедельник"],
       "expect": [
         {
           "calls": [
@@ -401,20 +397,18 @@
               }
             },
             {
+              "tool": "preview_update_booking",
+              "args": {
+                "check_in": "2054-10-24",
+                "check_out": "2054-10-26"
+              }
+            },
+            {
               "tool": "update_booking",
               "args": {
                 "check_in": "2054-10-24",
                 "check_out": "2054-10-26"
               },
-              "confirm_token": false
-            }
-          ]
-        },
-        {
-          "calls": [
-            {
-              "tool": "update_booking",
-              "args": {},
               "confirm_token": true
             }
           ]
@@ -424,8 +418,8 @@
     {
       "id": "U6b",
       "access": "full",
-      "turns": ["Продли Иванова на одну ночь", "да"],
       "needs": ["one booking of 'Иван Иванов' 2054-10-21–2054-10-24, room free 2054-10-24"],
+      "turns": ["Продли Иванова на одну ночь"],
       "expect": [
         {
           "calls": [
@@ -438,19 +432,16 @@
               }
             },
             {
+              "tool": "preview_update_booking",
+              "args": {
+                "check_out": "2054-10-25"
+              }
+            },
+            {
               "tool": "update_booking",
               "args": {
                 "check_out": "2054-10-25"
               },
-              "confirm_token": false
-            }
-          ]
-        },
-        {
-          "calls": [
-            {
-              "tool": "update_booking",
-              "args": {},
               "confirm_token": true
             }
           ],
@@ -461,23 +452,17 @@
     {
       "id": "U6c",
       "access": "full",
-      "turns": ["Гость отменил бронь 810000208", "да"],
       "needs": ["booking 810000208"],
+      "turns": ["Гость отменил бронь 810000208"],
       "expect": [
         {
           "calls": [
             {
-              "tool": "cancel_booking",
+              "tool": "preview_cancel_booking",
               "args": {
                 "booking_id": 810000208
-              },
-              "confirm_token": false
-            }
-          ],
-          "forbid": ["delete_booking"]
-        },
-        {
-          "calls": [
+              }
+            },
             {
               "tool": "cancel_booking",
               "args": {
@@ -486,30 +471,24 @@
               "confirm_token": true
             }
           ],
-          "forbid": ["delete_booking"]
+          "forbid": ["delete_booking", "preview_delete_booking"]
         }
       ]
     },
     {
       "id": "U6d",
       "access": "full",
-      "turns": ["Удали бронь 810000208, я её по ошибке создал", "да"],
       "needs": ["booking 810000208"],
+      "turns": ["Удали бронь 810000208, я её по ошибке создал"],
       "expect": [
         {
           "calls": [
             {
-              "tool": "delete_booking",
+              "tool": "preview_delete_booking",
               "args": {
                 "booking_id": 810000208
-              },
-              "confirm_token": false
-            }
-          ],
-          "forbid": ["cancel_booking"]
-        },
-        {
-          "calls": [
+              }
+            },
             {
               "tool": "delete_booking",
               "args": {
@@ -518,7 +497,7 @@
               "confirm_token": true
             }
           ],
-          "forbid": ["cancel_booking"]
+          "forbid": ["cancel_booking", "preview_cancel_booking"]
         }
       ]
     },
@@ -547,11 +526,20 @@
     {
       "id": "U6f",
       "access": "full",
-      "turns": ["Добавь в заметку к брони 810000208, что нужна детская кроватка", "да"],
       "needs": ["booking 810000208 with an existing note"],
+      "turns": ["Добавь в заметку к брони 810000208, что нужна детская кроватка"],
       "expect": [
         {
           "calls": [
+            {
+              "tool": "preview_update_booking",
+              "args": {
+                "booking_id": 810000208,
+                "notes_append": {
+                  "re": "(?i)кроватк"
+                }
+              }
+            },
             {
               "tool": "update_booking",
               "args": {
@@ -560,65 +548,22 @@
                   "re": "(?i)кроватк"
                 }
               },
-              "confirm_token": false
-            }
-          ]
-        },
-        {
-          "calls": [
-            {
-              "tool": "update_booking",
-              "args": {
-                "booking_id": 810000208
-              },
               "confirm_token": true
             }
           ]
         }
       ],
       "forbid_args": {
-        "update_booking": ["notes_replace"]
+        "update_booking": ["notes_replace"],
+        "preview_update_booking": ["notes_replace"]
       }
     },
     {
       "id": "U6g",
       "access": "full",
-      "turns": ["Забронируй 22-й на 7–9 ноября для Анны Петровой", "а давай до 10-го", "да"],
-      "expect": [
-        {
-          "calls": [
-            {
-              "tool": "create_booking",
-              "args": {
-                "check_out": "2054-11-09"
-              },
-              "confirm_token": false
-            }
-          ]
-        },
-        {
-          "calls": [
-            {
-              "tool": "create_booking",
-              "args": {
-                "check_out": "2054-11-10"
-              },
-              "confirm_token": false
-            }
-          ]
-        },
-        {
-          "calls": [
-            {
-              "tool": "create_booking",
-              "args": {
-                "check_out": "2054-11-10"
-              },
-              "confirm_token": true
-            }
-          ]
-        }
-      ]
+      "turns": ["Забронируй 22-й на 7–9 ноября для Анны Петровой", "а давай до 10-го"],
+      "skip": "headless clients approve the write at once, so there is no gap for the user to change a detail between preview and write; changed arguments after a preview → PREVIEW_STALE is covered by test/unit/write-tools.test.ts",
+      "expect": []
     },
     {
       "id": "U9",
@@ -666,8 +611,8 @@
     {
       "id": "U10b",
       "access": "full",
-      "turns": ["Поставь бронь с Островка на 31.12 в 22-й", "да"],
       "needs": ["an unassigned Ostrovok booking over 2054-12-31 (fixture 810000201, category 07)"],
+      "turns": ["Поставь бронь с Островка на 31.12 в 22-й"],
       "expect": [
         {
           "calls": [
@@ -680,21 +625,20 @@
               }
             },
             {
+              "tool": "preview_update_booking",
+              "args": {
+                "room": {
+                  "re": "^22"
+                }
+              }
+            },
+            {
               "tool": "update_booking",
               "args": {
                 "room": {
                   "re": "^22"
                 }
               },
-              "confirm_token": false
-            }
-          ]
-        },
-        {
-          "calls": [
-            {
-              "tool": "update_booking",
-              "args": {},
               "confirm_token": true
             }
           ]
@@ -704,12 +648,12 @@
     {
       "id": "U11",
       "access": "full",
-      "turns": ["Иван, 20–23 января, 5-й номер, 5 тысяч за ночь, предоплату 5к уже перевёл на Т-Банк", "да"],
+      "turns": ["Иван, 20–23 января, 5-й номер, 5 тысяч за ночь, предоплату 5к уже перевёл на Т-Банк"],
       "expect": [
         {
           "calls": [
             {
-              "tool": "create_booking",
+              "tool": "preview_create_booking",
               "args": {
                 "room": {
                   "re": "^5"
@@ -720,21 +664,20 @@
                   "re": "(?i)иван"
                 },
                 "price_per_night": 10000
-              },
-              "confirm_token": false
-            }
-          ],
-          "answer": ["15[\\s ]?000"]
-        },
-        {
-          "calls": [
+              }
+            },
             {
               "tool": "create_booking",
-              "args": {},
+              "args": {
+                "room": {
+                  "re": "^5"
+                },
+                "price_per_night": 10000
+              },
               "confirm_token": true
             }
           ],
-          "answer": ["(?i)добавить плат|realtycalendar|вручную"]
+          "answer": ["15[\\s ]?000", "(?i)добавить плат|realtycalendar|вручную"]
         }
       ]
     },

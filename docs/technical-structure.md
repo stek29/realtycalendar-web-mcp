@@ -48,7 +48,8 @@ src/
   mcp/
     server.ts             createMcpServer(ctx): McpServer — instructions + tools allowed by ctx.access
     instructions.ts       server instructions (today, rules, what this access level can't do)
-    tools/                one file per tool (8), plus define.ts (defineTool, defineWriteTool) and shared.ts
+    tools/                one file per read tool and per write (preview + write tool, 12 tools), plus define.ts
+                          (defineTool, defineWriteTool) and shared.ts
                           (input checks, BookingSummary output shape)
   domain/                 pure logic, no IO
     catalog.ts  match.ts  dates.ts  calendar.ts  bookings.ts  writes.ts  confirm.ts  warnings.ts  errors.ts  redact.ts
@@ -124,6 +125,7 @@ defineTool({ name, level, description, input, output, annotations, handler: (ctx
 defineWriteTool({ name, level, description, input, output, annotations,
                   preview: (ctx, args) => Promise<Preview>,          // no side effects
                   commit:  (ctx, args, preview) => Promise<Out> })   // runs only with a valid confirm_token
+                  // → [preview_<name> (read-only), <name> (destructive, confirm_token required)]
 
 // mcp/server.ts
 createMcpServer(ctx: Context): McpServer       // registers tools with level ≤ ctx.config.access

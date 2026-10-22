@@ -59,7 +59,7 @@ So the combined ones are `check_availability` and the create/update tools (two-s
 the rest are thin. Where
 the API has no support for a story, we don't work around it (see "Not supported").
 
-## Tool set (v1: 8 tools)
+## Tool set (v1: 8 tools, plus a read-only preview tool per write: D33)
 
 Defined in [mcp-tool-spec.md](mcp-tool-spec.md) (inputs, outputs, confirm tokens, warnings, access levels, sample
 prompts). Summary:
@@ -75,7 +75,7 @@ prompts). Summary:
 | `cancel_booking` | edit | guest cancelled | same as update with `status: canceled` ✅ |
 | `delete_booking` | full | entered by mistake | `DELETE event_calendars/{id}` ✅ |
 
-Writes use a preview → `confirm_token` flow (spec §1). Story-by-story expected calls with Russian prompts: spec §3.
+Writes use a `preview_` tool → `confirm_token` → write tool flow (spec §1). Story-by-story expected calls with Russian prompts: spec §3.
 
 ### Later (API works, left out of v1)
 

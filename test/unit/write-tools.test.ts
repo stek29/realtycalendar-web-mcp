@@ -30,7 +30,7 @@ function setup(access: Access = 'full', opts: FakeRcOptions = {}) {
   /** Preview, then confirm with the preview's token. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const write = async (name: string, args: Record<string, unknown>): Promise<any> => {
-    const preview = await call(name, args)
+    const preview = await call(`preview_${name}`, args)
     expect(preview.confirm_token, JSON.stringify(preview)).toBeTruthy()
     return call(name, { ...args, confirm_token: preview.confirm_token })
   }
@@ -51,7 +51,10 @@ const ANNA = {
 describe('access levels (X5, X7)', () => {
   it.each([
     ['read', ['check_availability', 'get_booking', 'list_bookings', 'list_rooms']],
-    ['book', ['check_availability', 'create_booking', 'get_booking', 'list_bookings', 'list_rooms']],
+    [
+      'book',
+      ['check_availability', 'create_booking', 'get_booking', 'list_bookings', 'list_rooms', 'preview_create_booking'],
+    ],
     [
       'edit',
       [
@@ -61,6 +64,9 @@ describe('access levels (X5, X7)', () => {
         'get_booking',
         'list_bookings',
         'list_rooms',
+        'preview_cancel_booking',
+        'preview_create_booking',
+        'preview_update_booking',
         'update_booking',
       ],
     ],
@@ -72,20 +78,30 @@ describe('access levels (X5, X7)', () => {
 
   it('X5: create at read → ACCESS_DENIED, nothing sent', async () => {
     const { call, writes } = setup('read')
-    expect(await call('create_booking', ANNA)).toMatchObject({ isError: true, error: 'ACCESS_DENIED' })
+    expect(await call('preview_create_booking', ANNA)).toMatchObject({ isError: true, error: 'ACCESS_DENIED' })
+    expect(await call('create_booking', { ...ANNA, confirm_token: 'x' })).toMatchObject({ error: 'ACCESS_DENIED' })
     expect(writes()).toEqual([])
+  })
+
+  it('preview tools are read-only; every write tool is destructive (D34)', () => {
+    for (const t of TOOLS.filter((t) => /_booking$/.test(t.name) && t.name !== 'get_booking')) {
+      const preview = t.name.startsWith('preview_')
+      expect(t.annotations, t.name).toMatchObject(
+        preview ? { readOnlyHint: true } : { readOnlyHint: false, destructiveHint: true },
+      )
+    }
   })
 
   it('X7: cancel at book → ACCESS_DENIED', async () => {
     const { call } = setup('book')
-    expect(await call('cancel_booking', { booking_id: 810000162 })).toMatchObject({ error: 'ACCESS_DENIED' })
+    expect(await call('preview_cancel_booking', { booking_id: 810000162 })).toMatchObject({ error: 'ACCESS_DENIED' })
   })
 })
 
 describe('create_booking', () => {
   it('U5a: preview changes nothing; confirm creates the booking', async () => {
     const { call, writes } = setup()
-    const preview = await call('create_booking', ANNA)
+    const preview = await call('preview_create_booking', ANNA)
     expect(writes()).toEqual([])
     expect(preview).toMatchObject({ preview: true, before: null, will_fail: false, price_source: 'quote' })
     expect(preview.summary).toMatch(/^Бронь: 22, 8–10 ноября, Анна Петрова, [\d ]+ ₽$/)
@@ -110,7 +126,7 @@ describe('create_booking', () => {
       check_out: '2054-11-10',
       guest_name: 'Сидоров',
     }
-    const amb = await call('create_booking', args)
+    const amb = await call('preview_create_booking', args)
     expect(amb).toMatchObject({ isError: true, error: 'AMBIGUOUS' })
     expect(amb.candidates).toHaveLength(2)
     const done = await write('create_booking', { ...args, category: '02' })
@@ -130,6 +146,14 @@ describe('create_booking', () => {
     expect(done.summary).toMatch(/^Создана заявка/)
   })
 
+  it('a write without a token → VALIDATION pointing to the preview tool, nothing written', async () => {
+    const { call, writes } = setup()
+    const r = await call('create_booking', ANNA)
+    expect(r).toMatchObject({ isError: true, error: 'VALIDATION' })
+    expect(JSON.stringify(r)).toContain('preview_create_booking')
+    expect(writes()).toEqual([])
+  })
+
   it('U5d: a made-up token → PREVIEW_STALE with a preview, nothing written', async () => {
     const { call, writes } = setup()
     const r = await call('create_booking', { ...ANNA, confirm_token: 'abc.def' })
@@ -142,7 +166,7 @@ describe('create_booking', () => {
     const { call } = setup()
     const a = { ...ANNA, guest_name: 'Смирнов' }
     const b = { ...a, room: '21' }
-    const [pa, pb] = [await call('create_booking', a), await call('create_booking', b)]
+    const [pa, pb] = [await call('preview_create_booking', a), await call('preview_create_booking', b)]
     const ra = await call('create_booking', { ...a, confirm_token: pa.confirm_token })
     const rb = await call('create_booking', { ...b, confirm_token: pb.confirm_token })
     expect([ra.booking.room, rb.booking.room]).toEqual(['22', '21'])
@@ -151,7 +175,7 @@ describe('create_booking', () => {
 
   it('U11: price per night → total; NO_GUEST_MESSAGES', async () => {
     const { call } = setup()
-    const p = await call('create_booking', {
+    const p = await call('preview_create_booking', {
       room: '5',
       check_in: '2055-01-20',
       check_out: '2055-01-23',
@@ -167,7 +191,7 @@ describe('create_booking', () => {
     const { call, write, writes } = setup()
     const first = await write('create_booking', ANNA)
     const n = writes().length
-    const again = await call('create_booking', ANNA)
+    const again = await call('preview_create_booking', ANNA)
     expect(again.confirm_token).toBeUndefined()
     expect(codes(again)).toContain('DUPLICATE')
     expect(again.warnings[0].booking.id).toBe(first.booking.id)
@@ -177,7 +201,7 @@ describe('create_booking', () => {
   it('an overlapping booked stay → will_fail, conflicts, no token', async () => {
     const { call, write } = setup()
     const first = await write('create_booking', ANNA)
-    const p = await call('create_booking', {
+    const p = await call('preview_create_booking', {
       ...ANNA,
       check_in: '2054-11-09',
       check_out: '2054-11-11',
@@ -192,21 +216,21 @@ describe('create_booking', () => {
     const { call, write } = setup()
     const args = { category: '04', check_in: '2055-01-20', check_out: '2055-01-23', guest_name: 'TEST MCP Один' }
     await write('create_booking', args)
-    const p = await call('create_booking', { ...args, check_in: '2055-01-21', guest_name: 'TEST MCP Два' })
+    const p = await call('preview_create_booking', { ...args, check_in: '2055-01-21', guest_name: 'TEST MCP Два' })
     expect(p.will_fail).toBe(true)
   })
 
   it('a hold over a booked stay: allowed, HOLD_OVERLAP on the next booking', async () => {
     const { call, write } = setup()
     await write('create_booking', { ...ANNA, status: 'request', guest_name: 'Заявка Тест' })
-    const p = await call('create_booking', ANNA)
+    const p = await call('preview_create_booking', ANNA)
     expect(p.will_fail).toBe(false)
     expect(codes(p)).toContain('HOLD_OVERLAP')
   })
 
   it('L4: room taken between preview and confirm → OCCUPIED, nothing saved, conflicts', async () => {
     const { call, write } = setup()
-    const p = await call('create_booking', ANNA)
+    const p = await call('preview_create_booking', ANNA)
     const other = await write('create_booking', { ...ANNA, guest_name: 'Быстрее' })
     const r = await call('create_booking', { ...ANNA, confirm_token: p.confirm_token })
     expect(r).toMatchObject({ isError: true, error: 'OCCUPIED' })
@@ -218,7 +242,7 @@ describe('create_booking', () => {
     'PUT timeout (saved: %s) → RC_ERROR; the repeat confirm never creates twice',
     async (saved) => {
       const { call, rc } = setup('full', { failNext: { method: 'PUT', with: 'timeout', saved } })
-      const p = await call('create_booking', ANNA)
+      const p = await call('preview_create_booking', ANNA)
       const r = await call('create_booking', { ...ANNA, confirm_token: p.confirm_token })
       expect(r).toMatchObject({ isError: true, error: 'RC_ERROR' })
       expect(r.hint).toMatch(/same confirm_token/)
@@ -233,7 +257,7 @@ describe('create_booking', () => {
 
   it('PUT 500 → RC_ERROR with the repeat hint', async () => {
     const { call } = setup('full', { failNext: { method: 'PUT', with: 500 } })
-    const p = await call('create_booking', ANNA)
+    const p = await call('preview_create_booking', ANNA)
     expect(await call('create_booking', { ...ANNA, confirm_token: p.confirm_token })).toMatchObject({
       error: 'RC_ERROR',
       hint: expect.stringMatching(/same confirm_token/),
@@ -251,7 +275,7 @@ describe('create_booking', () => {
     [{ ...ANNA, source: 'нет такого' }, 'UNKNOWN_NAME'],
   ])('input check %#', async (args, error) => {
     const { call } = setup()
-    expect(await call('create_booking', args)).toMatchObject({ isError: true, error })
+    expect(await call('preview_create_booking', args)).toMatchObject({ isError: true, error })
   })
 })
 
@@ -271,7 +295,11 @@ describe('update_booking', () => {
   it('U6a: move dates; occupied → will_fail without a token', async () => {
     const { call, write, id } = await booked()
     await write('create_booking', { ...ANNA, guest_name: 'Сосед' }) // 7–9 Nov in 22
-    const blocked = await call('update_booking', { booking_id: id, check_in: '2054-11-09', check_out: '2054-11-11' })
+    const blocked = await call('preview_update_booking', {
+      booking_id: id,
+      check_in: '2054-11-09',
+      check_out: '2054-11-11',
+    })
     expect(blocked).toMatchObject({ preview: true, will_fail: true })
     expect(blocked.confirm_token).toBeUndefined()
 
@@ -281,7 +309,7 @@ describe('update_booking', () => {
 
   it('U6b: extend → PRICE_CHANGED with old and new totals and the quote', async () => {
     const { call, id } = await booked()
-    const p = await call('update_booking', { booking_id: id, check_out: '2054-11-13' })
+    const p = await call('preview_update_booking', { booking_id: id, check_out: '2054-11-13' })
     const w = p.warnings.find((x: { code: string }) => x.code === 'PRICE_CHANGED')
     expect(w).toMatchObject({ old_total: 20000, new_total: 30000, quote: expect.any(Number) })
     expect(p.changes).toEqual([
@@ -304,7 +332,7 @@ describe('update_booking', () => {
 
   it('U6g: changed arguments after the preview → PREVIEW_STALE with a fresh preview', async () => {
     const { call, id, writes } = await booked()
-    const p = await call('update_booking', { booking_id: id, check_out: '2054-11-13' })
+    const p = await call('preview_update_booking', { booking_id: id, check_out: '2054-11-13' })
     const n = writes().length
     const r = await call('update_booking', { booking_id: id, check_out: '2054-11-14', confirm_token: p.confirm_token })
     expect(r).toMatchObject({ isError: true, error: 'PREVIEW_STALE', preview: { after: { check_out: '2054-11-14' } } })
@@ -313,7 +341,7 @@ describe('update_booking', () => {
 
   it('the booking changed between preview and confirm → PREVIEW_STALE', async () => {
     const { call, write, id } = await booked()
-    const p = await call('update_booking', { booking_id: id, check_out: '2054-11-13' })
+    const p = await call('preview_update_booking', { booking_id: id, check_out: '2054-11-13' })
     await write('update_booking', { booking_id: id, arrival_time: '15:00' })
     const r = await call('update_booking', { booking_id: id, check_out: '2054-11-13', confirm_token: p.confirm_token })
     expect(r).toMatchObject({ error: 'PREVIEW_STALE' })
@@ -321,10 +349,11 @@ describe('update_booking', () => {
 
   it('two confirms of one token at once: one PUT (confirms on a booking are serialised)', async () => {
     const { call, id, writes } = await booked()
-    const args = { booking_id: id, check_out: '2054-11-13', confirm_token: '' }
-    args.confirm_token = (await call('update_booking', { ...args, confirm_token: undefined })).confirm_token
+    const args = { booking_id: id, check_out: '2054-11-13' }
+    const token = (await call('preview_update_booking', args)).confirm_token
     const n = writes().length
-    const [a, b] = await Promise.all([call('update_booking', args), call('update_booking', args)])
+    const confirm = () => call('update_booking', { ...args, confirm_token: token })
+    const [a, b] = await Promise.all([confirm(), confirm()])
     expect(a.preview).toBe(false)
     expect(b.isError).toBe(true) // the second sees the saved change: nothing left to do
     expect(writes()).toHaveLength(n + 1)
@@ -332,7 +361,7 @@ describe('update_booking', () => {
 
   it('U10b: room in another category → CATEGORY_CHANGE, PRICE_KEPT; apartment follows the room', async () => {
     const { call, write } = setup()
-    const p = await call('update_booking', { booking_id: 810000176, room: '23' })
+    const p = await call('preview_update_booking', { booking_id: 810000176, room: '23' })
     expect(codes(p)).toEqual(expect.arrayContaining(['CATEGORY_CHANGE', 'PRICE_KEPT']))
     expect(p.warnings.find((w: { code: string }) => w.code === 'PRICE_KEPT').quote).toEqual(expect.any(Number))
     const r = await write('update_booking', { booking_id: 810000176, room: '23' })
@@ -368,9 +397,9 @@ describe('update_booking', () => {
 
   it('BOOKING_SITE on a booking-site booking', async () => {
     const { call } = setup()
-    const p = await call('update_booking', { booking_id: 810000162, check_out: '2055-01-09' })
+    const p = await call('preview_update_booking', { booking_id: 810000162, check_out: '2055-01-09' })
     expect(codes(p)).toContain('BOOKING_SITE')
-    const notes = await call('update_booking', { booking_id: 810000162, notes_append: 'x' })
+    const notes = await call('preview_update_booking', { booking_id: 810000162, notes_append: 'x' })
     expect(codes(notes)).not.toContain('BOOKING_SITE')
   })
 
@@ -383,31 +412,36 @@ describe('update_booking', () => {
     [{ check_out: '2054-12-20' }, 'INVALID_DATES'],
   ])('input check %#', async (changes, error) => {
     const { call } = setup()
-    expect(await call('update_booking', { booking_id: 810000162, ...changes })).toMatchObject({ isError: true, error })
+    expect(await call('preview_update_booking', { booking_id: 810000162, ...changes })).toMatchObject({
+      isError: true,
+      error,
+    })
   })
 
   it('nothing would change → VALIDATION', async () => {
     const { call } = setup()
-    expect(await call('update_booking', { booking_id: 810000162, check_in: '2054-12-20' })).toMatchObject({
+    expect(await call('preview_update_booking', { booking_id: 810000162, check_in: '2054-12-20' })).toMatchObject({
       error: 'VALIDATION',
     })
   })
 
   it('unknown id → NOT_FOUND', async () => {
     const { call } = setup()
-    expect(await call('update_booking', { booking_id: 1, notes_append: 'x' })).toMatchObject({ error: 'NOT_FOUND' })
+    expect(await call('preview_update_booking', { booking_id: 1, notes_append: 'x' })).toMatchObject({
+      error: 'NOT_FOUND',
+    })
   })
 })
 
 describe('cancel_booking and delete_booking', () => {
   it('U6c: cancel a booking-site booking with payments', async () => {
     const { call, write } = setup()
-    const p = await call('cancel_booking', { booking_id: 810000162 })
+    const p = await call('preview_cancel_booking', { booking_id: 810000162 })
     expect(codes(p)).toEqual(expect.arrayContaining(['BOOKING_SITE', 'HAS_PAYMENTS']))
     expect(p.summary).toMatch(/^Отменить бронь 810000162: 25,/)
     const r = await write('cancel_booking', { booking_id: 810000162 })
     expect(r.booking.status).toBe('canceled')
-    expect(await call('cancel_booking', { booking_id: 810000162 })).toMatchObject({ error: 'VALIDATION' })
+    expect(await call('preview_cancel_booking', { booking_id: 810000162 })).toMatchObject({ error: 'VALIDATION' })
     const avail = await call('check_availability', { check_in: '2055-01-02', check_out: '2055-01-08', room: '25' })
     expect(avail.categories[0].rooms[0].runs.every((r: { state: string }) => r.state !== 'booked')).toBe(true)
   })
@@ -416,15 +450,15 @@ describe('cancel_booking and delete_booking', () => {
     const { call, write } = setup()
     const r = await write('delete_booking', { booking_id: 810000162 })
     expect(r).toMatchObject({ preview: false, deleted: true })
-    expect(await call('update_booking', { booking_id: 810000162, notes_append: 'x' })).toMatchObject({
+    expect(await call('preview_update_booking', { booking_id: 810000162, notes_append: 'x' })).toMatchObject({
       error: 'DELETED',
     })
-    expect(await call('delete_booking', { booking_id: 810000162 })).toMatchObject({ error: 'DELETED' })
+    expect(await call('preview_delete_booking', { booking_id: 810000162 })).toMatchObject({ error: 'DELETED' })
   })
 
   it('deleted between preview and confirm → DELETED', async () => {
     const { call, write } = setup()
-    const p = await call('cancel_booking', { booking_id: 810000176 })
+    const p = await call('preview_cancel_booking', { booking_id: 810000176 })
     await write('delete_booking', { booking_id: 810000176 })
     expect(await call('cancel_booking', { booking_id: 810000176, confirm_token: p.confirm_token })).toMatchObject({
       error: 'DELETED',
@@ -436,9 +470,9 @@ describe('audit log', () => {
   it('one entry per confirmed write, success and failure; previews write none', async () => {
     const { call, write, audit } = setup()
     const created = await write('create_booking', ANNA)
-    await call('update_booking', { booking_id: created.booking.id, notes_append: 'x' }) // preview only
+    await call('preview_update_booking', { booking_id: created.booking.id, notes_append: 'x' }) // preview only
     await write('update_booking', { booking_id: created.booking.id, notes_append: 'x' })
-    const p = await call('create_booking', { ...ANNA, room: '21' })
+    const p = await call('preview_create_booking', { ...ANNA, room: '21' })
     await write('create_booking', { ...ANNA, room: '21', guest_name: 'Быстрее' })
     await call('create_booking', { ...ANNA, room: '21', confirm_token: p.confirm_token }) // OCCUPIED
     expect(audit.map((e) => [e.tool, e.result])).toEqual([
@@ -464,11 +498,11 @@ describe('privacy', () => {
     }
     const { call, write, lines } = setup('full', { failNext: { method: 'PUT', with: 'timeout' } })
     const args = { ...ANNA, ...pii }
-    const p = await call('create_booking', args)
+    const p = await call('preview_create_booking', args)
     await call('create_booking', { ...args, confirm_token: p.confirm_token }) // timeout
     const r = await call('create_booking', { ...args, confirm_token: p.confirm_token })
     await call('create_booking', { ...args, confirm_token: 'forged.token' }) // stale
-    await call('create_booking', { ...args, check_in: '2054-11-09', check_out: '2054-11-11' }) // will_fail
+    await call('preview_create_booking', { ...args, check_in: '2054-11-09', check_out: '2054-11-11' }) // will_fail
     await write('update_booking', { booking_id: r.booking.id, notes_append: 'PII-SEED-2' })
     await write('cancel_booking', { booking_id: r.booking.id })
     await write('delete_booking', { booking_id: r.booking.id })

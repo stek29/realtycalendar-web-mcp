@@ -42,8 +42,10 @@ In memory, keyed by (hash of RC token, agency id):
 
 From tested behaviour (mcp-user-stories.md) and the reviews:
 
-- **Confirm token** (spec §1): previews return an HMAC token over (tool, normalised args, booking `updated_at` + last
-  audit version, expiry 15 min). The write handler recomputes it; mismatch → `PREVIEW_STALE` with a fresh preview.
+- **Preview tool + confirm token** (spec §1, D33–D35): a read-only `preview_<write>` tool returns the preview and an
+  HMAC token over (tool, resolved plan, booking `updated_at` + last audit version, expiry 15 min). The write tool
+  (`destructiveHint: true`, so the client asks the user) recomputes it; mismatch → `PREVIEW_STALE` with a fresh
+  preview. The token binds the write to what was previewed; the user's approval is the client's prompt.
   Stateless; the key is `RC_CONFIRM_KEY` (v1) or derived from the server key (hosted).
 - **Create**: duplicate check → `POST` draft → `PUT` full body. Nothing is retried or deleted by the server. After a
   timeout or 5xx the caller is told the outcome is unknown and to repeat the confirm: the duplicate check returns the

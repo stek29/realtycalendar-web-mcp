@@ -101,7 +101,7 @@ describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const write = async (name: string, args: Record<string, unknown>): Promise<any> => {
-    const preview = await call(name, args)
+    const preview = await call(`preview_${name}`, args)
     expect(preview.confirm_token, JSON.stringify(preview.warnings ?? preview)).toBeTruthy()
     const done = await call(name, { ...args, confirm_token: preview.confirm_token })
     expect(done.preview, JSON.stringify(done)).toBe(false)
@@ -178,7 +178,7 @@ describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
   })
 
   it('L2 the same create again → DUPLICATE, no token', async () => {
-    const r = await call('create_booking', {
+    const r = await call('preview_create_booking', {
       room: '5',
       check_in: FIRST,
       check_out: LAST,
@@ -189,7 +189,7 @@ describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
   })
 
   it('L3 an overlapping create in room 5 → will_fail, no token', async () => {
-    const r = await call('create_booking', {
+    const r = await call('preview_create_booking', {
       room: '5',
       check_in: '2055-01-21',
       check_out: LAST,
@@ -202,7 +202,7 @@ describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
 
   it('L4 room 6 taken between preview and confirm → OCCUPIED, nothing saved', async () => {
     const args = { room: '6', check_in: FIRST, check_out: LAST, guest_name: `${PREFIX} Анна` }
-    const first = await call('create_booking', args)
+    const first = await call('preview_create_booking', args)
     expect(first.confirm_token).toBeTruthy()
     const { done } = await write('create_booking', { ...args, guest_name: `${PREFIX} Борис` })
     occupier = done.booking.id
@@ -279,7 +279,7 @@ describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
 
   it('L10 booking changed after a preview → PREVIEW_STALE with a fresh preview', async () => {
     const args = { booking_id: l1, departure_time: '11:00' }
-    const first = await call('update_booking', args)
+    const first = await call('preview_update_booking', args)
     await write('update_booking', { booking_id: l1, notes_append: 'L10' })
     const r = await call('update_booking', { ...args, confirm_token: first.confirm_token })
     expect(r).toMatchObject({ isError: true, error: 'PREVIEW_STALE', preview: { preview: true } })
@@ -289,7 +289,11 @@ describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
   it('L11 single unit: an overlapping second booking in category 04 → will_fail', async () => {
     const args = { category: '04', check_in: FIRST, check_out: LAST, guest_name: `${PREFIX} Коттедж` }
     await write('create_booking', args)
-    const r = await call('create_booking', { ...args, check_in: '2055-01-21', guest_name: `${PREFIX} Коттедж 2` })
+    const r = await call('preview_create_booking', {
+      ...args,
+      check_in: '2055-01-21',
+      guest_name: `${PREFIX} Коттедж 2`,
+    })
     expect(r.will_fail).toBe(true)
     expect(r.confirm_token).toBeUndefined()
   })
@@ -311,7 +315,9 @@ describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
   it('L13 delete the hold; then update it → DELETED', async () => {
     const { done } = await write('delete_booking', { booking_id: hold })
     expect(done).toMatchObject({ deleted: true })
-    expect(await call('update_booking', { booking_id: hold, notes_append: 'x' })).toMatchObject({ error: 'DELETED' })
+    expect(await call('preview_update_booking', { booking_id: hold, notes_append: 'x' })).toMatchObject({
+      error: 'DELETED',
+    })
   })
 
   it('the firewall refuses writes outside the scope', async () => {

@@ -8,9 +8,10 @@ decisions: [decisions.md](decisions.md).
 ## Scope
 
 In:
-- `create_booking` (level `book`), `update_booking` and `cancel_booking` (`edit`), `delete_booking` (`full`).
-- Preview → confirm token for every write; warnings and `will_fail` from the same capacity logic as
-  `check_availability`.
+- `create_booking` (level `book`), `update_booking` and `cancel_booking` (`edit`), `delete_booking` (`full`), each with
+  a read-only `preview_` tool at the same level (D33).
+- Preview tool → confirm token → write tool for every write; the user approves in the client's prompt on the write
+  tool (D35); warnings and `will_fail` from a capacity check by RC's rule (`stayCheck`, D26).
 - GET → PUT body builder (spec §2.6 mapping), fail-closed on unknown GET fields.
 - Server instructions per access level (already written for all four levels in M1).
 - Fake RC with write behaviour; unit tests; live tests on the agreed window.
@@ -31,8 +32,8 @@ S3 (no-op PUT is safe), S8 (drafts: invisible, don't block, can't be deleted), S
 | `domain/confirm.ts` | `signPlan(key, plan, now)` / `verifyPlan(key, token, plan, now)` — see "Confirm token" |
 | `domain/calendar.ts` | `stayCheck()`: the preview's capacity check (`will_fail`, `conflicts`, overlapping holds, closed nights, stay-rule problems), with `excludeBookingId` so an update's own nights don't count against it. Separate from `availability()` because RC ignores closures, so closed rooms must not count as full here (D26) |
 | `domain/warnings.ts` | builds the preview warnings (`HOLD_OVERLAP`, `CLOSED_DATES`, `BOOKING_SITE`, `CATEGORY_CHANGE`, `PRICE_CHANGED`, `PRICE_KEPT`, `HAS_PAYMENTS`, `PAST_DATES`, `NO_GUEST_MESSAGES`, `DUPLICATE`) and `will_fail` / `conflicts` from an availability result |
-| `mcp/tools/define.ts` | `defineWriteTool({…, preview, commit})`: adds `confirm_token` to the input; without it runs `preview`; with it re-runs `preview` (fresh state), verifies the token against the new plan, and only then `commit` |
-| `mcp/tools/create-booking.ts`, `update-booking.ts`, `cancel-booking.ts`, `delete-booking.ts` | one per tool |
+| `mcp/tools/define.ts` | `defineWriteTool({…, preview, commit})` → two tools: `preview_<name>` (read-only; runs `preview`, signs the plan) and `<name>` (`destructiveHint: true`; required `confirm_token`; re-runs `preview` on fresh data, verifies the token against the new plan, and only then `commit`; writes the audit entry) |
+| `mcp/tools/create-booking.ts`, `update-booking.ts`, `cancel-booking.ts`, `delete-booking.ts` | one per write (preview + write tool) |
 | `context.ts` | `withBookingLock(id, fn)`: writes to the same booking id serialised in-process |
 
 
@@ -43,14 +44,15 @@ that will be written, plus, for existing bookings, the booking state it was comp
 audit version). Preview and commit both build the plan from fresh RC data, so what is confirmed is exactly what was
 shown.
 
-- **Preview** (no `confirm_token`): plan + capacity check + warnings → `{ preview: true, summary, before, after,
-  changes, warnings, will_fail, conflicts, confirm_token }`. `summary` is one Russian line ("Бронь: 22, 7–9 ноября,
-  Анна Петрова, 17 200 ₽").
+- **Preview** (`preview_<write>`, read-only): plan + capacity check + warnings → `{ preview: true, summary, before,
+  after, changes, warnings, will_fail, conflicts, confirm_token }`. `summary` is one Russian line ("Бронь: 22, 7–9
+  ноября, Анна Петрова, 17 200 ₽").
 - **No token when the write can't or shouldn't happen**: `DUPLICATE` (spec) and `will_fail: true` (room or category
-  certainly full) return the preview without `confirm_token`, so the model offers alternatives instead of asking for
-  a "да" that can only fail. *(Spec §1 change, applied with the code.)*
-- **Confirm** (with token): rebuild the plan from fresh data; token mismatch or expired → `PREVIEW_STALE` with the
-  fresh preview included; else commit.
+  certainly full) return the preview without `confirm_token`, so the model offers alternatives instead of calling the
+  write tool.
+- **Write** (`<write>` with the same arguments and the token; the client asks the user first): rebuild the plan from
+  fresh data; token mismatch or expired → `PREVIEW_STALE` with the fresh preview included; else commit. No token →
+  `VALIDATION` "Call preview_… first".
 
 ### Confirm token
 
@@ -100,11 +102,13 @@ Extended to hold state per instance:
   unknown GET key → `RC_SCHEMA_DRIFT`; price rules (3 cases); notes append/replace; status/room/category changes;
   `apartment_id` always from the target room.
 - `confirm.test.ts`: round trip; expiry; any plan change (args, quote, `updated_at`) → mismatch; key change → mismatch.
-- `write-tools.test.ts` (fake RC, through `runTool`), the spec §3 write stories:
+- `write-tools.test.ts` (fake RC, through `runTool`; previews via `preview_*`, writes via the write tool with the
+  token), the spec §3 write stories:
   - U5a create in a room: preview (no change in the fake) → confirm → booking exists; result fields.
   - U5b category without room → unassigned; `AMBIGUOUS` when the category words match two categories.
   - U5c hold in a single-unit category.
-  - U5d no confirm without a preview (a made-up token → `PREVIEW_STALE`).
+  - U5d no write without a preview: no token → `VALIDATION` naming the preview tool; a made-up token →
+    `PREVIEW_STALE`.
   - U5e two previews then two confirms.
   - U6a move dates; `will_fail` and no token when occupied.
   - U6b extend: `PRICE_CHANGED` with old/new totals and the quote.
@@ -113,7 +117,8 @@ Extended to hold state per instance:
   - U6g changed arguments after a preview → `PREVIEW_STALE` with a fresh preview.
   - U10b assign a room in another category → `CATEGORY_CHANGE`, `PRICE_KEPT`.
   - U11 price per night → total 30 000; `NO_GUEST_MESSAGES`.
-  - X5/X7 tools above the access level: not registered, `ACCESS_DENIED` if called.
+  - X5/X7 tools above the access level (preview and write): not registered, `ACCESS_DENIED` if called.
+  - annotations: preview tools read-only, every write tool `destructiveHint: true` (D34).
   - create timeout → `RC_ERROR` with the repeat hint; repeat confirm → duplicate check returns the saved booking
     (fake saved it) or creates it (fake didn't).
   - booking changed between preview and confirm → `PREVIEW_STALE`; deleted → `DELETED`.
@@ -138,7 +143,7 @@ Safety, enforced in code, not by convention:
 3. **Cleanup** in `afterAll`: `DELETE` every id created by the run (drafts answer 404, expected); then assert the grid
    for 19–24 Jan is empty again. Failures are reported with the ids.
 
-Scenarios, all through the MCP tools (preview → confirm), in order:
+Scenarios, all through the MCP tools (`preview_*` → write tool with the token), in order:
 
 | # | Scenario | Checks |
 |---|---|---|
@@ -161,12 +166,13 @@ one invisible draft from L4.
 
 ## Docs to update with the code
 
-- spec §1: preview without `confirm_token` when `will_fail` (with `DUPLICATE` already so); the `summary` format.
+- spec §1: preview tools and the write flow (D33–D35); preview without `confirm_token` when `will_fail` (with
+  `DUPLICATE` already so); the `summary` format; annotations; server instructions.
 - spec §2.5–2.8: input validation rules above; result shape (`BookingSummary`, `deleted` for delete).
 - technical-structure.md: new files; `npm run test:live`.
 - decisions.md: entries for anything that changes on the way.
 
-Result 2054-10-22: L1–L13 passed (14 tests incl. a firewall self-check, dry-run against the fake RC first); the
+Result 2054-10-22 (before the preview tools, D33): L1–L13 passed (14 tests incl. a firewall self-check, dry-run against the fake RC first); the
 window 19–24 Jan 2055 was empty before and after (D30).
 
 ## Done when

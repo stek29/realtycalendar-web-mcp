@@ -14,23 +14,23 @@ import { words } from '../../domain/match.js'
 import { bookingBrief, bookingLine, pastDates, stayWarnings, type Warning } from '../../domain/warnings.js'
 import { createBody, type CreateFields } from '../../domain/writes.js'
 import { createDraft, getGrid, getPrice, getStayRules, putBooking } from '../../upstream/api.js'
-import { defineWriteTool, WRITE_ANNOTATIONS } from './define.js'
+import { defineWriteTool } from './define.js'
 import { checkRange, dateInput, NAME_HINT, timeInput, today, withCatalog } from './shared.js'
 
 const MAX_NIGHTS = 62
 
 const sameName = (a: string | null | undefined, b: string) => a != null && words(a).join(' ') === words(b).join(' ')
 
-export const createBooking = defineWriteTool({
+export const createBookingTools = defineWriteTool({
   name: 'create_booking',
   level: 'book',
   title: 'Create booking',
   description:
-    'WRITE: NEW BOOKING. Create a booking or a hold (забронировать, поставить бронь; заявка = hold) in a room, or in ' +
+    'NEW BOOKING. Create a booking or a hold (забронировать, поставить бронь; заявка = hold) in a room, or in ' +
     "a category without choosing a room when the user doesn't care which (it stays unassigned), or in a single-unit " +
     'category (коттедж). Give either room or category. Optional: price per night OR total (otherwise ' +
     "RealtyCalendar's quote), phone, e-mail, arrival/departure time, source, note. If the user gave no guest name, " +
-    'ask for it. Call without confirm_token for a preview; repeat with the token only after the user agrees. Does not ' +
+    'ask for it. Does not ' +
     'record prepayments in v1: if the user mentions one, say it must be added in RealtyCalendar ("Добавить платеж"). ' +
     'Never messages the guest.',
   input: z.object({
@@ -54,7 +54,6 @@ export const createBooking = defineWriteTool({
     source: z.string().optional().describe('Source / channel name, e.g. "Островок"; must match one source'),
     notes: z.string().optional(),
   }),
-  annotations: WRITE_ANNOTATIONS.create,
 
   async preview(ctx, args) {
     if (!args.room && !args.category) {

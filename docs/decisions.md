@@ -64,3 +64,33 @@ why, and where the docs were updated. The specs remain the source of truth; this
 | D30 | M2 live run (2054-10-22): L1–L13 passed on the real account; window 19–24 Jan 2055 empty and without closures before and after. New leftovers, accepted as D21/D25: 5 test guest records, soft-deleted test bookings, one more invisible draft from L4 (its id wasn't printed: vitest hides console output of passing tests, so `test:live` now runs with `--silent=false`) | plan-m2.md "Live tests" |
 | D31 | No keychain: `login` prints the token for `RC_TOKEN`, `logout` uses `RC_TOKEN` | owner: not needed | plan-m3.md §3 |
 | D32 | Audit log goes to the log stream (stderr for stdio, since stdout is the MCP channel), not a file; `RC_AUDIT=summary\|full`, default `summary` without guest data | owner: the audit is useful, a file isn't needed now | plan-m3.md §4 |
+
+## Write confirmation (reviewed with the owner, 2054-10-22)
+
+How clients confirm writes, checked against the MCP spec, Claude's and OpenAI's connector docs and quick tests with
+`claude -p` and `codex exec`:
+- Claude (web, Desktop, mobile): "Every tool must include … destructiveHint: true for tools that modify or delete
+  data. These determine auto-permissions in Claude. Read-only tools can run without per-call confirmation, and
+  destructive tools always prompt." It also wants read and write operations in separate tools.
+  Source: https://claude.com/docs/connectors/building/review-criteria.md
+- ChatGPT "requires manual confirmation in any conversation before write actions can be taken"; the user can remember
+  approval for the conversation. Any tool without `readOnlyHint` counts as a write.
+  Source: https://developers.openai.com/api/docs/mcp/
+- Codex `exec` refuses tools that aren't read-only ("MCP tool call requires approval, but approval policy is never")
+  unless the server config has `default_tools_approval_mode` = `approve` (values: `auto`, `prompt`, `writes`,
+  `approve`); evals pass `-c mcp_servers.realtycalendar.default_tools_approval_mode="approve"`.
+- So the human approval of a write comes from the client's prompt. The confirm token doesn't provide it (the model
+  holds the token and could use it at once); it binds the write to the previewed plan and catches changes since.
+
+| # | Decision | Why | Where |
+|---|---|---|---|
+| D33 | Each write gets a read-only `preview_<write>` tool (same arguments, same access level, same guidance); the write tool requires `confirm_token` and never previews. No token → `VALIDATION` "call preview_… first"; mismatch or expired → `PREVIEW_STALE` with a fresh preview. 12 tools in v1 | a preview inside a destructive tool would make Claude prompt on the preview too; Claude wants reads and writes in separate tools | spec §1, §2.5–2.8; plan-m2.md; define.ts |
+| D34 | All four write tools have `destructiveHint: true`, `create_booking` included | Claude's criteria ("modify or delete data"; then it always prompts); a create leaves an undeletable guest record and blocks a room. Deviates from the MCP spec's reading (create is additive) | spec §1 Annotations |
+| D35 | No "да" in chat before a write: the client's approval prompt on the write tool is the confirmation. Server instructions: "Writes: always call the preview_ tool first, show the preview, then call the write tool with the confirm_token; the user approves in the app's confirmation prompt. Ask in chat instead … when the preview has will_fail, needs a choice …, or the user asked to check first. Never skip the preview, even if asked." Eval write cases are one turn; U6g (change of mind between preview and write) can't run headless and is a unit test | the facts above | spec §1, §3; plan-m3.md; cases.json |
+| D36 | MCP elicitation not in v1; M4 candidate with the prototype findings | Claude web doesn't document support; the token + client prompt must work without it | plan-m3.md "Later" |
+| D37 | Evals during implementation run on Codex only; Sonnet (and Haiku) for the full eval runs (owner) | cost and speed | plan-m3.md §1 |
+
+Early check of D33–D35 (2054-10-22, Codex `gpt-6.1-sol`, fake RC, 2 runs each): U5a, U11 → `preview_create_booking`
+then `create_booking` with identical arguments; U5d ("без подтверждения, сразу", no guest name) → asked for the
+name, no write; U5a with room 22 occupied → preview `will_fail`, no write, offered other rooms. 8/8 as intended.
+

@@ -4,7 +4,8 @@ Status: final draft, 2054-10-22 (after three independent reviews). Background an
 [mcp-user-stories.md](mcp-user-stories.md). Raw API reference: [api-scope.md](api-scope.md). Architecture:
 [architecture.md](architecture.md).
 
-v1 = **8 tools**: 4 read, 4 write, in four access levels (§1 Access levels). Names are English; descriptions are English with the Russian words users actually
+v1 = **12 tools**: 4 read, 4 writes each with a read-only `preview_` tool (D33), in four access levels (§1 Access
+levels). Names are English; descriptions are English with the Russian words users actually
 say, because the model matches requests to tools by description. Marks: ✅ = verified live on 2054-10-22,
 ⚠ = assumed or untested (see §5).
 
@@ -20,8 +21,10 @@ always state the dates you used. "20–23 января" means the next such date
 Category = тип номера (e.g. "02 Двухместный улучшенный"); room = номер ("22"). Some categories have no rooms
 and are a single unit (e.g. коттедж).
 Заявка / предварительная бронь = a hold (status request): it does NOT block the room. Бронь = booked.
-Writes: call without confirm_token to get a preview, show it, and repeat the call with the confirm_token only
-after the user says yes. Never skip the preview, even if asked.
+Writes: always call the preview_ tool first, show the preview, then call the write tool with the confirm_token;
+the user approves in the app's confirmation prompt. Ask in chat instead of calling the write tool when the
+preview has will_fail, needs a choice (which room, cancel or delete), or the user asked to check first.
+Never skip the preview, even if asked.
 Guest cancelled → cancel_booking. Entered by mistake / duplicate → delete_booking. If unsure, ask.
 Cannot do in v1: record payments (tell the user to use "Добавить платеж" in RealtyCalendar), list bookings by the
 date they were made, show new/unread bookings, change guest contact details on an existing booking.
@@ -126,17 +129,22 @@ MCP tool errors (`isError: true`) with `{ "error": CODE, "message": "…", "hint
 | `OCCUPIED` | RC 422 "На данные числа объект занят" ✅ | "Don't retry. Offer other rooms from check_availability." `conflicts` is filled best-effort (null if the lookup fails) |
 | `INVALID_DATES` | bad format, check_out ≤ check_in, RC 422 on dates ✅ | |
 | `RANGE_TOO_LONG` | over the tool's limit, or RC 400 "date range" ✅ | "Split or narrow the range" |
-| `PREVIEW_STALE` | confirm_token doesn't match the arguments or the booking changed since the preview | "Show the new preview (included) and ask again" |
+| `PREVIEW_STALE` | confirm_token doesn't match the arguments, the booking changed since the preview, or it expired | "Show the new preview (included) and ask again" |
 | `ACCESS_DENIED` | a tool above the connection's access level (only if a client calls a tool it wasn't offered) | "Tell the user this connection can't do it; they can do it in RealtyCalendar" |
 | `VALIDATION` | missing/conflicting inputs, other RC 422 | `rc_errors` only after redaction |
 | `RC_SCHEMA_DRIFT` | RC response doesn't match the expected shape | "RealtyCalendar changed; report to the admin" |
 | `RC_ERROR` | 5xx / network | reads retried once; writes never retried |
 
-### Writes: preview → confirm token
+### Writes: preview tool → write tool with a confirm token
 
-Every write tool has an optional `confirm_token: string`.
+Each write is two tools (D33): `preview_<write>` (read-only) and `<write>`, with the same arguments; the write tool
+also takes a **required** `confirm_token`.
 
-- **Without `confirm_token`** → nothing changes. Returns
+- **Who approves.** The user approves a write in the client's confirmation prompt for the write tool, not by typing
+  "да" in chat (D35): Claude always prompts for tools with `destructiveHint: true` and runs read-only tools without
+  asking; ChatGPT asks before any tool without `readOnlyHint`. The confirm token doesn't approve anything (the model
+  holds it and could use it at once): it binds the write to the previewed plan and catches changes since the preview.
+- **`preview_<write>`** → nothing changes. Returns
   `{ "preview": true, "summary": "…one line in Russian…", "currency": "₽", "before": …, "after": …, "changes": [...],
      "warnings": [...], "will_fail": false, "conflicts": [], "confirm_token": "…" }`. `before`/`after` are
   BookingSummary (+ `departure_time`; `before: null` and `after.id: null` for a create); `changes` =
@@ -145,15 +153,15 @@ Every write tool has an optional `confirm_token: string`.
   "Изменить бронь 123 (22, 7–9 ноября, Анна Петрова, 17 200 ₽): выезд 2054-11-09 → 2054-11-10; сумма 17200 → 25800",
   "Отменить бронь 123: …", "Удалить бронь 123: …".
 - **No `confirm_token` in the preview** when the write can't or shouldn't happen: `DUPLICATE` (create) and
-  `will_fail: true` (room or category certainly full). The model offers alternatives instead of asking for a "да"
-  that can only fail.
-- **Result of a confirmed write**: `{ "preview": false, "summary": "…", "currency": "₽", "booking": BookingSummary,
+  `will_fail: true` (room or category certainly full). The model offers alternatives instead of calling the write.
+- **`<write>` with `confirm_token`** → the server rebuilds the plan from the current arguments and, for existing
+  bookings, the booking's current state (`updated_at` + last audit version); mismatch or older than 15 min →
+  `PREVIEW_STALE` with a fresh preview. Match → performs the change. Without a token → `VALIDATION` ("Call
+  preview_… first and pass its confirm_token"). The write tool never previews by itself.
+- **Result of a write**: `{ "preview": false, "summary": "…", "currency": "₽", "booking": BookingSummary,
   "deleted"?: true, "note"?: "…" }`, `booking` built from RC's PUT / DELETE response; `paid` from the payments read at
   confirm time (0 for a create).
-- **With `confirm_token`** → the server recomputes the token from the current arguments and, for existing bookings,
-  the booking's current state (`updated_at` + last audit version); mismatch or older than 15 min → `PREVIEW_STALE`
-  with a fresh preview. Match → performs the change and returns the resulting booking.
-- The token is an HMAC (server key) over tool name, normalised arguments, booking state, and expiry — stateless, no
+- The token is an HMAC (server key) over tool name, the resolved plan, booking state, and expiry — stateless, no
   storage. It can't be single-use without state; repeat protection for creates is the duplicate check below.
 - Previews run a capacity check by the rule RC enforces (per room one `booked`; per category assigned + unassigned
   `booked` ≤ rooms, 1 for a single unit; holds and canceled don't count; an update's own nights don't count). Unlike
@@ -161,9 +169,10 @@ Every write tool has an optional `confirm_token: string`.
   If RC will certainly refuse, the preview sets `will_fail: true` and lists `conflicts` (the booked stays that fill
   the room or category). RC still decides at save time; an `OCCUPIED` at confirm carries the fresh preview's
   `conflicts`.
-- Clients that support MCP elicitation may later replace the chat "yes" step; the token stays.
-- Note for setup: each tool call may show a client permission prompt; owners can "always allow" the write tools —
-  the confirm token, not the client prompt, is what guarantees the preview was shown.
+- MCP elicitation (the server asking the user in a client dialog) is not in v1 (D36); candidate for M4.
+- Note for setup: owners should **not** "always allow" the write tools in their client — the client prompt is the
+  approval. Codex needs `default_tools_approval_mode = "approve"` (or `prompt`) on the server for writes to run at
+  all (D33).
 
 Preview warnings:
 
@@ -183,10 +192,12 @@ Preview warnings:
 
 | Tool | readOnlyHint | destructiveHint | idempotentHint | openWorldHint |
 |---|---|---|---|---|
-| list_rooms, check_availability, list_bookings, get_booking | true | – | true | true |
-| create_booking | false | false | false | true |
-| update_booking, cancel_booking | false | true | false | true |
-| delete_booking | false | true | false | true |
+| list_rooms, check_availability, list_bookings, get_booking, preview_* | true | – | true | true |
+| create_booking, update_booking, cancel_booking, delete_booking | false | true | false | true |
+
+All writes, `create_booking` included, are destructive (D34): Claude's review criteria ask for `destructiveHint: true`
+on tools that "modify or delete data", and a create leaves a guest record that can't be deleted and blocks a room.
+(The MCP spec would read a create as additive, `false`; with `true` Claude always prompts.)
 
 ### Access levels
 
@@ -196,9 +207,9 @@ tool sensibly.
 | Level | Adds tools | Risk |
 |---|---|---|
 | `read` | `list_rooms`, `check_availability`, `list_bookings`, `get_booking` | none |
-| `book` | `create_booking` | only adds bookings |
-| `edit` | `update_booking`, `cancel_booking` | changes existing bookings (`update_booking` can't cancel) |
-| `full` | `delete_booking` | removes bookings (soft delete) |
+| `book` | `preview_create_booking`, `create_booking` | only adds bookings |
+| `edit` | `update_booking`, `cancel_booking` and their `preview_` tools | changes existing bookings (`update_booking` can't cancel) |
+| `full` | `delete_booking`, `preview_delete_booking` | removes bookings (soft delete) |
 
 Each level includes the ones above it. Tools above the level are not registered, and their handlers also refuse calls
 (`ACCESS_DENIED`) in case a client cached an older tool list. Typical use: housekeeping `read`, front desk `edit`,
@@ -382,14 +393,25 @@ amounts (refunds negative) — equal to the grid's `prepayment` in both cases ch
 test booking) ✅. `from_booking_site` here = `platform_name != null` (authoritative). Deleted bookings come back from
 RC with `is_delete: true` → `deleted: true`. A draft (created but never saved) is 404 → `NOT_FOUND`.
 
+### Write tools: shared text
+
+Each write tool's description in §2.5–2.8 (without the leading "WRITE:") is used twice (D33):
+- `preview_<write>`: "PREVIEW, changes nothing. {text} Returns what <write> would do (before/after, warnings,
+  will_fail) and a confirm_token; no token when it would fail (will_fail) or is a duplicate. Show the preview to the
+  user, then call <write> with the same arguments and the confirm_token."
+- `<write>`: "WRITE. {text} Always call preview_<write> first and show its preview; then call this with the same
+  arguments and its confirm_token. The user approves in the app's confirmation prompt. Instead of calling this, ask
+  in chat when the preview has will_fail, needs a choice, or the user asked to check first."
+
+The preview tool takes the inputs below without `confirm_token`; the write tool requires it.
+
 ### 2.5 `create_booking`
 
 > **WRITE: NEW BOOKING.** Create a booking or a hold (забронировать, поставить бронь; заявка = hold) in a room, or in
 > a category without choosing a room when the user doesn't care which (it stays unassigned), or in a single-unit
 > category (коттедж). Give either room or category. Optional: price per night OR total (otherwise RealtyCalendar's
-> quote), phone, e-mail, arrival/departure time, source, note. If the user gave no guest name, ask for it.
-> Call without confirm_token for a preview; repeat with the token only after the user agrees. Does not record
-> prepayments in v1: if the user mentions one, say it must be added in RealtyCalendar ("Добавить платеж"). Never
+> quote), phone, e-mail, arrival/departure time, source, note. If the user gave no guest name, ask for it. Does not
+> record prepayments in v1: if the user mentions one, say it must be added in RealtyCalendar ("Добавить платеж"). Never
 > messages the guest.
 
 **Input**
@@ -403,7 +425,7 @@ RC with `is_delete: true` → `deleted: true`. A draft (created but never saved)
   "price_per_night": "number", "total": "number",      // at most one, ≥ 0
   "arrival_time": "HH:MM", "departure_time": "HH:MM",
   "source": "string", "notes": "string",
-  "confirm_token": "string"
+  "confirm_token": "string"                            // write tool only, required
 }
 ```
 **Input checks** (`VALIDATION` unless noted): `room` or `category` (both only if they agree, else
@@ -439,8 +461,8 @@ booking exists (then no token is issued) and always `NO_GUEST_MESSAGES`.
 > **WRITE: CHANGE A BOOKING.** Move dates (перенести, продлить, сократить), move to another room or category, put an
 > unassigned booking into a room (расселить, поставить в 22-й) or take it out of its room, confirm a hold
 > (заявка → бронь), change price, arrival/departure time, or the note (add a line by default; replace only if asked).
-> Pass only what changes. For cancellation use cancel_booking. Call without confirm_token for a preview; repeat with
-> the token only after the user agrees. For bookings from booking sites, changes are not sent to the site — say so.
+> Pass only what changes. For cancellation use cancel_booking. For bookings from booking sites, changes are not sent to
+> the site — say so.
 
 **Input**
 ```jsonc
@@ -456,7 +478,7 @@ booking exists (then no token is issued) and always `NO_GUEST_MESSAGES`.
   "clear_arrival_time": "boolean", "clear_departure_time": "boolean",
   "notes_append": "string",                             // default for "добавь в заметку"
   "notes_replace": "string",                            // only when the user asks to rewrite the note
-  "confirm_token": "string"
+  "confirm_token": "string"                             // write tool only, required
 }
 ```
 At least one change is required; `room`/`category`/`unassign`, `notes_append`/`notes_replace`,
@@ -498,9 +520,9 @@ If the GET contains fields the builder doesn't know, the write is refused with `
 
 > **WRITE: GUEST CANCELLED.** The guest cancelled or won't come (отменить, отмена, гость отказался, не приедет, снять
 > бронь). Sets status "canceled": the record stays and the room is freed. Use this, not delete_booking, unless the
-> user says the booking was entered by mistake. Call without confirm_token for a preview first.
+> user says the booking was entered by mistake.
 
-**Input**: `{ "booking_id": "integer", "confirm_token": "string" }`
+**Input**: `{ "booking_id": "integer", "confirm_token": "string" }` (token: write tool only)
 **Preview**: the booking; warnings `BOOKING_SITE` (cancel on the site separately), `HAS_PAYMENTS`. Already canceled
 → `VALIDATION`; deleted → `DELETED`.
 **On confirm**: same path as update with `status: "canceled"` ✅ (canceled frees the room ✅).
@@ -508,9 +530,9 @@ If the GET contains fields the builder doesn't know, the write is refused with `
 ### 2.8 `delete_booking`
 
 > **WRITE: REMOVE A MISTAKE.** Delete a booking that was entered by mistake or is a duplicate (ошибочная, дубль,
-> удалить). If the guest cancelled, use cancel_booking. If unsure which, ask. Call without confirm_token first.
+> удалить). If the guest cancelled, use cancel_booking. If unsure which, ask.
 
-**Input**: `{ "booking_id": "integer", "confirm_token": "string" }`
+**Input**: `{ "booking_id": "integer", "confirm_token": "string" }` (token: write tool only)
 **Preview**: the booking; warnings `BOOKING_SITE` (deleting in RC doesn't cancel on the site), `HAS_PAYMENTS`.
 **On confirm**: `DELETE /v2/event_calendars/{id}` ✅ (soft delete; the booking disappears from the calendar and can be
 restored with `POST …/restore` ✅ — the web app has a restore action too; not a v1 tool). Already deleted → `DELETED`.
@@ -518,8 +540,9 @@ Result: the booking with `deleted: true`.
 
 ## 3. Stories with sample prompts (acceptance tests)
 
-Today = Thu 2054-10-22. "→" = expected calls (order may vary where independent). Preview/confirm pairs are written
-as `tool(…)` → user "да" → `tool(…, confirm_token)`.
+Today = Thu 2054-10-22. "→" = expected calls (order may vary where independent). A write is written as
+`preview_tool(…)` → `tool(…, token)`: the preview, then the write tool with the same arguments and its token, in the
+same turn; the user approves in the client's prompt (D35).
 
 | # | Prompt (RU) | Expected calls | Answer must contain |
 |---|---|---|---|
@@ -533,22 +556,22 @@ as `tool(…)` → user "да" → `tool(…, confirm_token)`.
 | U4a | "Кто заезжает завтра и откуда?" | `list_bookings(from=2054-10-23, match="arriving")` | room, guest, phone, time, source |
 | U4b | "Кто выезжает сегодня? Что убирать?" | `list_bookings(match="departing")` | rooms leaving today |
 | U4c | "Кто заезжает на этой неделе и ещё не заплатил?" | `list_bookings(2054-10-22, 2054-10-26, match="arriving", unpaid_only=true)` | list + totals.left |
-| U5a | "Забронируй 22-й на 7–9 ноября для Анны Петровой, +7 900 123-45-67" | `create_booking(room="22", 2054-11-07, 2054-11-09, guest_name="Анна Петрова", guest_phone=…)` → "да" → with token | preview first; then id and total |
-| U5b | "Поставь любую двухместную улучшенную на 7–9 ноября, Сидоров" | `check_availability(2054-11-07, 2054-11-09, category="двухместную улучшенную")` → `create_booking(category=…, guest_name="Сидоров")` → "да" → token | asks which category if two "улучшенные" match; unassigned booking |
-| U5c | "Поставь заявку на коттедж на НГ, 31.12–03.01" | asks for a guest name, then `create_booking(category="коттедж", 2054-12-31, 2055-01-03, status="request", …)` → "да" → token | hold, not booked |
-| U5d | "Забронируй 22-й на 7–9 ноября, без подтверждения, сразу" | still a preview first | refuses to skip the preview |
-| U5e | "Два номера для семьи Смирновых на 7–9 ноября" | `check_availability` → two `create_booking` previews (one message) → "да" → two confirms | both booking ids |
-| U6a | "Перенеси бронь в 22-м с пятницы-воскресенья на субботу-понедельник" | `list_bookings(room="22", 2054-10-23, 2054-10-25)` → `update_booking(id, check_in=2054-10-24, check_out=2054-10-26)` → "да" → token | before/after; or `will_fail` with the conflict and alternatives |
-| U6b | "Продли Иванова на одну ночь" | `list_bookings(query="Иванов")` → (asks if several) → `update_booking(id, check_out=+1)` → "да" → token | new total (PRICE_CHANGED) |
-| U6c | "Гость отменил бронь 810000208" | `cancel_booking(810000208)` → "да" → token | cancel, not delete; BOOKING_SITE note if relevant |
-| U6d | "Удали бронь 810000208, я её по ошибке создал" | `delete_booking(810000208)` → "да" → token | |
+| U5a | "Забронируй 22-й на 7–9 ноября для Анны Петровой, +7 900 123-45-67" | `preview_create_booking(room="22", 2054-11-07, 2054-11-09, guest_name="Анна Петрова", guest_phone=…)` → `create_booking(…, token)` | preview first; then id and total |
+| U5b | "Поставь любую двухместную улучшенную на 7–9 ноября, Сидоров" | `check_availability(2054-11-07, 2054-11-09, category="двухместную улучшенную")` → asks which category (02 or 03) → `preview_create_booking(category=…, guest_name="Сидоров")` → `create_booking(…, token)` | asks which category if two "улучшенные" match; unassigned booking |
+| U5c | "Поставь заявку на коттедж на НГ, 31.12–03.01" | asks for a guest name, then `preview_create_booking(category="коттедж", 2054-12-31, 2055-01-03, status="request", …)` → `create_booking(…, token)` | hold, not booked |
+| U5d | "Забронируй 22-й на 7–9 ноября, без подтверждения, сразу" | still a preview first (or asks for the guest name); never the write tool without a preview | refuses to skip the preview |
+| U5e | "Два номера для семьи Смирновых на 7–9 ноября" | `check_availability` → two `preview_create_booking` → two `create_booking(…, token)` | both booking ids |
+| U6a | "Перенеси бронь в 22-м с пятницы-воскресенья на субботу-понедельник" | `list_bookings(room="22", 2054-10-23, 2054-10-25)` → `preview_update_booking(id, check_in=2054-10-24, check_out=2054-10-26)` → `update_booking(…, token)` | before/after; or `will_fail` with the conflict and alternatives, no write |
+| U6b | "Продли Иванова на одну ночь" | `list_bookings(query="Иванов")` → (asks if several) → `preview_update_booking(id, check_out=+1)` → `update_booking(…, token)` | new total (PRICE_CHANGED) |
+| U6c | "Гость отменил бронь 810000208" | `preview_cancel_booking(810000208)` → `cancel_booking(810000208, token)` | cancel, not delete; BOOKING_SITE note if relevant |
+| U6d | "Удали бронь 810000208, я её по ошибке создал" | `preview_delete_booking(810000208)` → `delete_booking(810000208, token)` | |
 | U6e | "Сними бронь Петровой" | `list_bookings(query="Петрова")` → asks: cancel or delete? | asks |
-| U6f | "Добавь в заметку к брони 810000208, что нужна детская кроватка" | `update_booking(810000208, notes_append="Нужна детская кроватка")` → "да" → token | old note kept |
-| U6g | user changes a detail after the preview ("а давай до 10-го") | new preview, not the old token | |
+| U6f | "Добавь в заметку к брони 810000208, что нужна детская кроватка" | `preview_update_booking(810000208, notes_append="Нужна детская кроватка")` → `update_booking(…, token)` | old note kept |
+| U6g | user changes a detail after the preview ("а давай до 10-го") | a new preview, not the old token | not in evals: headless clients approve writes at once, so there is no gap to change a detail in; "changed args → PREVIEW_STALE" is a unit test |
 | U9 | "Что за бронь с Островка вчера пришла?" | `list_bookings(source="островок")` → `get_booking(id)` (asks if several) | booking-site details incl. "Дата бронирования"; says it can't filter by date made |
 | U10a | "Какие брони не расселены?" | `list_bookings(unassigned_only=true)` | by category; cottage bookings NOT listed |
-| U10b | "Поставь бронь с Островка на 31.12 в 22-й" | `list_bookings(2054-12-31, 2055-01-01, source="островок")` → `update_booking(id, room="22")` → "да" → token | CATEGORY_CHANGE if 22 is in another category; OCCUPIED/will_fail if taken |
-| U11 | "Иван, 20–23 января, 5-й номер, 5 тысяч за ночь, предоплату 5к уже перевёл на Т-Банк" | `create_booking(room="5", 2055-01-20, 2055-01-23, guest_name="Иван", price_per_night=10000)` → "да" → token | total 30 000; prepayment must be added in RC |
+| U10b | "Поставь бронь с Островка на 31.12 в 22-й" | `list_bookings(2054-12-31, 2055-01-01, source="островок")` → `preview_update_booking(id, room="22")` → `update_booking(…, token)` | CATEGORY_CHANGE if 22 is in another category; OCCUPIED/will_fail if taken |
+| U11 | "Иван, 20–23 января, 5-й номер, 5 тысяч за ночь, предоплату 5к уже перевёл на Т-Банк" | `preview_create_booking(room="5", 2055-01-20, 2055-01-23, guest_name="Иван", price_per_night=10000)` → `create_booking(…, token)` | total 30 000; prepayment must be added in RC |
 | U12a | "Бронь 810000208 оплачена?" | `get_booking(810000208)` | total / paid / left |
 | U12b | "Кто нам должен за ноябрь?" | `list_bookings(2054-11-01, 2054-12-01, unpaid_only=true)` | list + totals.left |
 | U12c | "Сколько мы заработали в ноябре по броням?" | `list_bookings(2054-11-01, 2054-12-01)` | totals (says stays overlapping the month are counted in full) |

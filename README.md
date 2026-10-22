@@ -27,7 +27,7 @@ Claude Desktop (`claude_desktop_config.json`), until the package is published:
 
 | Doc | What's in it |
 |---|---|
-| [docs/mcp-tool-spec.md](docs/mcp-tool-spec.md) | The 8 tools: descriptions, inputs/outputs, errors, access levels, sample prompts (acceptance tests) |
+| [docs/mcp-tool-spec.md](docs/mcp-tool-spec.md) | The 12 tools (4 read, 4 writes with their preview tools): descriptions, inputs/outputs, errors, access levels, sample prompts (acceptance tests) |
 | [docs/architecture.md](docs/architecture.md) | Runtime behaviour: RC client, write path, privacy, local stdio, hosted stateless OAuth |
 | [docs/technical-structure.md](docs/technical-structure.md) | Stack, repository layout, interfaces, entrypoints, build order |
 | [docs/mcp-user-stories.md](docs/mcp-user-stories.md) | User stories and the live-tested API behaviour behind the design |

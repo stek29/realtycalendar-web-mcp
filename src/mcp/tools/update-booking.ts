@@ -7,7 +7,7 @@ import { ToolError } from '../../domain/errors.js'
 import { bookingLine, bookingSite, money, pastDates, stayWarnings, type Warning } from '../../domain/warnings.js'
 import { appendNote, applyChanges, putBodyFromGet, updatedAmount, type BookingFields } from '../../domain/writes.js'
 import { getGrid, getPrice, getStayRules, putBooking } from '../../upstream/api.js'
-import { defineWriteTool, WRITE_ANNOTATIONS } from './define.js'
+import { defineWriteTool } from './define.js'
 import { bookingForWrite, checkRange, dateInput, NAME_HINT, timeInput, today, withCatalog } from './shared.js'
 
 const MAX_NIGHTS = 62
@@ -66,17 +66,16 @@ const CHANGE_ARGS = [
   'notes_replace',
 ] as const
 
-export const updateBooking = defineWriteTool({
+export const updateBookingTools = defineWriteTool({
   name: 'update_booking',
   level: 'edit',
   title: 'Update booking',
   description:
-    'WRITE: CHANGE A BOOKING. Move dates (перенести, продлить, сократить), move to another room or category, put an ' +
+    'CHANGE A BOOKING. Move dates (перенести, продлить, сократить), move to another room or category, put an ' +
     'unassigned booking into a room (расселить, поставить в 22-й) or take it out of its room, confirm a hold ' +
     '(заявка → бронь), change price, arrival/departure time, or the note (add a line by default; replace only if ' +
-    'asked). Pass only what changes. For cancellation use cancel_booking. Call without confirm_token for a preview; ' +
-    'repeat with the token only after the user agrees. For bookings from booking sites, changes are not sent to the ' +
-    'site — say so.',
+    'asked). Pass only what changes. For cancellation use cancel_booking. For bookings from booking sites, changes are ' +
+    'not sent to the site — say so.',
   input: z.object({
     booking_id: z.number().int().positive().describe('Booking id, e.g. from list_bookings'),
     check_in: dateInput('New arrival day, YYYY-MM-DD').optional(),
@@ -94,7 +93,6 @@ export const updateBooking = defineWriteTool({
     notes_append: z.string().optional().describe('Add a line to the note (default for "добавь в заметку")'),
     notes_replace: z.string().optional().describe('Replace the whole note; only when the user asks to rewrite it'),
   }),
-  annotations: WRITE_ANNOTATIONS.change,
   lockId: (args) => args.booking_id,
 
   async preview(ctx, args) {

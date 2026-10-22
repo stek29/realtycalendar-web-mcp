@@ -30,16 +30,21 @@ No live data reaches a model in evals.
 
 ```jsonc
 { "id": "U5a", "access": "full",
-  "turns": ["Забронируй 22-й на 7–9 ноября для Анны Петровой, +7 900 123-45-67", "да"],
+  "turns": ["Забронируй 22-й на 7–9 ноября для Анны Петровой, +7 900 123-45-67"],
   "expect": [                                   // per turn
-    { "calls": [ { "tool": "create_booking", "args": { "room": "22", "check_in": "2054-11-07", … }, "no_token": true } ],
-      "answer": ["(?i)подтверд|preview|да\\?"] },
-    { "calls": [ { "tool": "create_booking", "has_token": true } ], "answer": ["\\d{9}"] } ],
-  "forbid": ["delete_booking"] }
+    { "calls": [ { "tool": "preview_create_booking", "args": { "room": { "re": "^22" }, "check_in": "2054-11-07", … } },
+                 { "tool": "create_booking", "args": { "room": { "re": "^22" }, … }, "confirm_token": true } ],
+      "answer": ["\\d{6,}"] } ] }
 ```
 
-- `calls`: required tool calls with an argument subset; `any_order` for independent calls; extra read calls are
-  allowed (counted in the benchmark), extra write calls are not.
+Writes are one turn (D35): the preview tool, then the write tool with the token. Headless clients approve the write
+tool's call at once (Claude via `--allowedTools`, Codex via `default_tools_approval_mode`), standing in for the user's
+approval in the client prompt. So a case can't put a user's change of mind between preview and write (U6g); that path
+(`PREVIEW_STALE`) is covered by unit tests.
+
+- `calls`: required tool calls with an argument subset; `any_order` for independent calls; extra read calls (preview
+  tools included) are allowed (counted in the benchmark), extra write calls are not; a write must come after a
+  preview with the same arguments.
 - `answer`: regexes the final answer must match (dates used, amounts, "can't do that in v1" …).
 - `forbid`: tools that must not be called (X1–X7 negative stories: no writes, no fabricated payment calls).
 
@@ -54,10 +59,15 @@ each client: "Что свободно на выходные?" → `check_availab
 | Runner | Command (per turn) | Role |
 |---|---|---|
 | `claude-sonnet` | `claude -p <prompt> --model sonnet --strict-mcp-config --mcp-config <cfg.json> --tools "" --allowedTools mcp__realtycalendar --setting-sources project --output-format stream-json --verbose --max-budget-usd 1`; turn 2+ adds `--resume <session_id>` (from the `system/init` event) | **gate** |
-| `codex` | `codex exec --json -m gpt-6.1-sol -s read-only --skip-git-repo-check --ignore-user-config -C <dir> <disable…> -c mcp_servers.realtycalendar.command="<tsx>" -c mcp_servers.realtycalendar.args=["<server>"] <prompt>`; turn 2+ `codex exec resume <thread_id> --json -m gpt-6.1-sol -c sandbox_mode="read-only" --skip-git-repo-check --ignore-user-config <disable…> -c mcp_servers… <prompt>` run from the same directory (`resume` takes neither `-s` nor `-C`) | **gate** (non-Claude client; ChatGPT is a target in M4) |
+| `codex` | `codex exec --json -m gpt-6.1-sol -s read-only --skip-git-repo-check --ignore-user-config -C <dir> <disable…> -c mcp_servers.realtycalendar.command="<tsx>" -c mcp_servers.realtycalendar.args=["<server>"] -c mcp_servers.realtycalendar.default_tools_approval_mode="approve" <prompt>`; turn 2+ `codex exec resume <thread_id> --json -m gpt-6.1-sol -c sandbox_mode="read-only" --skip-git-repo-check --ignore-user-config <disable…> -c mcp_servers… <prompt>` run from the same directory (`resume` takes neither `-s` nor `-C`) | **gate** (non-Claude client; ChatGPT is a target in M4) |
 | `claude-haiku` | as `claude-sonnet` with `--model haiku` | floor: reported, not gating |
 
-- Claude: `--tools ""` leaves only the MCP tools (the `init` event lists exactly the four `mcp__realtycalendar__*`
+- Use during implementation (owner, D37): small checks run on `codex` only; `claude-sonnet` (and Haiku) are for the
+  full eval runs.
+- Codex refuses tools that aren't read-only ("MCP tool call requires approval, but approval policy is never") unless
+  the server has `default_tools_approval_mode` = `approve` (values: `auto`, `prompt`, `writes`, `approve`); found
+  2054-10-22 when the write tools were first called (D33).
+- Claude: `--tools ""` leaves only the MCP tools (the `init` event lists only the `mcp__realtycalendar__*`
   tools); `--strict-mcp-config` ignores the user's other MCP servers; `--setting-sources project` with an empty
   working directory keeps user settings, hooks and plugins out. Tool calls: `assistant` events with `tool_use`
   blocks; cost, turns and duration: the final `result` event (about $0.04–0.06 per turn on Sonnet).
@@ -148,3 +158,15 @@ Per confirmed write (architecture.md "Write path"), one JSON line:
 - `login` / `check` / `logout` verified by the owner.
 - Audit entries written in the live write tests.
 - `npm pack` contents checked; v1.0.0 published (owner).
+
+## Later (M4 candidate): MCP elicitation
+
+Not in v1 (D36). Elicitation lets the server ask the user directly in a client-rendered dialog the model can't answer,
+which would make the approval independent of the client's tool prompt. Claude web doesn't document support for it,
+so the token plus the client prompt must work without it anyway. Prototype findings (M1 session, 2054-10-22):
+- SDK 2.3.1: one handler that returns `inputRequired({ inputRequests: { confirm: inputRequired.elicit({ message,
+  requestedSchema }) } })` and reads `acceptedContent(ctx.mcpReq.inputResponses, 'confirm', schema)` on re-entry
+  serves both protocol eras: `claude -p` used 2026-07-28; Codex used the 2053 protocol through the SDK's legacy shim.
+- A client without the elicitation capability gets an `isError` result, so check capabilities first.
+- Headless runs answer the dialog automatically (`claude -p`: cancel, `codex exec`: decline), so evals can't exercise
+  it.

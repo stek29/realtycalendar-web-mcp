@@ -16,8 +16,10 @@ export function instructions(today: string, timezone: string, access: Access): s
   ]
   if (accessAllows(access, 'book')) {
     lines.push(
-      'Writes: call without confirm_token to get a preview, show it, and repeat the call with the confirm_token only',
-      'after the user says yes. Never skip the preview, even if asked.',
+      'Writes: always call the preview_ tool first, show the preview, then call the write tool with the confirm_token;',
+      "the user approves in the app's confirmation prompt. Ask in chat instead of calling the write tool when the",
+      'preview has will_fail, needs a choice (which room, cancel or delete), or the user asked to check first.',
+      'Never skip the preview, even if asked.',
     )
   }
   if (accessAllows(access, 'full')) {
