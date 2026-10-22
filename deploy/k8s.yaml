@@ -1,0 +1,49 @@
+# Minimal Kubernetes example. Create the secret first:
+#   kubectl create secret generic realtycalendar-mcp \
+#     --from-literal=MCP_SERVER_KEY="$(openssl rand -base64 32)"
+# Stateless: any number of replicas works. TLS and the public host come from your Ingress / Gateway (not included).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: realtycalendar-mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: realtycalendar-mcp }
+  template:
+    metadata:
+      labels: { app: realtycalendar-mcp }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: server
+          image: realtycalendar-web-mcp:0.2.0
+          ports: [{ containerPort: 8080, name: http }]
+          env:
+            - { name: MCP_PUBLIC_URL, value: https://rc.example.com }
+            - { name: RC_ACCESS, value: edit }
+            - { name: RC_SITE_BOOKINGS, value: protect }
+          envFrom:
+            - secretRef: { name: realtycalendar-mcp }
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: realtycalendar-mcp
+spec:
+  selector: { app: realtycalendar-mcp }
+  ports: [{ port: 80, targetPort: http, name: http }]

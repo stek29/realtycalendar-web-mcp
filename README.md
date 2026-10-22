@@ -4,8 +4,8 @@ MCP server for [RealtyCalendar](https://realtycalendar.ru) — lets Claude, Chat
 availability and manage bookings through RealtyCalendar's web app API.
 
 Status: v0.1.0 — 4 read tools and 4 write tools (create, update, cancel, delete), each write with a read-only preview
-tool; audit log; `login` / `logout`. Not published: run it with Node from a checkout. A Docker image comes with the
-hosted HTTP server (M4), for Kubernetes / docker compose.
+tool; audit log; `login` / `logout`. Not published: run it with Node from a checkout, or build the Docker image of the
+hosted HTTP server (below) for Kubernetes / docker compose.
 
 ## Set up
 
@@ -34,6 +34,30 @@ Guest names, phones and notes pass through the server (nothing is stored; logs c
 model provider of your MCP client (Anthropic, OpenAI…), as with any use of an AI assistant. The hotel is the operator
 of this data under 152-FZ and may need to mention the transfer, including abroad, in its privacy notice.
 `RC_AUDIT=full` writes guest data to the log stream; use it only when you need it.
+
+## Hosted server (Claude web, ChatGPT)
+
+The same tools over Streamable HTTP at `<MCP_PUBLIC_URL>/mcp`, with a built-in OAuth server: each user signs in with
+their RealtyCalendar login on the server's page and picks an access level (up to `RC_ACCESS`). No database: all state
+is in tokens encrypted with `MCP_SERVER_KEY`. Clients: Claude (web, Desktop, mobile), Claude Code, ChatGPT
+([plan-m4.md](docs/plan-m4.md)).
+
+```sh
+docker build -t realtycalendar-web-mcp:0.2.0 .
+```
+
+Run it behind HTTPS with `deploy/docker-compose.yml` or `deploy/k8s.yaml`. Settings, besides the ones below:
+
+| Variable | Meaning |
+|---|---|
+| `MCP_PUBLIC_URL` | the public origin, e.g. `https://rc.example.com` (https, except `localhost`) |
+| `MCP_SERVER_KEY` | secret, `openssl rand -base64 32`; losing or changing it disconnects every user |
+| `MCP_SERVER_KEY_PREVIOUS` | the old key while rotating: tokens under it still work; drop it after 30 days |
+| `PORT` | default 8080; `GET /healthz` for probes |
+
+`RC_ACCESS` is the highest level a connection may pick; `RC_TOKEN` and `RC_CONFIRM_KEY` are not used. Add the
+connector with the URL `https://…/mcp` (Claude: Settings → Connectors → Add custom connector; ChatGPT: Settings → Apps
+→ developer mode → Create; Claude Code: `claude mcp add --transport http realtycalendar https://…/mcp`).
 
 ## Develop
 

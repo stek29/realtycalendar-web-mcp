@@ -1,0 +1,16 @@
+# Example: the hosted server behind your own HTTPS reverse proxy (Caddy, nginx, Traefik).
+# .env.server (git-ignored, chmod 600):
+#   MCP_PUBLIC_URL=https://rc.example.com
+#   MCP_SERVER_KEY=<openssl rand -base64 32>
+#   RC_ACCESS=edit            # the highest level a connection may pick on the login page
+#   RC_SITE_BOOKINGS=protect
+services:
+  realtycalendar-mcp:
+    image: realtycalendar-web-mcp:0.2.0 # docker build -t realtycalendar-web-mcp:0.2.0 .
+    env_file: .env.server
+    ports:
+      - '127.0.0.1:8080:8080' # the proxy terminates TLS and forwards here
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    restart: unless-stopped
