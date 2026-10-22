@@ -97,12 +97,4 @@ describe('RcClient', () => {
     const err = await errorOf(rc.send('PUT', 'x', {}, z.unknown()))
     expect(JSON.stringify(err.toJSON())).not.toMatch(/916/)
   })
-
-  it('follows X-Next-Cursor', async () => {
-    const { rc, calls } = client((url) =>
-      url.searchParams.get('cursor') ? json(200, [2]) : json(200, [1], { 'X-Has-More': 'true', 'X-Next-Cursor': 'c1' }),
-    )
-    expect(await rc.getPaged('arrivals_departures/by_dates', { limit: 50 }, z.array(z.number()))).toEqual([1, 2])
-    expect(calls[1]!.url.searchParams.get('cursor')).toBe('c1')
-  })
 })

@@ -54,28 +54,12 @@ export class RcClient {
 
   /** GET with one retry on network errors and 5xx; the response is validated against `schema`. */
   async get<T>(path: string, query: Query, schema: ZodType<T>): Promise<T> {
-    const { body } = await this.request('GET', path + encodeQuery(query), undefined, true)
-    return this.parse(path, body, schema)
-  }
-
-  /** GET following X-Has-More / X-Next-Cursor; `schema` describes one page (an array). */
-  async getPaged<T>(path: string, query: Query, schema: ZodType<T[]>): Promise<T[]> {
-    const out: T[] = []
-    let cursor: string | undefined
-    for (let page = 0; page < 100; page++) {
-      const { body, headers } = await this.request('GET', path + encodeQuery({ ...query, cursor }), undefined, true)
-      out.push(...this.parse(path, body, schema))
-      const next = headers.get('X-Next-Cursor')
-      if (headers.get('X-Has-More') !== 'true' || !next) return out
-      cursor = next
-    }
-    throw new ToolError('RC_ERROR', `Too many pages from ${path}`)
+    return this.parse(path, await this.request('GET', path + encodeQuery(query), undefined, true), schema)
   }
 
   /** A write or a read sent as POST. Never retried. */
   async send<T>(method: 'POST' | 'PUT' | 'DELETE', path: string, body: unknown, schema: ZodType<T>): Promise<T> {
-    const res = await this.request(method, path, body, false)
-    return this.parse(path, res.body, schema)
+    return this.parse(path, await this.request(method, path, body, false), schema)
   }
 
   private parse<T>(path: string, body: unknown, schema: ZodType<T>): T {
@@ -92,12 +76,7 @@ export class RcClient {
     )
   }
 
-  private async request(
-    method: string,
-    pathAndQuery: string,
-    body: unknown,
-    retry: boolean,
-  ): Promise<{ body: unknown; headers: Headers }> {
+  private async request(method: string, pathAndQuery: string, body: unknown, retry: boolean): Promise<unknown> {
     const endpoint = `${method} ${pathAndQuery.split('?')[0]}`
     for (let attempt = 0; ; attempt++) {
       const started = Date.now()
@@ -141,7 +120,7 @@ export class RcClient {
         continue
       }
       const parsed = await readJson(res)
-      if (res.ok) return { body: parsed, headers: res.headers }
+      if (res.ok) return parsed
       throw this.mapError(res.status, parsed, endpoint)
     }
   }

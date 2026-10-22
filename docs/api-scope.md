@@ -27,7 +27,7 @@ The other left-nav sections are separate Vue apps on the same `/v2` API; see "Ot
 
 The final v1 tool set is in [mcp-tool-spec.md](mcp-tool-spec.md). It uses: `apartments`, `info`, the calendar grid
 `event_calendars/`, `event_calendars/{id}` (GET/POST/PUT/DELETE), `event_calendars/{id}/payments` (read only),
-`apartments/{id}/price`, `arrivals_departures/by_dates`. Everything else below is reference for later versions.
+`apartments/{id}/price`, `events/group_special_prices/prices` (stay rules, a read). Everything else below is reference for later versions.
 Payload formats and tested behaviour: [mcp-user-stories.md](mcp-user-stories.md).
 
 ## Core: calendar and bookings
@@ -103,7 +103,7 @@ they are `special_prices[]` rows with `closed: true` in the grid.
 Each left-nav section is its own Vue app (`/<section>/assets/main-*.js`) sharing the same HTTP client: same base URL,
 same `X-User-Token` auth, same error format. Endpoint lists: `docs/endpoints/endpoints_<section>.txt`.
 
-### "Клиенты и брони" → "Заезды / Выезды" (`/arrivals_departures/`) — `by_dates` used in v1
+### "Клиенты и брони" → "Заезды / Выезды" (`/arrivals_departures/`) — not used in v1 (`by_dates` duplicates the grid)
 
 | Method | Path | Purpose |
 |---|---|---|

@@ -109,12 +109,11 @@ interface Context { rc: RcClient; catalog(): Promise<Catalog>; now(): Date; conf
 class RcClient {
   constructor(token: string, opts: { baseUrl: string; fetch?: typeof fetch })
   get<T>(path: string, query: Query, schema: ZodType<T>): Promise<T>                     // 1 retry, validated
-  getPaged<T>(…): Promise<T[]>                                                           // X-Next-Cursor paging
   send<T>(method: 'POST' | 'PUT' | 'DELETE', path: string, body: unknown, schema: ZodType<T>): Promise<T>  // no retry
 }
 
 // upstream/api.ts
-getApartments, getApartmentInfo, getInfo, getGrid, getStayRules, getArrivals,
+getApartments, getApartmentInfo, getInfo, getGrid, getStayRules,
 getBooking, getPayments, getPrice, createDraft, putBooking, deleteBooking, signIn, signOut
 
 // mcp/tools/define.ts
@@ -176,7 +175,7 @@ The password is never stored or logged. The CLI is the only place besides the ho
 | # | Milestone | Done when |
 |---|---|---|
 | M1 | Repo + `docs/`, config/context/cache, `upstream/` client + schemas, fixtures + fake RC, catalog + matching, the 4 read tools, stdio, `check` command | Claude Desktop answers U1–U4, U9, U10, U12, R1–R3 against the live account with `RC_ACCESS=read` |
-| M2 | Live checks S2, S3, S4, S6, S9 on the test window; `defineWriteTool`; create / update / cancel / delete | Live write tests pass and leave the calendar clean; S3 (no-op PUT keeps booking and guest) passes before update/cancel ship |
+| M2 | Live checks S2, S3, S9 on the test window; `defineWriteTool`; create / update / cancel / delete | Live write tests pass and leave the calendar clean; S3 (no-op PUT keeps booking and guest) passes before update/cancel ship |
 | M3 | Evals for all spec §3 prompts, `login` / `logout`, audit log, packaging | Evals green; v1 published |
 | M4 | `oauth/` + `platforms/node.ts` | Connects from Claude and ChatGPT via CIMD |
 

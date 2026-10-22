@@ -27,7 +27,6 @@ Stack, repository layout, module interfaces, entrypoints and build order:
 - GETs: 15 s timeout, one retry on network/5xx with jitter, respect `Retry-After`. Writes: no automatic retry.
 - Rate limiting: per token ≤ 4 concurrent requests (across all sessions of that token); hosted also a global token
   bucket towards RC so one tenant can't get the shared egress IP banned.
-- Paging: `X-Has-More` / `X-Next-Cursor` for `by_dates`.
 
 ## Caching
 

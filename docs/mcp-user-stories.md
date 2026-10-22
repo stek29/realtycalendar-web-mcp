@@ -68,7 +68,7 @@ prompts). Summary:
 |---|---|---|---|
 | `list_rooms` | read | catalog, name → id | `GET apartments` ✅ |
 | `check_availability` | read | U1, U2, U3, price quotes | grid `GET event_calendars/` ✅ + `apartments/{id}/price` ✅ |
-| `list_bookings` (`staying` / `arriving` / `departing`) | read | U3, U4, U6 lookup, U9, U10, U12 | grid ✅ + `info.agency.sources_list` ✅ (+ `arrivals_departures/by_dates` ✅ for arrivals/departures) |
+| `list_bookings` (`staying` / `arriving` / `departing`) | read | U3, U4, U6 lookup, U9, U10, U12 | grid ✅ + `info.agency.sources_list` ✅ |
 | `get_booking` | read | U9, U12 | `GET event_calendars/{id}` ✅ + `…/payments` ✅ |
 | `create_booking` | book | U5, U11 | `POST event_calendars` (draft) → `PUT event_calendars/{id}` ✅ |
 | `update_booking` | edit | U6, U10 assign/unassign, confirm a hold | `GET` → merge → full `PUT event_calendars/{id}` ✅ |

@@ -94,7 +94,7 @@ Every tool returns one JSON object as text and as `structuredContent`, with an `
   "unassigned": false,                      // true only if the category has rooms and room is null
   "check_in": "2055-01-20", "check_out": "2055-01-23", "nights": 3,
   "guest_name": "Иван Петров",              // ✅ grid client.fio
-  "guest_phone": "+79990000001",            // ⚠ S4: grid client.phone; null if absent
+  "guest_phone": "+79990000001",            // ✅ grid client.phone; often null (23 of 54 set)
   "source": "Ostrovok.ru",                  // null for manual bookings without source
   "from_booking_site": true,                // see §5 S1
   "arrival_time": "15:00",                  // ✅ grid arrival_time ("HH:MM" or null)
@@ -277,14 +277,15 @@ This account: 9 categories, 18 real rooms ✅.
 - **Capacity per night** = `capacity − closed_rooms − assigned_booked − unassigned_booked` (holds and canceled don't
   count ✅). `bookable_count` = minimum over the nights. For a single-unit category capacity is 1 and its bookings
   count as booked units ✅.
-- Closed nights: `special_prices` rows with `closed: true` for that room (per room ✅). For single-unit categories the
-  closure row location is unknown (⚠ S5); until verified, look for rows with `room_id: null` in that category.
+- Closed nights: `special_prices` rows with `closed: true` for that room (per room ✅). Single-unit categories have one
+  grid row with `room_id: null` that carries their bookings and their `special_prices` ✅ (S5). `special_prices`
+  `end_date` is exclusive ✅ (adjacent rows share the boundary date; checked against the per-day rules).
 - Stay rules: per category and night from `POST /v2/events/group_special_prices/prices`
   `{apartment_ids, begin_date, end_date}` ✅ (a read, despite POST) → `min_stay_through.actual`,
-  `closed_on_arrivial.actual`, `closed_on_departure.actual`, `closed.actual`; room-level overrides from the grid's
-  `special_prices` rows (`min_stay_through`, `closed_on_arrivial`, `closed_on_departure`) ✅. Example: over New Year
-  every category has min stay 3 (normally 2), set per room for 29 Dec – 4 Jan ✅. The grid alone shows only overrides,
-  not the normal min stay, which is why both calls are needed.
+  `closed_on_arrivial.actual`, `closed_on_departure.actual`, `closed.actual`; `begin_date` and `end_date` are both
+  inclusive, so the call covers check_in … check_out (the check-out day's `closed_on_departure`). The grid's room
+  rows carry the same rules (all 243 room-nights checked matched the per-category values ✅), so they are used only
+  for closures. Example: over New Year every category has min stay 3 (normally 2), from 29 Dec ✅.
 - Prices: `GET /v2/apartments/{id}/price?begin_date&end_date` ✅ per matched category, in parallel (≤ 9 calls here).
 
 **API**: `GET /v2/event_calendars/?begin_date={check_in}&end_date={check_out}&statuses[]=booked&statuses[]=request
@@ -310,7 +311,7 @@ This account: 9 categories, 18 real rooms ✅.
   "room":            "string",
   "source":          "string",
   "query":           "string", // guest name words or phone digits
-  "status":          ["booked", "request"],   // default; "canceled" allowed ⚠ S7
+  "status":          ["booked", "request"],   // default; "canceled" allowed ✅ S7
   "unassigned_only": "boolean",
   "unpaid_only":     "boolean",               // left > 0
   "limit":           "integer"                 // default 50, max 200
@@ -327,11 +328,10 @@ This account: 9 categories, 18 real rooms ✅.
   "bookings": [ BookingSummary ] }     // sorted by check_in (arriving/staying) or check_out (departing)
 ```
 
-**API**: the grid as in 2.2 ✅ (`client.fio` ✅, `client.phone` ⚠ S4, `arrival_time` ✅, `source_id` ✅,
+**API**: the grid as in 2.2 ✅ (`client.fio` ✅, `client.phone` ✅, `arrival_time` ✅, `source_id` ✅,
 `amount`/`prepayment` ✅, `is_external` ✅) + names from `GET /v2/info` → `agency.sources_list` ✅; filters applied
-server-side. For `arriving` / `departing` over ≤ 28 days the server also calls
-`GET /v2/arrivals_departures/by_dates?period_start&period_end&limit=50&kind=arrival|departure` ✅ (following
-`X-Next-Cursor` ✅) to fill guest phone and times, joined by booking id; `canceled` rows are dropped (⚠ S6).
+server-side. `arrivals_departures/by_dates` is not used: on all 36 bookings checked it returned the same phone, times,
+amounts and source as the grid (phones only lacked the leading `+`) ✅, so it adds nothing.
 
 ### 2.4 `get_booking`
 
@@ -538,9 +538,9 @@ as `tool(…)` → user "да" → `tool(…, confirm_token)`.
 | S1 | `from_booking_site` in lists: grid has `is_external` (true for Ostrovok) but Yandex Travel / Ttravel bookings had `is_external: false` with `platform_name` set in the detail | lists: `is_external OR source ∈ booking-site sources`; writes use the detail's `platform_name` |
 | S2 | Does RC refuse bookings on closed nights / below min stay? | warn only |
 | S3 | GET→PUT mapping: does a no-op PUT keep the booking and the guest record unchanged (no duplicate guest)? Our update tests sent `guest.id: null` in some cases. Guest contact edits | must pass before update/cancel ship; guest edits out |
-| S4 | Is `client.phone` in grid rows populated (shape showed `phone: object`, i.e. possibly null)? | `guest_phone` nullable; phone `query` falls back to `by_dates` search only for ≤ 28-day ranges |
-| S5 | Where are closures stored for single-unit categories? | look for `room_id: null` rows |
-| S6 | Which statuses does `by_dates` return (holds? canceled?) | drop canceled; keep holds with status |
-| S7 | Grid with `statuses[]=canceled` — not exercised directly | allowed but ⚠ |
+| S4 | ✅ Answered 2054-10-22: grid `client.phone` is a string when known (23 of 54), else null; `by_dates` has the same phones | `guest_phone` nullable; phone `query` searches the grid |
+| S5 | ✅ Answered 2054-10-22: in the category's `room_id: null` grid row | — |
+| S6 | Dropped: `by_dates` is not used (see 2.3) | — |
+| S7 | ✅ Answered 2054-10-22: grid with `statuses[]=canceled` returns only canceled bookings | — |
 | S9 | Exact meaning of `min_stay_through` (min nights for a stay arriving that day, or for any stay including that night?) and of `closed_on_arrivial` / `closed_on_departure` per date | treat min stay as applying to every night of the stay (strictest wins); verify with one booking attempt on the New Year window or from RC's help |
 | S8 | Draft lifetime | never leave drafts on purpose |
