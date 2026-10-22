@@ -82,7 +82,7 @@ write needs a confirm token from a preview the user saw.
 
 ```jsonc
 { "mcpServers": { "realtycalendar": {
-    "command": "node", "args": ["/path/to/realtycalendar-web-mcp/dist/main.js"],   // checkout at a release tag, e.g. v0.2.0
+    "command": "node", "args": ["/path/to/realtycalendar-web-mcp/dist/main.js"],   // checkout at a release tag, e.g. v0.2.1
     "env": { "RC_TOKEN": "…", "RC_ACCESS": "edit" } } } }
 ```
 

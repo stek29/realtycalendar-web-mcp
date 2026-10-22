@@ -20,7 +20,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: server
-          image: ghcr.io/stek29/realtycalendar-web-mcp:0.2.0 # private: needs an imagePullSecret for ghcr.io
+          image: ghcr.io/stek29/realtycalendar-web-mcp:0.2.1 # private: needs an imagePullSecret for ghcr.io
           ports: [{ containerPort: 8080, name: http }]
           env:
             - { name: MCP_PUBLIC_URL, value: https://rc.example.com }

@@ -6,7 +6,7 @@ import { silentLogger, type Logger } from './log.js'
 import { getApartmentInfo, getApartments, getInfo } from './upstream/api.js'
 import { RcClient } from './upstream/client.js'
 
-export const VERSION = '0.2.0'
+export const VERSION = '0.2.1'
 const CATALOG_TTL_SEC = 600
 
 /** Built per connection (stdio) or per request (HTTP); never shared between users. */

@@ -3,7 +3,7 @@
 MCP server for [RealtyCalendar](https://realtycalendar.ru) — lets Claude, ChatGPT and other MCP clients check
 availability and manage bookings through RealtyCalendar's web app API.
 
-Status: v0.2.0 — 4 read tools and 4 write tools (create, update, cancel, delete), each write with a read-only preview
+Status: v0.2.1 — 4 read tools and 4 write tools (create, update, cancel, delete), each write with a read-only preview
 tool; audit log; `login` / `logout`; a hosted HTTP server with OAuth sign-in for Claude and ChatGPT connectors (Docker
 image, below). Not published: stdio runs with Node from a checkout; the image is in the private GHCR package.
 
@@ -17,7 +17,7 @@ Needs Node 22+.
 2. **Build** from a checkout of the release tag:
 
    ```sh
-   git checkout v0.2.0
+   git checkout v0.2.1
    npm ci && npm run build
    ```
 
