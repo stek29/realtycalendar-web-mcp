@@ -1,6 +1,6 @@
 # M4: hosted HTTP server
 
-Status: plan, 2054-10-22. Design: [architecture.md](architecture.md) "Hosted: stateless OAuth". Layout:
+Status: v0.2.0 released 2054-10-22 (D58); real-client check and over-triggering still open. Design: [architecture.md](architecture.md) "Hosted: stateless OAuth". Layout:
 [technical-structure.md](technical-structure.md). Goal: deployed and in real use on Claude web and ChatGPT web.
 
 ## Modules
@@ -104,14 +104,15 @@ answers 401 (JSON responses only; tool calls never stream).
 
 ## Done when
 
-- `npm run check` green; the OAuth unit tests above pass.
+- `npm run check` green; the OAuth unit tests above pass. ✅
 - Local: MCP Inspector and `claude mcp add --transport http` complete the OAuth flow against `http://localhost:8080`
-  with the owner's login (typed by the owner).
+  with the owner's login (typed by the owner). Partly ✅: the Inspector CLI on the fake RC (`scripts/dev-hosted.ts`);
+  the browser Inspector isn't an allowed client; Claude Code with the owner's login not run yet.
 - Owner's deployment behind HTTPS; Claude web and ChatGPT web connect, answer U1a and U4a, and one write on the test
   window shows the client's approval prompt. Note whether ChatGPT passes `instructions` (D47).
 - Over-triggering TODO (plan-m3.md) done small: descriptions tightened, a few negative/contextual cases, Sonnet
   `--repeat 1`.
-- Owner OKs the tag; `v0.2.0`.
+- Owner OKs the tag; `v0.2.0`. ✅ Tagged before the two items above, at the owner's request (D58).
 
 ## Later
 
