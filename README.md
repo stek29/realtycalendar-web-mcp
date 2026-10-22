@@ -3,24 +3,58 @@
 MCP server for [RealtyCalendar](https://realtycalendar.ru) — lets Claude, ChatGPT and other MCP clients check
 availability and manage bookings through RealtyCalendar's web app API.
 
-Status: M1 (read tools) and M2 (write tools: create, update, cancel, delete with preview → confirm) implemented;
-M3 (evals, login/logout, audit log, release) next. Writes are not released before M3.
+Status: M1 (read tools) and M2 (write tools: create, update, cancel, delete, each with a read-only preview tool)
+done; from M3, the audit log and `login` / `logout` are in. Evals and the release are next. Not published yet.
 
 ## Run locally
 
 ```sh
 npm install && npm run build
+node dist/main.js login                 # asks for the RC login and password, prints a token for RC_TOKEN
 RC_TOKEN=… node dist/main.js check      # token works? user, agency, access level
+RC_TOKEN=… node dist/main.js logout     # ends that RC session
 npm run check                           # typecheck, lint, unit tests
 RC_LIVE=1 RC_TOKEN=… npm run test:live  # live write tests on the approved test window (plan-m2.md)
 ```
+
+## Settings (env)
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `RC_TOKEN` | – | RC session token, from `login` |
+| `RC_ACCESS` | `read` | `read` · `book` (+ create) · `edit` (+ update, cancel) · `full` (+ delete) |
+| `RC_SITE_BOOKINGS` | `protect` | `protect`: bookings from booking sites (Ostrovok, Yandex Travel…) can't get new dates, category, status or price, and can't be cancelled or deleted, since RC doesn't send such changes to the site; a room in the same category, times and notes can still change. `allow`: all changes, with a warning |
+| `RC_TIMEZONE` | `Europe/Moscow` | the hotel's time zone |
+| `RC_AUDIT` | `summary` | audit line per write on stderr; `full` adds the booking before the write (guest data) |
+| `RC_CONFIRM_KEY` | random per process | key for the preview's confirm token |
+
+## Clients
+
+Every write is two tools: `preview_<write>` (read-only, returns a preview and a `confirm_token`) and `<write>`, which
+needs the token. **Your approval of the write is the client's tool prompt**, so never set the write tools
+(`create_booking`, `update_booking`, `cancel_booking`, `delete_booking`) to "always allow". The read tools and the
+`preview_*` tools are safe to always allow.
 
 Claude Desktop (`claude_desktop_config.json`), until the package is published:
 
 ```jsonc
 { "mcpServers": { "realtycalendar": {
     "command": "node", "args": ["/path/to/realty/dist/main.js"],
-    "env": { "RC_TOKEN": "…", "RC_ACCESS": "read", "RC_TIMEZONE": "Europe/Moscow" } } } }
+    "env": { "RC_TOKEN": "…", "RC_ACCESS": "edit" } } } }
+```
+
+Claude Code: `claude mcp add realtycalendar -e RC_TOKEN=… -e RC_ACCESS=edit -- node /path/to/realty/dist/main.js`.
+Don't put the write tools in `allowedTools`.
+
+Codex (`~/.codex/config.toml`). Codex refuses MCP tools that aren't read-only unless the server sets
+`default_tools_approval_mode`: `prompt` asks you before each call; `approve` runs them without asking (tests only).
+
+```toml
+[mcp_servers.realtycalendar]
+command = "node"
+args = ["/path/to/realty/dist/main.js"]
+env = { RC_TOKEN = "…", RC_ACCESS = "edit" }
+default_tools_approval_mode = "prompt"
 ```
 
 ## Docs
