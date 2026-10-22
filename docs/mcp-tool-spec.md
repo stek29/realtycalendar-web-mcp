@@ -244,7 +244,8 @@ This account: 9 categories, 18 real rooms ✅.
 ```jsonc
 {
   "today": "2054-10-22", "today_weekday": "чт",
-  "check_in": "2055-01-20", "check_out": "2055-01-23", "nights": 3,
+  "check_in": "2055-01-20", "check_in_weekday": "ср", "check_out": "2055-01-23", "check_out_weekday": "сб",
+  "nights": 3, "currency": "₽",
   "matched_categories": ["01 Стандартный двухместный"],   // when category given
   "categories": [ {
     "category": "01 Стандартный двухместный", "category_id": 810000052, "single_unit": false, "capacity": 2,
@@ -323,7 +324,8 @@ This account: 9 categories, 18 real rooms ✅.
 
 **Output**
 ```jsonc
-{ "today": "…", "today_weekday": "…", "match": "arriving", "matched": 23, "returned": 23,
+{ "today": "…", "today_weekday": "…", "from": "2054-10-23", "to": "2054-10-24", "match": "arriving",
+  "currency": "₽", "matched": 23, "returned": 23,
   "totals": { "bookings": 23, "nights": 61, "total": 824000, "paid": 600000, "left": 224000 },
   "bookings": [ BookingSummary ] }     // sorted by check_in (arriving/staying) or check_out (departing)
 ```
@@ -344,6 +346,7 @@ amounts and source as the grid (phones only lacked the leading `+`) ✅, so it a
 **Output**
 ```jsonc
 { ...BookingSummary,
+  "currency": "₽", "departure_time": "12:00",
   "guest_email": "…",
   "booking_site": { "platform": "Ostrovok", "untrusted": { "fields": { "Номер бронирования": "…",
                     "Дата бронирования": "…" } } },          // ✅ detail platform_name, external.fields

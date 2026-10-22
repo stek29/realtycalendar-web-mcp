@@ -48,7 +48,8 @@ src/
   mcp/
     server.ts             createMcpServer(ctx): McpServer — instructions + tools allowed by ctx.access
     instructions.ts       server instructions (today, rules, what this access level can't do)
-    tools/                one file per tool (8), plus define.ts (defineTool, defineWriteTool)
+    tools/                one file per tool (8), plus define.ts (defineTool, defineWriteTool) and shared.ts
+                          (input checks, BookingSummary output shape)
   domain/                 pure logic, no IO
     catalog.ts  match.ts  dates.ts  calendar.ts  bookings.ts  writes.ts  confirm.ts  errors.ts  redact.ts
   upstream/               the only code that talks to RealtyCalendar
