@@ -172,7 +172,8 @@ one invisible draft from L4.
 - technical-structure.md: new files; `npm run test:live`.
 - decisions.md: entries for anything that changes on the way.
 
-Result 2054-10-22 (before the preview tools, D33): L1–L13 passed (14 tests incl. a firewall self-check, dry-run against the fake RC first); the
+Result 2054-10-22, through the preview tools: L1–L13 passed (after D38; the run before it failed L9 on a false
+`PREVIEW_STALE`, see D38). First run, before the preview tools: L1–L13 passed (14 tests incl. a firewall self-check, dry-run against the fake RC first); the
 window 19–24 Jan 2055 was empty before and after (D30).
 
 ## Done when
