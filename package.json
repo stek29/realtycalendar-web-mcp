@@ -20,6 +20,7 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "test": "vitest run test/unit",
+    "test:live": "vitest run test/live --silent=false",
     "check": "npm run typecheck && npm run lint && npm test"
   },
   "dependencies": {

@@ -122,7 +122,8 @@ Extended to hold state per instance:
 
 ## Live tests (test/live/, opt-in)
 
-Run: `RC_LIVE=1 RC_TOKEN=… npx vitest run test/live`. Never in CI; `npm test` excludes `test/live`.
+Run: `RC_LIVE=1 RC_TOKEN=… npm run test:live` (`test/live/writes.live.test.ts`; prints the ids it cleaned up). Never
+in CI; `npm test` excludes `test/live`.
 
 Approved scope (decisions.md D24): guests named "TEST MCP …", phone +79990000001, e-mail test-mcp@example.com, dates
 **20–23 Jan 2055** only (the other approved windows were for the S2/S9 baseline, already done). Any category; the
@@ -141,10 +142,10 @@ Scenarios, all through the MCP tools (preview → confirm), in order:
 
 | # | Scenario | Checks |
 |---|---|---|
-| L1 | create "TEST MCP Иван" in room 5, 20–23 Jan, no price | preview shows the quote; result id; `get_booking` matches; `list_bookings(query="TEST MCP")` finds it |
+| L1 | create "TEST MCP Иван" in room 5, 20–23 Jan, no price, arrival 14:00 (for L9) | preview shows the quote; result id; `get_booking` matches; `list_bookings(query="TEST MCP")` finds it |
 | L2 | same create again | `DUPLICATE`, no token, nothing created |
 | L3 | create in room 5 overlapping L1 | preview `will_fail`, no token |
-| L4 | preview a create in room 6, then occupy room 6 with another create, then confirm the first | RC 422 → `OCCUPIED`, "nothing was saved" (leaves one invisible draft — known, D19) |
+| L4 | preview a create in room 6, then occupy room 6 with another create, then confirm the first; then cancel the occupier so room 6 is free for L7 | RC 422 → `OCCUPIED`, "nothing was saved" (leaves one invisible draft — known, D19) |
 | L5 | hold (request) in category 01 without a room | unassigned hold; `check_availability` lists it, capacity unchanged |
 | L6 | update L1: dates 20–23 → 21–23 | `PRICE_CHANGED`; amount = average × 2 |
 | L7 | assign the hold to room 6, then confirm it (request → booked) | room set; status booked |
@@ -164,6 +165,9 @@ one invisible draft from L4.
 - spec §2.5–2.8: input validation rules above; result shape (`BookingSummary`, `deleted` for delete).
 - technical-structure.md: new files; `npm run test:live`.
 - decisions.md: entries for anything that changes on the way.
+
+Result 2054-10-22: L1–L13 passed (14 tests incl. a firewall self-check, dry-run against the fake RC first); the
+window 19–24 Jan 2055 was empty before and after (D30).
 
 ## Done when
 

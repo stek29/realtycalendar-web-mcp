@@ -3,7 +3,8 @@
 MCP server for [RealtyCalendar](https://realtycalendar.ru) — lets Claude, ChatGPT and other MCP clients check
 availability and manage bookings through RealtyCalendar's web app API.
 
-Status: milestone M1 (read-only tools over stdio) implemented; M2 (writes) next.
+Status: M1 (read tools) and M2 (write tools: create, update, cancel, delete with preview → confirm) implemented;
+M3 (evals, login/logout, audit log, release) next. Writes are not released before M3.
 
 ## Run locally
 
@@ -11,6 +12,7 @@ Status: milestone M1 (read-only tools over stdio) implemented; M2 (writes) next.
 npm install && npm run build
 RC_TOKEN=… node dist/main.js check      # token works? user, agency, access level
 npm run check                           # typecheck, lint, unit tests
+RC_LIVE=1 RC_TOKEN=… npm run test:live  # live write tests on the approved test window (plan-m2.md)
 ```
 
 Claude Desktop (`claude_desktop_config.json`), until the package is published:

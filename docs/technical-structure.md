@@ -172,8 +172,8 @@ The password is never stored or logged. The CLI is the only place besides the ho
   (tool calls are read from the stream), and `codex exec -m gpt-6.1-sol --json` with the server passed as
   `-c mcp_servers.realtycalendar.command=…`; both gate. Exact flags: plan-m3.md §1. One run on Claude Desktop before
   a release.
-- CI (GitHub Actions): typecheck, lint, unit tests, fixture-PII check; evals when `src/mcp/` changes. Live tests never
-  run in CI.
+- CI (GitHub Actions): typecheck, lint, unit tests, fixture-PII check; evals when `src/mcp/` changes. Live tests
+  (`RC_LIVE=1 RC_TOKEN=… npm run test:live`) never run in CI.
 - Release: npm with provenance; config examples pin the version.
 
 ## Build order
