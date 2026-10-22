@@ -62,7 +62,7 @@ src/
     cimd.ts               client allowlist + CIMD document fetch/validation
     login.tsx             login page
   context.ts              Context type + makeContext(rcToken, config, cache)
-  audit.ts                AuditEntry, AuditSink (write audit log; the stdio platform provides a file sink)
+  audit.ts                AuditEntry, AuditSink, streamAudit (one JSON line per write; RC_AUDIT=summary|full)
   config.ts               Config type + parse(env-like record)
   cache.ts                Cache interface + in-memory implementation
   log.ts                  Logger: structured JSON lines, every line through domain/redact.ts
@@ -70,7 +70,6 @@ src/
     main.ts               login / logout / check
   platforms/
     stdio.ts              v1 entrypoint
-    audit-file.ts         audit log as daily JSONL files (0600), 30 days kept
     node.ts               hosted entrypoint (M4)
 test/
   fixtures/               scrubbed RC responses
@@ -99,8 +98,8 @@ oauth/ is used only by platforms/node.ts (and later worker.ts)
 ```ts
 // config.ts
 type Access = 'read' | 'book' | 'edit' | 'full'
-interface Config { access: Access; timezone: string; confirmKey: Uint8Array; rcBaseUrl: string }
-parseConfig(env: Record<string, string | undefined>): Config        // RC_ACCESS, RC_TIMEZONE, RC_CONFIRM_KEY
+interface Config { access: Access; timezone: string; confirmKey: Uint8Array; rcBaseUrl: string; audit: 'summary' | 'full' }
+parseConfig(env: Record<string, string | undefined>): Config        // RC_ACCESS, RC_TIMEZONE, RC_CONFIRM_KEY, RC_AUDIT
 
 // cache.ts — in-memory now; Workers would use the Cache API behind the same interface
 interface Cache { get<T>(key: string): Promise<T | undefined>; set<T>(key: string, value: T, ttlSec: number): Promise<void> }

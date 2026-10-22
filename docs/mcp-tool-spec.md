@@ -207,7 +207,8 @@ owner `full`. The confirm-token preview applies at every write level.
 ### Settings
 
 v1 (env): `RC_TOKEN` (required), `RC_ACCESS=read|book|edit|full` (default `read`), `RC_TIMEZONE` (default
-`Europe/Moscow`), `RC_CONFIRM_KEY` (HMAC key; random per process if unset). Hosted: the same `RC_ACCESS` per
+`Europe/Moscow`), `RC_CONFIRM_KEY` (HMAC key; random per process if unset), `RC_AUDIT=summary|full` (audit line
+detail, default `summary`; plan-m3.md §4). Hosted: the same `RC_ACCESS` per
 deployment; per-user levels can come later.
 
 ## 2. Tools

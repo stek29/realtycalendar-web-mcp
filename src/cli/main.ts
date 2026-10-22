@@ -16,7 +16,8 @@ const USAGE = `realtycalendar-web-mcp ${VERSION}
   realtycalendar-web-mcp check    check that RC_TOKEN works: user, agency, access level
 
 Environment: RC_TOKEN (required), RC_ACCESS=read|book|edit|full (default read),
-RC_TIMEZONE (default Europe/Moscow), RC_CONFIRM_KEY.`
+RC_TIMEZONE (default Europe/Moscow), RC_CONFIRM_KEY,
+RC_AUDIT=summary|full (default summary; full adds the booking before each write, with guest data).`
 
 /** GET /v2/info with RC_TOKEN. Returns the exit code. */
 export async function check(env: NodeJS.ProcessEnv, out: (s: string) => void = console.log): Promise<number> {
@@ -51,7 +52,7 @@ export async function check(env: NodeJS.ProcessEnv, out: (s: string) => void = c
 const CLI_OPTS = { baseUrl: RC_BASE_URL, userAgent: `realtycalendar-web-mcp/${VERSION}` }
 
 const [command, ...rest] = process.argv.slice(2)
-if (command === undefined) await runStdio()
+if (command === undefined) runStdio()
 else if (command === 'check' && rest.length === 0) process.exitCode = await check(process.env)
 else if (command === 'login' && rest.length === 0) process.exitCode = await login(terminalIo(), CLI_OPTS)
 else if (command === 'logout' && rest.length === 0) {

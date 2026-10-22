@@ -119,19 +119,17 @@ The summary table goes into the commit message of the change that ran it.
 
 ## 4. Audit log
 
-Per confirmed write (architecture.md "Write path"):
-- `AuditSink { write(entry): Promise<void> }` in `Context` (portable); the stdio platform provides a file sink.
-- File sink: `RC_AUDIT_DIR` (default macOS `~/Library/Logs/realtycalendar-web-mcp/`, Linux
-  `$XDG_STATE_HOME/realtycalendar-web-mcp/` or `~/.local/state/…`, Windows `%LOCALAPPDATA%\realtycalendar-web-mcp\`),
-  one file per day `audit-YYYY-MM-DD.jsonl`, directory 0700, files 0600; files older than 30 days deleted at start.
-- Entry: `time`, `tool`, `booking_id` (null for a create that got no id), `rc_user_id`, `fields` (RC field names
-  written), `result` (`ok`, `already_existed` for a repeated create, or the error code), and `before`, the full
-  pre-write GET body (for manual undo; this is why the file is local and 0600). Written by `defineWriteTool` after RC
-  answers, for success and failure alike; previews write nothing. Create entries have no `before`. A failing sink is
-  logged as `audit_failed` and doesn't fail the tool (the write already happened). Read-only connections
-  (`RC_ACCESS=read`) create no audit directory.
-- Code: `src/audit.ts` (types, portable), `src/platforms/audit-file.ts` (file sink).
-- Tests: unit (temp dir, permissions, rotation); live: L1 and L12 of plan-m2 assert an entry each.
+Per confirmed write (architecture.md "Write path"), one JSON line:
+- Destination: the server's log stream (stdio: stderr, with the logs; stdout is the MCP channel). The only
+  destination for now (owner, D32); `AuditSink { write(entry) }` in `Context` keeps it portable.
+- Detail `RC_AUDIT=summary|full` (default `summary`). `summary`: `event: "audit"`, `time`, `tool`, `booking_id`
+  (null for a create that got no id), `rc_user_id`, `fields` (RC field names written), `result` (`ok`,
+  `already_existed` for a repeated create, or the error code); no guest data. `full` adds `before`, the full
+  pre-write GET body (guest names, phones, notes) for manual undo; not passed through log redaction, so only on
+  request.
+- Written by `defineWriteTool` after RC answers, for success and failure alike; previews write nothing. A failing sink
+  is logged as `audit_failed` and doesn't fail the tool (the write already happened).
+- Code: `src/audit.ts`. Tests: `test/unit/audit.test.ts`, the write-tool tests; live: L1 and L12 assert an entry each.
 
 ## 5. Packaging and release
 
