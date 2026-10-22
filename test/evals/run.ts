@@ -8,11 +8,16 @@ import { spawn } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { parseConfig, type Access } from '../../src/config.js'
+import { todayIn } from '../../src/domain/dates.js'
+import { instructions } from '../../src/mcp/instructions.js'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 const TSX = join(ROOT, 'node_modules', '.bin', 'tsx')
 const FAKE_SERVER = join(ROOT, 'test', 'evals', 'fake-server.ts')
 const TURN_TIMEOUT_MS = 300_000
+/** The fake server's today (EVAL_NOW default in fake-server.ts). */
+const EVAL_TODAY = '2054-10-22'
 const WRITE_TOOLS = new Set(['create_booking', 'update_booking', 'cancel_booking', 'delete_booking'])
 /** M1 read cases for the live client check (§2). */
 const LIVE_CASES = [
@@ -92,6 +97,8 @@ interface Server {
   env: Record<string, string>
   /** Variables the server gets from the client's environment, never written to the client's config. */
   passEnv: string[]
+  /** The server's MCP instructions, for clients that don't pass them to the model (Codex). */
+  instructions: string
 }
 
 interface Runner {
@@ -219,6 +226,9 @@ function codex(model: string): Runner {
         ['default_tools_approval_mode', '"approve"'],
       ].flatMap(([k, v]) => ['-c', `mcp_servers.realtycalendar.${k}=${v}`])
       const common = [
+        // codex exec doesn't give the model the MCP server's instructions (D47); pass them as a client that does.
+        '-c',
+        `developer_instructions=${toml(server.instructions)}`,
         '--json',
         '-m',
         model,
@@ -396,12 +406,16 @@ async function main() {
     return cases.flatMap((c) =>
       Array.from({ length: opts.repeat }, (_, k) => async (): Promise<Run> => {
         const dir = mkdtempSync(join(tmpdir(), 'rc-eval-'))
+        const access = (opts.live ? 'read' : c.access) as Access
+        const today = opts.live ? todayIn(new Date(), 'Europe/Moscow') : EVAL_TODAY
+        const serverInstructions = instructions(today, parseConfig({ RC_ACCESS: access }))
         const server: Server = opts.live
           ? {
               command: 'node',
               args: [join(ROOT, 'dist', 'main.js')],
               env: { RC_ACCESS: 'read' },
               passEnv: ['RC_TOKEN'],
+              instructions: serverInstructions,
             }
           : {
               command: TSX,
@@ -413,6 +427,7 @@ async function main() {
                 RC_CONFIRM_KEY: 'eval',
               },
               passEnv: [],
+              instructions: serverInstructions,
             }
         // An empty working directory per case run: no project files, settings or instructions for the client.
         const cwd = join(dir, 'cwd')

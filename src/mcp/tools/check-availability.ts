@@ -5,7 +5,7 @@ import { weekday } from '../../domain/dates.js'
 import { ToolError } from '../../domain/errors.js'
 import { getGrid, getPrice, getStayRules } from '../../upstream/api.js'
 import { defineTool, READ_ANNOTATIONS } from './define.js'
-import { BookingSummaryShape, CATEGORY_HINT, checkRange, dateInput, today, withCatalog } from './shared.js'
+import { BookingSummaryShape, CATEGORY_HINT, checkRange, DATES_HINT, dateInput, today, withCatalog } from './shared.js'
 
 const MAX_NIGHTS = 62
 
@@ -22,11 +22,12 @@ export const checkAvailability = defineTool({
   level: 'read',
   title: 'Check availability',
   description:
-    'What is free, busy, on hold or closed for given dates, with the price of the stay per category (что свободно, ' +
+    "In the user's hotel: what is free, busy, on hold or closed for given dates, with the price of the stay per category (что свободно, " +
     'свободен ли 22-й, есть ли места, загрузка, сколько стоит, на троих), and the booking rules for the dates: minimum ' +
     'stay (минимальный срок), no check-in / no check-out days. A room is bookable only if it is empty AND its ' +
     'category has capacity every night (unassigned bookings use capacity without a room): answer from bookable_rooms ' +
-    'and stay_rules, not empty_rooms. Mention holds (заявки) on free rooms. Not for finding a booking: use list_bookings.',
+    'and stay_rules, not empty_rooms. Mention holds (заявки) on free rooms. Not for finding a booking: use list_bookings. ' +
+    DATES_HINT,
   input: z.object({
     check_in: dateInput('Arrival day, YYYY-MM-DD (hotel-local)'),
     check_out: dateInput(

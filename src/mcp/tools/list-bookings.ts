@@ -4,7 +4,7 @@ import { resolveCategories, resolveRoom, resolveSources } from '../../domain/cat
 import { addDays, todayIn } from '../../domain/dates.js'
 import { getGrid } from '../../upstream/api.js'
 import { defineTool, READ_ANNOTATIONS } from './define.js'
-import { BookingSummaryShape, CATEGORY_HINT, checkRange, dateInput, today, withCatalog } from './shared.js'
+import { BookingSummaryShape, CATEGORY_HINT, checkRange, DATES_HINT, dateInput, today, withCatalog } from './shared.js'
 
 const MAX_DAYS = 180
 
@@ -13,13 +13,15 @@ export const listBookings = defineTool({
   level: 'read',
   title: 'List bookings',
   description:
-    'Find bookings in a period: match=staying (кто живёт, в каком номере Иванов), arriving (заезды, кто заезжает ' +
+    "Find the hotel's bookings in a period: match=staying (кто живёт, в каком номере Иванов), arriving (заезды, кто заезжает " +
     'завтра) or departing (выезды, что убирать). Filters: room, category, source (Островок, Яндекс…), guest name or ' +
     'phone, holds, unassigned (неразобранные, не расселены), unpaid (кто не доплатил, кто должен). Totals (sum, paid, ' +
-    "left) cover all matches. The period defaults to today; to find a guest's booking with no dates given " +
+    "left) cover all matches and their whole stays: a stay crossing the period's edge counts in full; say so with " +
+    "the totals. The period defaults to today; to find a guest's booking with no dates given " +
     '("найди бронь Петровой") use today to today + 180 days, and say which period you searched. No filter by the ' +
     'date a booking was made: for a recent booking from a site, filter by source and read "Дата бронирования" in ' +
-    'get_booking. Not for "is room X free": use check_availability.',
+    'get_booking. Not for "is room X free": use check_availability. ' +
+    DATES_HINT,
   input: z.object({
     from: dateInput('Start of the period, YYYY-MM-DD; default today').optional(),
     to: dateInput('End of the period (exclusive); default from + 1 day; at most 180 days after from').optional(),

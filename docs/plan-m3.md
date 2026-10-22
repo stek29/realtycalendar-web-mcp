@@ -80,6 +80,8 @@ each client: "Что свободно на выходные?" → `check_availab
   (`usage`: token counts; Codex reports no cost).
 - Each case gets its own environment: `RC_ACCESS` from the case, a fixed `RC_CONFIRM_KEY`, `EVAL_STATE` pointing at
   a fresh temp file, passed via the MCP config's `env`.
+- `codex exec` doesn't give the model the MCP server's `instructions` (checked 2054-10-22: Claude quotes them, Codex
+  says it has none). The Codex runner passes them as `developer_instructions`, like a client that honours them (D47).
 - Caveat: these clients have their own system prompts (a coding agent), not Claude Desktop's or ChatGPT's. Evals test
   our descriptions and instructions, not the exact production client — hence the release check in §2.
 - Cost limits: `--max-budget-usd` per Claude run; a whole run is about 40 cases × 2 turns × 3 repeats per runner.
@@ -118,8 +120,8 @@ The summary table goes into the commit message of the change that ran it.
   `RC_TOKEN` stays in the environment (Codex: `env_vars`) instead of the client's config file; each run removes its
   temp directory and the client's own files for it (`~/.claude/projects/<dir>`, `~/.codex/sessions/…<thread>.jsonl`).
   Default runner: `claude-sonnet`; `--runner codex,claude-sonnet` also works. Real guest data reaches Anthropic, as in any real use.
-- **Claude Desktop**, once before the v1 release: the owner adds the server to Claude Desktop and asks three prompts
-  (U1a, U4a, X5). Confirms the client launches the server, shows the tools and uses the instructions.
+- ~~Claude Desktop~~: dropped (owner, D48). The real-client check moves to M4: Claude web and ChatGPT web with the
+  hosted HTTP server, the actual targets.
 
 ## 3. login / logout
 
@@ -159,7 +161,7 @@ Nothing is published (owner, D42): no npm package, and no Docker image for stdio
 ## Done when
 
 - Evals gate green on Sonnet and Codex; Haiku results reported.
-- Live read-only client check passes; Claude Desktop check done by the owner.
+- Live read-only client check passes. (Claude Desktop check dropped, D48.)
 - `login` / `check` / `logout` verified by the owner. ✅ 2054-10-22, `scripts/test-session.sh` (D45)
 - Audit entries written in the live write tests.
 - v0.1.0 tagged; README setup from a checkout.

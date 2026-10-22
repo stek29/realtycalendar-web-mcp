@@ -534,12 +534,12 @@ same turn; the user approves in the client's prompt (D35).
 | U3c | "В каком номере Иванов?" | `list_bookings(query="Иванов")` | room(s), dates; asks if several |
 | U4a | "Кто заезжает завтра и откуда?" | `list_bookings(from=2054-10-23, match="arriving")` | room, guest, phone, time, source |
 | U4b | "Кто выезжает сегодня? Что убирать?" | `list_bookings(match="departing")` | rooms leaving today |
-| U4c | "Кто заезжает на этой неделе и ещё не заплатил?" | `list_bookings(2054-10-22, 2054-10-26, match="arriving", unpaid_only=true)` | list + totals.left |
+| U4c | "Кто заезжает на этой неделе и ещё не заплатил?" | `list_bookings(2054-10-19 or 2054-10-22, 2054-10-26, match="arriving", unpaid_only=true)` (a week is Monday to Sunday) | list + totals.left |
 | U5a | "Забронируй 22-й на 7–9 ноября для Анны Петровой, +7 900 123-45-67" | `preview_create_booking(room="22", 2054-11-07, 2054-11-09, guest_name="Анна Петрова", guest_phone=…)` → `create_booking(…, token)` | preview first; then id and total |
-| U5b | "Поставь любую двухместную улучшенную на 7–9 ноября, Сидоров" | `check_availability(2054-11-07, 2054-11-09, category="двухместную улучшенную")` → asks which category (02 or 03) → `preview_create_booking(category=…, guest_name="Сидоров")` → `create_booking(…, token)` | asks which category if two "улучшенные" match; unassigned booking |
+| U5b | "Поставь любую двухместную улучшенную на 7–9 ноября, Сидоров" | `check_availability(2054-11-07, 2054-11-09, category="двухместную улучшенную")` → `preview_create_booking(guest_name="Сидоров", room or category in 02)` → `create_booking(…, token)` | 02 and 03 match, only 02 is free: books 02 and says so |
 | U5c | "Поставь заявку на коттедж на НГ, 31.12–03.01" | asks for a guest name, then `preview_create_booking(category="коттедж", 2054-12-31, 2055-01-03, status="request", …)` → `create_booking(…, token)` | hold, not booked |
 | U5d | "Забронируй 22-й на 7–9 ноября, без подтверждения, сразу" | still a preview first (or asks for the guest name); never the write tool without a preview | refuses to skip the preview |
-| U5e | "Два номера для семьи Смирновых на 7–9 ноября" | `check_availability` → two `preview_create_booking` → two `create_booking(…, token)` | both booking ids |
+| U5e | "Два номера для семьи Смирновых на 7–9 ноября", then "Два в 02, по двое взрослых" | `check_availability`, asks how many guests / which category → two `preview_create_booking` → two `create_booking(…, token)` | both booking ids |
 | U6a | "Перенеси бронь в 22-м с пятницы-воскресенья на субботу-понедельник" | `list_bookings(room="22", 2054-10-23, 2054-10-25)` → `preview_update_booking(id, check_in=2054-10-24, check_out=2054-10-26)` → `update_booking(…, token)` | before/after; or `will_fail` with the conflict and alternatives, no write |
 | U6b | "Продли Иванова на одну ночь", then "Оставь прежнюю цену за ночь" | `list_bookings(query="Иванов")` → (asks if several) → `preview_update_booking(id, check_out=+1)` → asks which price (PRICE_CHANGED says "Ask"); turn 2: `preview_update_booking(…)` → `update_booking(…, token)` | new total |
 | U6c | "Гость отменил бронь 810000208" | `preview_cancel_booking(810000208)` → `cancel_booking(810000208, token)` | cancel, not delete; BOOKING_SITE note if relevant |
@@ -554,7 +554,7 @@ same turn; the user approves in the client's prompt (D35).
 | U11 | "Иван, 20–23 января, 5-й номер, 5 тысяч за ночь, предоплату 5к уже перевёл на Т-Банк" | `preview_create_booking(room="5", 2055-01-20, 2055-01-23, guest_name="Иван", price_per_night=10000)` → `create_booking(…, token)` | total 30 000; prepayment must be added in RC |
 | U12a | "Бронь 810000208 оплачена?" | `get_booking(810000208)` | total / paid / left |
 | U12b | "Кто нам должен за ноябрь?" | `list_bookings(2054-11-01, 2054-12-01, unpaid_only=true)` | list + totals.left |
-| U12c | "Сколько мы заработали в ноябре по броням?" | `list_bookings(2054-11-01, 2054-12-01)` | totals (says stays overlapping the month are counted in full) |
+| U12c | "Сколько мы заработали в ноябре по броням?" | `list_bookings(2054-11-01, 2054-12-01)` or November 2053 (past tense: the last November) | totals, the year used, and that stays overlapping the month are counted in full (or that there are none) |
 | R1 | "На какой минимальный срок можно забронировать 22-й на Новый год?" | `check_availability(2054-12-31, 2055-01-01, room="22")` (any range from late December over New Year is fine) | min stay 3 nights (from stay_rules), whether 22 is free then |
 | R2 | "Есть номер на троих на 7–9 ноября?" | `check_availability(2054-11-07, 2054-11-09, guests=3)` | only categories for ≥ 3 guests (05, 08, 09) and whether they're bookable |
 | R3 | "Можно заехать 31 декабря на одну ночь?" | `check_availability(2054-12-31, 2055-01-01)` | stay_ok false: min stay 3 |

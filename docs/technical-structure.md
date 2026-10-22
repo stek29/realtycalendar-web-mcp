@@ -178,8 +178,8 @@ The password is never stored or logged. The CLI is the only place besides the ho
 - Evals and the real-client check run headless CLIs against the server in fake-RC mode (no live data):
   `claude -p --model sonnet|haiku --strict-mcp-config --mcp-config <json> --output-format stream-json --verbose`
   (tool calls are read from the stream), and `codex exec -m gpt-6.1-sol --json` with the server passed as
-  `-c mcp_servers.realtycalendar.command=…`; both gate. Exact flags: plan-m3.md §1. One run on Claude Desktop before
-  a release.
+  `-c mcp_servers.realtycalendar.command=…`; both gate. Exact flags: plan-m3.md §1. Real clients (Claude web, ChatGPT web)
+  are checked in M4 (D48).
 - CI (GitHub Actions): typecheck, lint, unit tests, fixture-PII check; evals when `src/mcp/` changes. Live tests
   (`RC_LIVE=1 RC_TOKEN=… npm run test:live`) never run in CI.
 - Release: a git tag (stdio, run from a checkout); from M4, a Docker image of the HTTP server tagged with the version

@@ -13,6 +13,13 @@ export const dateInput = (description: string) =>
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD')
     .describe(description)
 
+/** Date rules for tools that take dates from the user's words; the instructions say the same, but not every client
+ * passes them to the model (Codex doesn't). */
+export const DATES_HINT =
+  'Dates: today is in every result; stays are nights (check_out = departure day); a week is Monday to Sunday; ' +
+  '"на выходные" = Friday and Saturday nights; a date without a year is the next one, or the last one when the user ' +
+  'asks about the past. Say which dates you used.'
+
 export const CATEGORY_HINT = 'Words or a stem are enough: "улучшен", "двухмест", "коттедж".'
 
 /** RANGE_TOO_LONG hint for a booking's own stay. */

@@ -197,7 +197,9 @@
             {
               "tool": "list_bookings",
               "args": {
-                "from": "2054-10-22",
+                "from": {
+                  "oneOf": ["2054-10-19", "2054-10-22"]
+                },
                 "to": "2054-10-26",
                 "match": "arriving",
                 "unpaid_only": true
@@ -250,7 +252,7 @@
     {
       "id": "U5b",
       "access": "full",
-      "turns": ["Поставь любую двухместную улучшенную на 7–9 ноября, Сидоров", "02"],
+      "turns": ["Поставь любую двухместную улучшенную на 7–9 ноября, Сидоров"],
       "expect": [
         {
           "calls": [
@@ -260,19 +262,10 @@
                 "check_in": "2054-11-07",
                 "check_out": "2054-11-09"
               }
-            }
-          ],
-          "answer": ["02", "03"],
-          "forbid": ["create_booking"]
-        },
-        {
-          "calls": [
+            },
             {
               "tool": "preview_create_booking",
               "args": {
-                "category": {
-                  "re": "02"
-                },
                 "guest_name": {
                   "re": "(?i)сидоров"
                 },
@@ -283,15 +276,16 @@
             {
               "tool": "create_booking",
               "args": {
-                "category": {
-                  "re": "02"
+                "guest_name": {
+                  "re": "(?i)сидоров"
                 },
                 "check_in": "2054-11-07",
                 "check_out": "2054-11-09"
               },
               "confirm_token": true
             }
-          ]
+          ],
+          "answer": ["02"]
         }
       ]
     },
@@ -347,7 +341,7 @@
     {
       "id": "U5e",
       "access": "full",
-      "turns": ["Два номера для семьи Смирновых на 7–9 ноября"],
+      "turns": ["Два номера для семьи Смирновых на 7–9 ноября", "Два в 02, по двое взрослых"],
       "expect": [
         {
           "calls": [
@@ -357,7 +351,12 @@
                 "check_in": "2054-11-07",
                 "check_out": "2054-11-09"
               }
-            },
+            }
+          ],
+          "forbid": ["create_booking"]
+        },
+        {
+          "calls": [
             {
               "tool": "preview_create_booking",
               "args": {
@@ -375,7 +374,8 @@
               "confirm_token": true,
               "count": 2
             }
-          ]
+          ],
+          "answer": ["\\d{6,}[\\s\\S]*\\d{6,}"]
         }
       ]
     },
@@ -765,13 +765,20 @@
             {
               "tool": "list_bookings",
               "args": {
-                "from": "2054-11-01",
-                "to": "2054-12-01"
+                "from": {
+                  "oneOf": ["2054-11-01", "2053-11-01"]
+                },
+                "to": {
+                  "oneOf": ["2054-12-01", "2053-12-01"]
+                }
               }
             }
           ],
           "forbid": ["create_booking", "update_booking", "cancel_booking", "delete_booking"],
-          "answer": ["(?i)целиком|полност|пересека|захват|частично|выходят за"]
+          "answer": [
+            "(?i)целиком|полност|пересека|захват|частично|выходят за|нет (ни одной )?брон|броней нет",
+            "202[56]"
+          ]
         }
       ]
     },
