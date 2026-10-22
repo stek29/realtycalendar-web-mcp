@@ -9,9 +9,9 @@ export const getBooking = defineTool({
   level: 'read',
   title: 'Get booking',
   description:
-    'One booking by id: guest and contacts, category and room, dates and times, source, booking-site details ' +
-    '(booking number, date booked), notes, total / paid / left with each payment, created and changed times (что за ' +
-    'бронь, оплачена ли, что в заметке). Not needed before a write: the preview reads the booking itself.',
+    "One booking of the user's hotel in RealtyCalendar by id: guest and contacts, category and room, dates and " +
+    'times, source, booking-site details (booking number, date booked), notes, total / paid / left with each ' +
+    'payment, created and changed times. Not needed before a write: the preview reads the booking itself.',
   input: z.object({
     booking_id: z.number().int().positive().describe('RealtyCalendar booking id (from list_bookings)'),
   }),

@@ -14,6 +14,8 @@ export function instructions(today: string, config: Pick<Config, 'timezone' | 'a
     'user says otherwise.',
     'Dates without a year are the next such dates in the future, unless the user is asking about the past.',
     'Always state the dates you used.',
+    "Use these tools only for this hotel's rooms, guests and bookings: not for the user's own calendar, free time or",
+    'meetings, staff schedules, other hotels or travel plans.',
     'Category = тип номера (e.g. "02 Двухместный улучшенный"); room = номер ("22"). Some categories have no rooms',
     'and are a single unit (e.g. коттедж). Tools take names directly.',
     'Заявка / предварительная бронь = a hold (status request): it does NOT block the room. Бронь = booked.',

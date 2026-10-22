@@ -20,6 +20,10 @@ export const DATES_HINT =
   '"на выходные" = Friday and Saturday nights; a date without a year is the next one, or the last one when the user ' +
   'asks about the past. Say which dates you used.'
 
+/** Read tools: what they are not for, so a general question in a client with other connectors isn't sent here. */
+export const SCOPE_HINT =
+  "Not for the user's own calendar, free time or meetings, staff schedules, other hotels or travel plans."
+
 export const CATEGORY_HINT = 'Words or a stem are enough: "улучшен", "двухмест", "коттедж".'
 
 /** RANGE_TOO_LONG hint for a booking's own stay. */

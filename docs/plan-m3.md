@@ -182,6 +182,8 @@ means the user's own weekend. Before the M4 release:
 - Prompts: give most cases the context a real hotel user has (a mention of rooms, guests, the hotel), keep a few bare
   ones, and add negative cases where the right answer calls no tool (personal calendar, "кто свободен из
   сотрудников", general questions); grading supports `forbid` already.
+- Status 2054-10-22 (D59): descriptions and instructions done; cases N1–N6 (no tool may be called) and C1–C3 (bare
+  prompts with hotel context) added; not run yet.
 - Run some cases with a second, decoy MCP server (e.g. a fake calendar with "free/busy" tools) to measure picking
   the right one.
 
