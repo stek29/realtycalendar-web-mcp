@@ -47,6 +47,16 @@ describe('bookings from the grid', () => {
     expect(matchesQuery(b, '9161234567')).toBe(true)
   })
 
+  it('matches guest names across Cyrillic and Latin', async () => {
+    const { list } = await setup()
+    const as = (guest_name: string) => ({ ...list[0]!, guest_name })
+    expect(matchesQuery(as('Igor Petrov'), 'Игорь')).toBe(true)
+    expect(matchesQuery(as('Игорь Петров'), 'Igor')).toBe(true)
+    expect(matchesQuery(as('Yulia Smirnova'), 'Юлия Смирновой')).toBe(true)
+    expect(matchesQuery(as('Ksenia Orlova'), 'Ксения')).toBe(true)
+    expect(matchesQuery(as('Igor Petrov'), 'Олег')).toBe(false)
+  })
+
   it('sums totals', async () => {
     const { list } = await setup()
     const t = totals(list)

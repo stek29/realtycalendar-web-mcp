@@ -188,6 +188,25 @@ describe('list_bookings', () => {
     expect(p.matched).toBe(1)
   })
 
+  it('finds a Latin name from a Cyrillic query; a miss comes with a hint', async () => {
+    const { call } = setup('read', [
+      {
+        apartment_id: 810000052,
+        room_id: 810000029,
+        begin_date: '2055-01-20',
+        end_date: '2055-01-23',
+        client: { fio: 'Igor Petrov', phone: null },
+      },
+    ])
+    const r = await call('list_bookings', { from: '2054-10-22', to: '2055-04-20', query: 'Игорь' })
+    expect(r.bookings.map((b: { guest_name: string }) => b.guest_name)).toContain('Igor Petrov')
+    expect(r.hint).toBeUndefined()
+    const miss = await call('list_bookings', { from: '2054-10-22', to: '2055-04-20', query: 'Алексей Щербаков' })
+    expect(miss).toMatchObject({ matched: 0, hint: expect.stringMatching(/without query/) })
+    const phone = await call('list_bookings', { from: '2054-10-22', to: '2055-04-20', query: '000 11 22 33' })
+    expect(phone.hint).toMatch(/no phone/)
+  })
+
   it('holds only', async () => {
     const { call } = setup('read', [
       {

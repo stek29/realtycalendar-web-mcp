@@ -56,7 +56,7 @@ All name matching is done by the server, tolerant of Russian endings:
 | `room` | room title ("22", "22-й") or numeric id | `AMBIGUOUS` (titles are checked for uniqueness at load, not assumed) |
 | `category` | id, number prefix ("02"), or words from the title ("улучшенный двуспальной", "коттедж") | **read tools:** all matches are used and listed in `matched_categories`; **write tools:** `AMBIGUOUS` |
 | `source` | words from the source name ("островок", "ostrovok", "яндекс") — matched against Latin and Cyrillic aliases kept in a small table | read tools: all matches |
-| `query` (guests) | guest name words or phone digits (≥ 5 digits, any format) | — |
+| `query` (guests) | guest name words or phone digits (≥ 5 digits, any format). Names are compared as written and transliterated to Latin, so Cyrillic finds Latin and back ("Игорь" ~ "Igor", "Юлия" ~ "Yulia") | no match → `hint` (§2.3) |
 
 - When only `room` is given, the category is always taken from the room. When both are given they must agree, else
   `ROOM_NOT_IN_CATEGORY`. (RC itself either returns 422 "Комната не найдена" when the category is unchanged, or
@@ -311,7 +311,7 @@ This account: 9 categories, 18 real rooms ✅.
   "category":        "string",
   "room":            "string",
   "source":          "string",
-  "query":           "string", // guest name words or phone digits
+  "query":           "string", // guest name words (Cyrillic or Latin) or phone digits
   "status":          ["booked", "request"],   // default; "canceled" allowed ✅ S7
   "unassigned_only": "boolean",
   "unpaid_only":     "boolean",               // left > 0
@@ -319,6 +319,11 @@ This account: 9 categories, 18 real rooms ✅.
 }
 ```
 - `staying`: the stay overlaps [from, to). `arriving`: `check_in` in [from, to). `departing`: `check_out` in [from, to).
+- Guest names: 10 of 60 live bookings store the name in Latin (booking sites). Transliteration covers the common
+  cases; spelling variants (Алексей / Alexey, Евгений / Yevgeny), nicknames (Саша / Александр) and typos are left to the
+  model: a name query with no match returns a `hint` to list the period without `query` and read `guest_name` itself
+  (about 60 bookings per six months here, one call). Loose matches (Марина ~ Мария) are accepted: the model sees the full
+  names, and no write tool selects a booking by guest name.
 - One night "today" = `from: today` (default `to` = from + 1), so "кто живёт сегодня" and "кто заезжает завтра"
   need only `from` and `match`.
 
@@ -327,7 +332,8 @@ This account: 9 categories, 18 real rooms ✅.
 { "today": "…", "today_weekday": "…", "from": "2054-10-23", "to": "2054-10-24", "match": "arriving",
   "currency": "₽", "matched": 23, "returned": 23,
   "totals": { "bookings": 23, "nights": 61, "total": 824000, "paid": 600000, "left": 224000 },
-  "bookings": [ BookingSummary ] }     // sorted by check_in (arriving/staying) or check_out (departing)
+  "bookings": [ BookingSummary ],      // sorted by check_in (arriving/staying) or check_out (departing)
+  "hint": "…" }                        // only when a `query` matched nothing (see below)
 ```
 
 **API**: the grid as in 2.2 ✅ (`client.fio` ✅, `client.phone` ✅, `arrival_time` ✅, `source_id` ✅,

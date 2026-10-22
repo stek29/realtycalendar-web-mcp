@@ -1,7 +1,7 @@
 // Booking summaries from the grid and the booking detail (spec §1 Output, §2.3, §2.4). Pure: no IO.
 import { categoryById, isBookingSite, roomById, sourceTitle, type Catalog } from './catalog.js'
 import { nightsBetween } from './dates.js'
-import { nameMatches } from './match.js'
+import { nameMatches, translit, words } from './match.js'
 import type { Booking, Grid, GridEvent, Payments } from '../upstream/schemas.js'
 
 export interface BookingSummary {
@@ -114,11 +114,22 @@ export interface BookingFilter {
 
 /** Phone digits (≥ 5) match anywhere in the phone; otherwise every query word must match the guest name. */
 export function matchesQuery(b: BookingSummary, query: string): boolean {
-  let digits = query.replace(/\D/g, '')
-  // A full Russian number may start with 8 or 7 (+7): compare the last 10 digits.
-  if (digits.length === 11 && /^[78]/.test(digits)) digits = digits.slice(1)
-  if (digits.length >= 5 && !/\p{L}/u.test(query)) return (b.guest_phone ?? '').replace(/\D/g, '').includes(digits)
-  return b.guest_name != null && nameMatches(query, b.guest_name)
+  if (isPhoneQuery(query)) {
+    let digits = query.replace(/\D/g, '')
+    // A full Russian number may start with 8 or 7 (+7): compare the last 10 digits.
+    if (digits.length === 11 && /^[78]/.test(digits)) digits = digits.slice(1)
+    return (b.guest_phone ?? '').replace(/\D/g, '').includes(digits)
+  }
+  if (b.guest_name == null) return false
+  // Guests from booking sites are often stored in Latin: compare in both scripts ("Игорь" ~ "Igor").
+  const q = words(query)
+  const t = words(b.guest_name)
+  return nameMatches(q, t) || nameMatches(q.map(translit), t.map(translit))
+}
+
+/** At least 5 digits and no letters: a phone search. */
+export function isPhoneQuery(query: string): boolean {
+  return query.replace(/\D/g, '').length >= 5 && !/\p{L}/u.test(query)
 }
 
 export function filterBookings(list: BookingSummary[], f: BookingFilter): BookingSummary[] {

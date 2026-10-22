@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { filterBookings, fromGrid, sortBookings, totals } from '../../domain/bookings.js'
+import { filterBookings, fromGrid, isPhoneQuery, sortBookings, totals } from '../../domain/bookings.js'
 import { resolveCategories, resolveRoom, resolveSources } from '../../domain/catalog.js'
 import { addDays, todayIn } from '../../domain/dates.js'
 import { getGrid } from '../../upstream/api.js'
@@ -37,7 +37,12 @@ export const listBookings = defineTool({
       .string()
       .optional()
       .describe('Channel name in Latin or Cyrillic: "островок", "ostrovok", "яндекс"; all matches'),
-    query: z.string().optional().describe(`Guest name words or phone digits (at least 5, any format). ${NAME_HINT}`),
+    query: z
+      .string()
+      .optional()
+      .describe(
+        `Guest name words (Cyrillic or Latin; matched in both scripts) or phone digits (at least 5, any format). ${NAME_HINT}`,
+      ),
     status: z
       .array(z.enum(['booked', 'request', 'canceled']))
       .min(1)
@@ -64,6 +69,7 @@ export const listBookings = defineTool({
       left: z.number(),
     }),
     bookings: z.array(BookingSummaryShape),
+    hint: z.string().optional().describe('Present when a guest query found nothing'),
   }),
   annotations: READ_ANNOTATIONS,
   async handler(ctx, args) {
@@ -115,6 +121,17 @@ export const listBookings = defineTool({
       returned: bookings.length,
       totals: totals(matched),
       bookings,
+      ...(args.query && matched.length === 0 ? { hint: noMatchHint(args.query) } : {}),
     }
   },
 })
+
+/** A guest query found nothing: names may be spelled differently and phones are often missing. */
+function noMatchHint(query: string): string {
+  return isPhoneQuery(query)
+    ? 'No booking has this phone. Many bookings have no phone stored: ask the user for the guest name, or call again ' +
+        'without query and look through the returned bookings.'
+    : 'No guest name matched. Names may be stored in another spelling, as a nickname or full name (Саша = Александр), ' +
+        'or in Latin with a different transliteration (Алексей = Alexey). Call again without query for the same period ' +
+        '(raise limit if needed) and look through guest_name yourself before saying the booking does not exist.'
+}
