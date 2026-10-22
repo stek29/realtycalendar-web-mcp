@@ -13,7 +13,7 @@ export const dateInput = (description: string) =>
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD')
     .describe(description)
 
-export const NAME_HINT = "Use the base form or a stem if unsure, e.g. 'Петров', 'улучшен'."
+export const CATEGORY_HINT = 'Words or a stem are enough: "улучшен", "двухмест", "коттедж".'
 
 export function today(ctx: Context) {
   const t = todayIn(ctx.now(), ctx.config.timezone)
@@ -60,7 +60,9 @@ export const BookingSummaryShape = z.object({
   guest_name: z.string().nullable(),
   guest_phone: z.string().nullable(),
   source: z.string().nullable(),
-  from_booking_site: z.boolean(),
+  from_booking_site: z
+    .boolean()
+    .describe('From a booking site (Ostrovok…). In lists partly guessed from the source; get_booking is exact'),
   arrival_time: z.string().nullable(),
   total: z.number(),
   paid: z.number(),
@@ -86,38 +88,43 @@ export const BookingViewShape = BookingSummaryShape.extend({
 
 const FieldValue = z.union([z.string(), z.number(), z.null()])
 
-/** One output shape for the write tools: a preview (`preview: true`) or the result of a confirmed write. */
-export const WriteOutput = z.object({
-  preview: z.boolean().describe('true = nothing was changed yet: show this to the user and ask'),
-  summary: z.string().describe('One line in Russian for the user'),
+/** What every preview_<write> tool returns. Nothing was changed. */
+export const PreviewOutput = z.object({
+  preview: z.literal(true).describe('Nothing was changed'),
+  summary: z.string().describe('One line in Russian: put it in your reply'),
   currency: z.string(),
-  before: BookingViewShape.nullable().optional().describe('Preview: the booking now (null for a new one)'),
-  after: BookingViewShape.optional().describe('Preview: the booking as it will be'),
+  before: BookingViewShape.nullable().optional().describe('The booking now (null for a new one)'),
+  after: BookingViewShape.optional().describe('The booking as it will be'),
   changes: z
     .array(z.object({ field: z.string(), from: FieldValue, to: FieldValue }))
     .optional()
-    .describe('Preview: the fields that change'),
+    .describe('The fields that change'),
   warnings: z
     .array(z.object({ code: z.string(), message: z.string() }).loose())
-    .optional()
-    .describe('Preview: tell the user about each'),
+    .describe('Tell the user each one; a warning that says "Ask" needs an answer before the write'),
   will_fail: z
     .boolean()
     .optional()
-    .describe('Preview: RealtyCalendar will refuse (room or category full); offer alternatives, no token is given'),
-  conflicts: z.array(BookingSummaryShape).optional().describe('Preview: the booked stays that make it fail'),
-  price_source: z
-    .enum(['quote', 'per_night', 'total'])
-    .optional()
-    .describe('Create preview: where the total comes from'),
+    .describe(
+      'RealtyCalendar would refuse: the room or category is full (see conflicts). No token; offer alternatives',
+    ),
+  conflicts: z.array(BookingSummaryShape).optional().describe('The booked stays that make it fail'),
+  price_source: z.enum(['quote', 'per_night', 'total']).optional().describe('Where the new total comes from'),
   quote: z.number().nullable().optional().describe("RealtyCalendar's current price for the stay"),
   confirm_token: z
     .string()
     .optional()
-    .describe('Preview: repeat the same call with this token only after the user agreed; valid 15 minutes'),
-  booking: BookingViewShape.optional().describe('Result: the booking as saved'),
+    .describe("Pass to the write tool with the same arguments; valid 15 minutes. Not the user's approval"),
+})
+
+/** What every write tool returns after RealtyCalendar saved the change. */
+export const ResultOutput = z.object({
+  preview: z.literal(false).describe('The change was saved'),
+  summary: z.string().describe('One line in Russian for the user'),
+  currency: z.string(),
+  booking: BookingViewShape.describe('The booking as saved'),
   deleted: z.boolean().optional(),
-  note: z.string().optional(),
+  note: z.string().optional().describe('Present when nothing new was saved, e.g. the booking already existed'),
 })
 
 /** An existing booking for update / cancel / delete: fresh GET (all keys) and payments; deleted → DELETED. */
@@ -127,7 +134,8 @@ export async function bookingForWrite(ctx: Context, id: number) {
     getBookingRaw(ctx.rc, id),
     getPayments(ctx.rc, id),
   ])
-  if (raw.is_delete) throw new ToolError('DELETED', `Booking ${id} was deleted`, 'This booking was deleted')
+  if (raw.is_delete)
+    throw new ToolError('DELETED', `Booking ${id} was deleted`, "Tell the user it was deleted; don't retry")
   const paid = paidOf(payments)
   return {
     catalog,
@@ -152,7 +160,7 @@ export function guardSiteBooking(ctx: Context, raw: { id: number; platform_name:
   throw new ToolError(
     'SITE_BOOKING',
     `Booking ${raw.id} is from ${site}: this connection can't ${what}, because RealtyCalendar doesn't send that to ${site}. Nothing was changed.`,
-    `Tell the user to do it on ${site}`,
+    `Tell the user to do it on ${site}. Don't work around it with another write or by creating a new booking. Allowed here: a room in the same category, arrival/departure time, notes`,
     { platform: site },
   )
 }

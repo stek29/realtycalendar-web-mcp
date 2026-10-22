@@ -12,10 +12,13 @@ export const cancelBookingTools = defineWriteTool({
   level: 'edit',
   title: 'Cancel booking',
   description:
-    "GUEST CANCELLED. The guest cancelled or won't come (отменить, отмена, гость отказался, не приедет, снять " +
-    'бронь). Sets status "canceled": the record stays and the room is freed. Use this, not delete_booking, unless the ' +
-    'user says the booking was entered by mistake.',
-  input: z.object({ booking_id: z.number().int().positive().describe('Booking id, e.g. from list_bookings') }),
+    "The guest cancelled or won't come (отмени бронь, гость отказался, не приедет). Sets status canceled: the " +
+    'record and its payments stay, the room is freed. Entered by mistake or a duplicate is a delete, not this; if ' +
+    'the user just says "сними бронь", ask which.',
+  saves: 'Cancels the booking previewed by preview_cancel_booking.',
+  input: z.object({
+    booking_id: z.number().int().positive().describe('RealtyCalendar booking id (from list_bookings)'),
+  }),
   lockId: (args) => args.booking_id,
 
   async preview(ctx, args) {

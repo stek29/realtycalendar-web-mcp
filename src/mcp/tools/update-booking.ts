@@ -13,7 +13,7 @@ import {
   checkRange,
   guardSiteBooking,
   dateInput,
-  NAME_HINT,
+  CATEGORY_HINT,
   timeInput,
   today,
   withCatalog,
@@ -82,27 +82,44 @@ export const updateBookingTools = defineWriteTool({
   level: 'edit',
   title: 'Update booking',
   description:
-    'CHANGE A BOOKING. Move dates (перенести, продлить, сократить), move to another room or category, put an ' +
-    'unassigned booking into a room (расселить, поставить в 22-й) or take it out of its room, confirm a hold ' +
-    '(заявка → бронь), change price, arrival/departure time, or the note (add a line by default; replace only if ' +
-    'asked). Pass only what changes. For cancellation use cancel_booking. For bookings from booking sites, changes are ' +
-    'not sent to the site — say so.',
+    'Change a booking: dates (перенести, продлить, сократить), room or category (переселить), put an unassigned ' +
+    'booking in a room (расселить, поставь в 22-й) or take it out, confirm a hold (заявка → бронь), price, ' +
+    'arrival/departure time, note. Pass only what changes. Without a new price, a different number of nights keeps ' +
+    'the old price per night and a new category keeps the total; the preview then says so and asks. Not for ' +
+    "cancelling (preview_cancel_booking); can't change the guest's name or contacts.",
+  saves: 'Saves the change previewed by preview_update_booking.',
+  noToken: 'will_fail (room or category full)',
   input: z.object({
-    booking_id: z.number().int().positive().describe('Booking id, e.g. from list_bookings'),
+    booking_id: z
+      .number()
+      .int()
+      .positive()
+      .describe('RealtyCalendar booking id (from list_bookings), not a room number'),
     check_in: dateInput('New arrival day, YYYY-MM-DD').optional(),
-    check_out: dateInput('New departure day, YYYY-MM-DD').optional(),
-    room: z.string().optional().describe('Move/assign to this room ("22"); the category follows the room'),
-    category: z.string().optional().describe(`Move to another category without a room. ${NAME_HINT}`),
-    unassign: z.boolean().optional().describe('true = take out of its room, keep the category'),
+    check_out: dateInput('New departure day, YYYY-MM-DD; at most 62 nights').optional(),
+    room: z.string().optional().describe('Move to / put in this room ("22"); the category follows the room'),
+    category: z.string().optional().describe(`Move to another category, without a room. ${CATEGORY_HINT}`),
+    unassign: z.boolean().optional().describe('true = take it out of its room, keep the category'),
     status: z.enum(['booked', 'request']).optional().describe('booked (confirm a hold) or request (make it a hold)'),
-    price_per_night: z.number().min(0).optional().describe('New price per night; this OR total'),
-    total: z.number().min(0).optional().describe('New total; this OR price_per_night'),
+    price_per_night: z
+      .number()
+      .min(0)
+      .optional()
+      .describe("New price per night in the hotel's currency; this OR total"),
+    total: z
+      .number()
+      .min(0)
+      .optional()
+      .describe("New price of the whole stay in the hotel's currency; this OR price_per_night"),
     arrival_time: timeInput('HH:MM').optional(),
     departure_time: timeInput('HH:MM').optional(),
     clear_arrival_time: z.boolean().optional().describe('true = remove the arrival time'),
     clear_departure_time: z.boolean().optional().describe('true = remove the departure time'),
     notes_append: z.string().optional().describe('Add a line to the note (default for "добавь в заметку")'),
-    notes_replace: z.string().optional().describe('Replace the whole note; only when the user asks to rewrite it'),
+    notes_replace: z
+      .string()
+      .optional()
+      .describe('Replace the whole note ("" clears it); only when the user asks to rewrite it'),
   }),
   lockId: (args) => args.booking_id,
 

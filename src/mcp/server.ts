@@ -31,7 +31,7 @@ export function createMcpServer(ctx: Context): McpServer {
   const today = todayIn(ctx.now(), ctx.config.timezone)
   const server = new McpServer(
     { name: 'realtycalendar-web-mcp', version: VERSION },
-    { instructions: instructions(today, ctx.config.timezone, ctx.config.access), capabilities: { tools: {} } },
+    { instructions: instructions(today, ctx.config), capabilities: { tools: {} } },
   )
   for (const tool of TOOLS) {
     if (!accessAllows(ctx.config.access, tool.level)) continue

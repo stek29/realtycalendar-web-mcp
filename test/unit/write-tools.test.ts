@@ -4,6 +4,7 @@ import type { AuditEntry } from '../../src/audit.js'
 import { memoryCache } from '../../src/cache.js'
 import { parseConfig, type Access } from '../../src/config.js'
 import { makeContext } from '../../src/context.js'
+import { instructions } from '../../src/mcp/instructions.js'
 import { createMcpServer, runTool, TOOLS } from '../../src/mcp/server.js'
 import { fakeRc, type FakeRcOptions } from '../fake-rc.js'
 
@@ -93,6 +94,23 @@ describe('access levels (X5, X7)', () => {
         preview ? { readOnlyHint: true } : { readOnlyHint: false, destructiveHint: true },
       )
     }
+  })
+
+  it('the user words are on the preview tool only; the write tool says it is step 2', () => {
+    for (const t of TOOLS.filter((t) => t.annotations.destructiveHint)) {
+      const preview = TOOLS.find((p) => p.name === `preview_${t.name}`)!
+      expect(t.description, t.name).toMatch(/^Step 2 of 2\..*preview_/)
+      expect(t.description, t.name).not.toMatch(/[а-я]/)
+      expect(preview.description, preview.name).toMatch(/^Step 1 of 2, changes nothing\./)
+    }
+  })
+
+  it('instructions follow the access level and RC_SITE_BOOKINGS', () => {
+    const text = (env: Record<string, string>) => instructions('2054-10-22', parseConfig(env))
+    expect(text({ RC_ACCESS: 'edit' })).toMatch(/SITE_BOOKING/)
+    expect(text({ RC_ACCESS: 'edit', RC_SITE_BOOKINGS: 'allow' })).toMatch(/BOOKING_SITE warning/)
+    expect(text({ RC_ACCESS: 'book' })).not.toMatch(/booking sites \(/)
+    expect(text({ RC_ACCESS: 'read' })).not.toMatch(/preview_/)
   })
 
   it('X7: cancel at book → ACCESS_DENIED', async () => {
@@ -257,6 +275,17 @@ describe('create_booking', () => {
       expect(rc.calls.filter((c) => c.startsWith('POST event_calendars'))).toHaveLength(saved ? 1 : 2)
     },
   )
+
+  it('update: PUT timeout → RC_ERROR that says to check before retrying', async () => {
+    const { call } = setup('full', { failNext: { method: 'PUT', with: 'timeout' } })
+    const args = { booking_id: 810000176, notes_append: 'x' }
+    const p = await call('preview_update_booking', args)
+    expect(await call('update_booking', { ...args, confirm_token: p.confirm_token })).toMatchObject({
+      error: 'RC_ERROR',
+      message: expect.stringMatching(/may or may not have been saved/),
+      hint: expect.stringMatching(/get_booking/),
+    })
+  })
 
   it('PUT 500 → RC_ERROR with the repeat hint', async () => {
     const { call } = setup('full', { failNext: { method: 'PUT', with: 500 } })

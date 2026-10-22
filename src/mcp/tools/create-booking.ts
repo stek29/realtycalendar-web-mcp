@@ -15,7 +15,7 @@ import { bookingBrief, bookingLine, pastDates, stayWarnings, type Warning } from
 import { createBody, type CreateFields } from '../../domain/writes.js'
 import { createDraft, getGrid, getPrice, getStayRules, putBooking } from '../../upstream/api.js'
 import { defineWriteTool } from './define.js'
-import { checkRange, dateInput, NAME_HINT, timeInput, today, withCatalog } from './shared.js'
+import { CATEGORY_HINT, checkRange, dateInput, timeInput, today, withCatalog } from './shared.js'
 
 const MAX_NIGHTS = 62
 
@@ -26,33 +26,46 @@ export const createBookingTools = defineWriteTool({
   level: 'book',
   title: 'Create booking',
   description:
-    'NEW BOOKING. Create a booking or a hold (забронировать, поставить бронь; заявка = hold) in a room, or in ' +
-    "a category without choosing a room when the user doesn't care which (it stays unassigned), or in a single-unit " +
-    'category (коттедж). Give either room or category. Optional: price per night OR total (otherwise ' +
-    "RealtyCalendar's quote), phone, e-mail, arrival/departure time, source, note. If the user gave no guest name, " +
-    'ask for it. Does not ' +
-    'record prepayments in v1: if the user mentions one, say it must be added in RealtyCalendar ("Добавить платеж"). ' +
-    'Never messages the guest.',
+    'New booking or hold (забронируй, поставь бронь; заявка = hold). Give room, or category when any room will do ' +
+    '(the booking stays unassigned) or for a single unit (коттедж). Guest name is required: ask if missing. Price: ' +
+    "price_per_night or total, else RealtyCalendar's quote. Can't record a prepayment: say to add it in " +
+    'RealtyCalendar ("Добавить платеж"). Never messages the guest.',
+  saves: 'Saves the booking or hold previewed by preview_create_booking.',
+  noToken: 'will_fail (room or category full) or DUPLICATE (it already exists: show it)',
   input: z.object({
-    room: z.string().optional().describe('Room (номер) title like "22" or "22-й", or its id. Give room or category'),
+    room: z
+      .string()
+      .optional()
+      .describe('Room (номер): "22", "22-й" or its id; the category follows. Give room or category'),
     category: z
       .string()
       .optional()
       .describe(
-        `Category (тип номера) when no particular room: id, number ("02") or title words; must match one category. ${NAME_HINT}`,
+        `Category (тип номера) when no particular room: id, number ("02") or title words; must match one. ${CATEGORY_HINT}`,
       ),
     check_in: dateInput('Arrival day, YYYY-MM-DD'),
     check_out: dateInput('Departure day, YYYY-MM-DD; after check_in, at most 62 nights'),
     guest_name: z.string().describe('Guest name as the user said it; required, ask if missing'),
-    guest_phone: z.string().optional(),
+    guest_phone: z.string().optional().describe('As the user gave it, any format'),
     guest_email: z.string().optional(),
     status: z.enum(['booked', 'request']).optional().describe('booked (бронь, default) or request (заявка, a hold)'),
-    price_per_night: z.number().min(0).optional().describe('Price per night; give this OR total, not both'),
-    total: z.number().min(0).optional().describe('Total for the stay; give this OR price_per_night, not both'),
+    price_per_night: z
+      .number()
+      .min(0)
+      .optional()
+      .describe("Price per night in the hotel's currency, times the nights; this OR total"),
+    total: z
+      .number()
+      .min(0)
+      .optional()
+      .describe("Price of the whole stay in the hotel's currency (not a prepayment); this OR price_per_night"),
     arrival_time: timeInput('HH:MM').optional(),
     departure_time: timeInput('HH:MM').optional(),
-    source: z.string().optional().describe('Source / channel name, e.g. "Островок"; must match one source'),
-    notes: z.string().optional(),
+    source: z
+      .string()
+      .optional()
+      .describe('Source (источник) as listed in RealtyCalendar, e.g. "Авито"; must match one. Only a label'),
+    notes: z.string().optional().describe('Note for staff (заметка)'),
   }),
 
   async preview(ctx, args) {

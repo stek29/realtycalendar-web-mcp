@@ -5,7 +5,7 @@ import { weekday } from '../../domain/dates.js'
 import { ToolError } from '../../domain/errors.js'
 import { getGrid, getPrice, getStayRules } from '../../upstream/api.js'
 import { defineTool, READ_ANNOTATIONS } from './define.js'
-import { BookingSummaryShape, checkRange, dateInput, NAME_HINT, today, withCatalog } from './shared.js'
+import { BookingSummaryShape, CATEGORY_HINT, checkRange, dateInput, today, withCatalog } from './shared.js'
 
 const MAX_NIGHTS = 62
 
@@ -22,29 +22,34 @@ export const checkAvailability = defineTool({
   level: 'read',
   title: 'Check availability',
   description:
-    'ROOM VIEW. Which rooms and categories are free, busy, on hold or closed for a stay (свободно, занято, есть ли ' +
-    'места, свободен ли 22-й, загрузка), with the price of the stay per category (сколько стоит). Use for any yes/no ' +
-    'about a room, "what can we offer", price quotes, "на сколько гостей", and booking rules for the dates: minimum ' +
-    'stay (минимальный срок), no check-in / no check-out days. A room is only bookable if it is empty AND its category ' +
-    'still has capacity — unassigned bookings use up category capacity without a room. If a room is free but has a ' +
-    'hold (заявка), mention the hold. For one night X: check_in = X, check_out = X+1. Not for finding a booking (use ' +
-    'list_bookings).',
+    'What is free, busy, on hold or closed for given dates, with the price of the stay per category (что свободно, ' +
+    'свободен ли 22-й, есть ли места, загрузка, сколько стоит, на троих), and the booking rules for the dates: minimum ' +
+    'stay (минимальный срок), no check-in / no check-out days. A room is bookable only if it is empty AND its ' +
+    'category has capacity every night (unassigned bookings use capacity without a room): answer from bookable_rooms ' +
+    'and stay_rules, not empty_rooms. Mention holds (заявки) on free rooms. Not for finding a booking: use list_bookings.',
   input: z.object({
     check_in: dateInput('Arrival day, YYYY-MM-DD (hotel-local)'),
-    check_out: dateInput('Departure day, YYYY-MM-DD; after check_in, at most 62 nights. One night on X: X+1'),
+    check_out: dateInput(
+      'Departure day, YYYY-MM-DD; after check_in, at most 62 nights. One night on X: X+1; for the rules of a day, too',
+    ),
     category: z
       .string()
       .optional()
       .describe(
-        `Category (тип номера): id, number ("02") or words from its title ("двухместный улучшенный", "коттедж"); all matching categories are used. ${NAME_HINT}`,
+        `Category (тип номера): id, number ("02") or title words; all matching categories are used. ${CATEGORY_HINT}`,
       ),
     room: z.string().optional().describe('Room (номер) title like "22" or "22-й", or its id; implies its category'),
-    guests: z.number().int().min(1).optional().describe('Only categories that take at least this many guests'),
+    guests: z
+      .number()
+      .int()
+      .min(1)
+      .optional()
+      .describe("Only categories that take at least this many guests; doesn't change the price"),
     detail: z
       .enum(['summary', 'rooms'])
       .optional()
       .describe(
-        'rooms = per-room nights with guests (who is where, what is busy); default "rooms" when room or category is given, else "summary"',
+        'summary = per category; rooms = also each room night by night with guests (что занято, кто где). Default: rooms when room or category is given',
       ),
   }),
   output: z.object({
@@ -64,12 +69,18 @@ export const checkAvailability = defineTool({
         single_unit: z.boolean(),
         capacity: z.number(),
         max_guests: z.number(),
-        bookable_count: z.number().describe('Rooms/units that can still take a booking for EVERY night'),
-        bookable_rooms: z.array(z.string()).describe('Empty, not closed, and the category has capacity every night'),
+        bookable_count: z
+          .number()
+          .describe(
+            'How many more bookings the category takes on its fullest night; one room free throughout: bookable_rooms',
+          ),
+        bookable_rooms: z
+          .array(z.string())
+          .describe('Free, not closed, and the category has capacity every night. Stay rules are separate'),
         empty_rooms: z.array(z.string()).describe('No booked night (may still be not bookable!)'),
         held_rooms: z.array(z.string()).describe('Empty but with a hold'),
         price_total: z.number().nullable().describe('RealtyCalendar quote for the stay'),
-        price_per_night: z.number().nullable(),
+        price_per_night: z.number().nullable().describe('price_total / nights'),
         stay_rules: z.object({
           min_stay: z.number().nullable().describe('Strictest min stay over the nights of the stay'),
           stay_ok: z.boolean().describe('Nights ≥ min stay, arrival/departure days allowed, nothing closed'),

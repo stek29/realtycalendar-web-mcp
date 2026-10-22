@@ -611,8 +611,8 @@
     {
       "id": "U10b",
       "access": "full",
-      "needs": ["an unassigned Ostrovok booking over 2054-12-31 (fixture 810000201, category 07)"],
-      "turns": ["Поставь бронь с Островка на 31.12 в 22-й"],
+      "needs": ["an unassigned Ostrovok booking over 2054-12-31 (fixture 810000201, category 07, rooms 10 and 11)"],
+      "turns": ["Поставь бронь с Островка на 31.12 в 10-й"],
       "expect": [
         {
           "calls": [
@@ -628,7 +628,7 @@
               "tool": "preview_update_booking",
               "args": {
                 "room": {
-                  "re": "^22"
+                  "re": "^10"
                 }
               }
             },
@@ -636,12 +636,34 @@
               "tool": "update_booking",
               "args": {
                 "room": {
-                  "re": "^22"
+                  "re": "^10"
                 }
               },
               "confirm_token": true
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "U10c",
+      "access": "full",
+      "needs": ["the same Ostrovok booking; room 22 is in another category (02)"],
+      "turns": ["Поставь бронь с Островка на 31.12 в 22-й"],
+      "expect": [
+        {
+          "calls": [
+            {
+              "tool": "preview_update_booking",
+              "args": {
+                "room": {
+                  "re": "^22"
+                }
+              }
+            }
+          ],
+          "answer": ["(?i)остров|ostrovok|сайт|площадк"],
+          "forbid": ["update_booking", "cancel_booking", "delete_booking", "create_booking"]
         }
       ]
     },

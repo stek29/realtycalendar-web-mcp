@@ -10,9 +10,12 @@ export const deleteBookingTools = defineWriteTool({
   level: 'full',
   title: 'Delete booking',
   description:
-    'REMOVE A MISTAKE. Delete a booking that was entered by mistake or is a duplicate (ошибочная, дубль, ' +
-    'удалить). If the guest cancelled, use cancel_booking. If unsure which, ask.',
-  input: z.object({ booking_id: z.number().int().positive().describe('Booking id, e.g. from list_bookings') }),
+    'Delete a booking entered by mistake or a duplicate (создал по ошибке, дубль, удали ошибочную). If the guest ' +
+    'cancelled, that is preview_cancel_booking; if the user just says "сними бронь", ask which.',
+  saves: 'Deletes the booking previewed by preview_delete_booking.',
+  input: z.object({
+    booking_id: z.number().int().positive().describe('RealtyCalendar booking id (from list_bookings)'),
+  }),
   lockId: (args) => args.booking_id,
 
   async preview(ctx, args) {

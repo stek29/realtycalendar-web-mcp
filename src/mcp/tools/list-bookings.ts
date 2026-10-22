@@ -4,7 +4,7 @@ import { resolveCategories, resolveRoom, resolveSources } from '../../domain/cat
 import { addDays, todayIn } from '../../domain/dates.js'
 import { getGrid } from '../../upstream/api.js'
 import { defineTool, READ_ANNOTATIONS } from './define.js'
-import { BookingSummaryShape, checkRange, dateInput, NAME_HINT, today, withCatalog } from './shared.js'
+import { BookingSummaryShape, CATEGORY_HINT, checkRange, dateInput, today, withCatalog } from './shared.js'
 
 const MAX_DAYS = 180
 
@@ -13,12 +13,13 @@ export const listBookings = defineTool({
   level: 'read',
   title: 'List bookings',
   description:
-    'BOOKING VIEW. Bookings in a period, by how they relate to it: `staying` (кто живёт, в каком номере Иванов), ' +
-    '`arriving` (заезды, кто заезжает завтра) or `departing` (выезды, кто выезжает сегодня, что убирать). Filters: room ' +
-    'or category, source/channel (Островок, Яндекс Путешествия…), guest name or phone, holds only, unassigned only ' +
-    '(неразобранные), not paid in full (кто не доплатил, кто должен). Returns totals (sum, paid, left) over all matches. ' +
-    'For searches ("найди бронь Петровой", "бронь с Островка") pass a wide period, e.g. to = today + 180 days. ' +
-    'Not for "is room X free" (use check_availability). Bookings can\'t be found by the date they were made.',
+    'Find bookings in a period: match=staying (кто живёт, в каком номере Иванов), arriving (заезды, кто заезжает ' +
+    'завтра) or departing (выезды, что убирать). Filters: room, category, source (Островок, Яндекс…), guest name or ' +
+    'phone, holds, unassigned (неразобранные, не расселены), unpaid (кто не доплатил, кто должен). Totals (sum, paid, ' +
+    "left) cover all matches. The period defaults to today; to find a guest's booking with no dates given " +
+    '("найди бронь Петровой") use today to today + 180 days, and say which period you searched. No filter by the ' +
+    'date a booking was made: for a recent booking from a site, filter by source and read "Дата бронирования" in ' +
+    'get_booking. Not for "is room X free": use check_availability.',
   input: z.object({
     from: dateInput('Start of the period, YYYY-MM-DD; default today').optional(),
     to: dateInput('End of the period (exclusive); default from + 1 day; at most 180 days after from').optional(),
@@ -31,7 +32,7 @@ export const listBookings = defineTool({
     category: z
       .string()
       .optional()
-      .describe(`Category: id, number ("02") or title words; all matches are used. ${NAME_HINT}`),
+      .describe(`Category: id, number ("02") or title words; all matches are used. ${CATEGORY_HINT}`),
     room: z.string().optional().describe('Room title like "22" or its id'),
     source: z
       .string()
@@ -41,13 +42,16 @@ export const listBookings = defineTool({
       .string()
       .optional()
       .describe(
-        `Guest name words (Cyrillic or Latin; matched in both scripts) or phone digits (at least 5, any format). ${NAME_HINT}`,
+        'Guest name words, Cyrillic or Latin (matched in both scripts), or phone digits (at least 5, any format). ' +
+          'Use a stem if unsure: "Петров" also finds Петрова',
       ),
     status: z
       .array(z.enum(['booked', 'request', 'canceled']))
       .min(1)
       .optional()
-      .describe('Default ["booked", "request"]; request = hold (заявка). Use ["request"] for holds only'),
+      .describe(
+        'Default ["booked", "request"]; request = hold (заявка). ["request"] = holds only; add "canceled" for отменённые',
+      ),
     unassigned_only: z.boolean().optional().describe('Only bookings without a room in categories that have rooms'),
     unpaid_only: z.boolean().optional().describe('Only bookings with left > 0'),
     limit: z.number().int().min(1).max(200).optional().describe('Max bookings returned (default 50); totals cover all'),
@@ -63,7 +67,7 @@ export const listBookings = defineTool({
     returned: z.number(),
     totals: z.object({
       bookings: z.number(),
-      nights: z.number(),
+      nights: z.number().describe('Whole stays, also nights outside the period'),
       total: z.number(),
       paid: z.number(),
       left: z.number(),
@@ -129,9 +133,9 @@ export const listBookings = defineTool({
 /** A guest query found nothing: names may be spelled differently and phones are often missing. */
 function noMatchHint(query: string): string {
   return isPhoneQuery(query)
-    ? 'No booking has this phone. Many bookings have no phone stored: ask the user for the guest name, or call again ' +
+    ? 'No booking in this period has this phone. Many bookings have no phone stored: ask the user for the guest name, or call again ' +
         'without query and look through the returned bookings.'
-    : 'No guest name matched. Names may be stored in another spelling, as a nickname or full name (Саша = Александр), ' +
+    : 'No guest name matched in this period. Names may be stored in another spelling, as a nickname or full name (Саша = Александр), ' +
         'or in Latin with a different transliteration (Алексей = Alexey). Call again without query for the same period ' +
         '(raise limit if needed) and look through guest_name yourself before saying the booking does not exist.'
 }

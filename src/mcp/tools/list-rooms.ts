@@ -6,8 +6,9 @@ export const listRooms = defineTool({
   level: 'read',
   title: 'List rooms',
   description:
-    "CATALOG. List the hotel's room categories and the rooms in each (типы номеров и номера), with ids and capacity. " +
-    'Use for "какие у нас номера". Says nothing about availability — for that use check_availability.',
+    "The hotel's room categories and the rooms in each (какие у нас номера, типы номеров, вместимость), with ids, " +
+    'capacity and max guests. No availability or prices: use check_availability. Other tools take names directly, ' +
+    'so this is not needed first.',
   input: z.object({}),
   output: z.object({
     categories: z.array(

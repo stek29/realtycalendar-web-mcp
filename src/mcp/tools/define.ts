@@ -5,7 +5,7 @@ import type { Access } from '../../config.js'
 import type { Context } from '../../context.js'
 import { signPlan, verifyPlan } from '../../domain/confirm.js'
 import { ToolError } from '../../domain/errors.js'
-import { WriteOutput } from './shared.js'
+import { PreviewOutput, ResultOutput } from './shared.js'
 
 export interface ToolDef<I extends z.ZodObject = z.ZodObject, O extends z.ZodObject = z.ZodObject> {
   name: string
@@ -38,7 +38,7 @@ export const WRITE_ANNOTATIONS: ToolAnnotations = {
 export interface WritePreview {
   /** What the confirm token signs: target ids, the field values to write, the booking state. Never raw arguments. */
   plan: unknown
-  /** What the model sees (WriteOutput's preview fields). */
+  /** What the model sees (PreviewOutput's fields). */
   view: Record<string, unknown> & { summary: string }
   /** No token: the write can't or shouldn't happen (DUPLICATE, will_fail). */
   blocked: boolean
@@ -50,14 +50,18 @@ export interface WriteToolDef<I extends z.ZodObject, P extends WritePreview> {
   name: string
   level: Access
   title: string
-  /** What the write does and when to use it; shared by the preview tool and the write tool. */
+  /** The preview tool's description: what the write does, when to use it, the user's words. */
   description: string
+  /** First sentence of the write tool's description: what it saves. */
+  saves: string
+  /** When the preview gives no token, e.g. "will_fail (room full)"; omit when it always gives one. */
+  noToken?: string
   input: I
   /** Booking id whose confirms are serialised (update, cancel, delete). */
   lockId?: (args: z.infer<I>) => number
   /** Builds the plan from fresh RC data; no side effects. */
   preview: (ctx: Context, args: z.infer<I>) => Promise<P>
-  /** Runs only after the token matched a fresh preview; returns WriteOutput's result fields. */
+  /** Runs only after the token matched a fresh preview; returns ResultOutput's fields. */
   commit: (ctx: Context, args: z.infer<I>, preview: P) => Promise<Record<string, unknown> & { summary: string }>
 }
 
@@ -83,15 +87,16 @@ export function defineWriteTool<I extends z.ZodObject, P extends WritePreview>(d
     level: def.level,
     title: `Preview: ${def.title.toLowerCase()}`,
     description:
-      `PREVIEW, changes nothing. ${def.description} ` +
-      `Returns what ${def.name} would do (before/after, warnings, will_fail) and a confirm_token; no token when it ` +
-      `would fail (will_fail) or is a duplicate. Show the preview to the user, then call ${def.name} with the same ` +
-      'arguments and the confirm_token.',
+      `Step 1 of 2, changes nothing. ${def.description} ` +
+      `Returns summary, warnings and a confirm_token${def.noToken ? `; no token when ${def.noToken}` : ''}. ` +
+      `Next: put the summary and every warning in your reply, then call ${def.name} with the same arguments plus ` +
+      "confirm_token; the app asks the user to approve that call, so don't also ask in chat. Ask in chat instead " +
+      `of calling ${def.name} when there is no token, a warning says "Ask", or the user only wanted to check.`,
     input: def.input,
-    output: WriteOutput,
+    output: PreviewOutput,
     annotations: READ_ANNOTATIONS,
     async handler(ctx, args) {
-      return WriteOutput.parse(await show(ctx, await def.preview(ctx, args as z.infer<I>)))
+      return PreviewOutput.parse(await show(ctx, await def.preview(ctx, args as z.infer<I>)))
     },
   })
 
@@ -100,17 +105,16 @@ export function defineWriteTool<I extends z.ZodObject, P extends WritePreview>(d
     level: def.level,
     title: def.title,
     description:
-      `WRITE. ${def.description} ` +
-      `Always call ${previewName} first and show its preview; then call this with the same arguments and its ` +
-      "confirm_token. The user approves in the app's confirmation prompt. Instead of calling this, ask in chat when " +
-      'the preview has will_fail, needs a choice, or the user asked to check first.',
+      `Step 2 of 2. ${def.saves} Call only after ${previewName}, with exactly its arguments plus its ` +
+      'confirm_token; the app asks the user to approve this call. PREVIEW_STALE: nothing was saved; show the ' +
+      'fresh preview it returns and call again with its token.',
     input: def.input.extend({
       confirm_token: z
         .string({ error: `Call ${previewName} first and pass its confirm_token` })
         .min(1, `Call ${previewName} first and pass its confirm_token`)
-        .describe(`From ${previewName} with the same arguments; valid 15 minutes`),
+        .describe(`From ${previewName} called with these same arguments; valid 15 minutes`),
     }),
-    output: WriteOutput,
+    output: ResultOutput,
     annotations: WRITE_ANNOTATIONS,
     async handler(ctx, all) {
       const { confirm_token, ...rest } = all as z.infer<I> & { confirm_token: string }
@@ -122,7 +126,7 @@ export function defineWriteTool<I extends z.ZodObject, P extends WritePreview>(d
           throw new ToolError(
             'PREVIEW_STALE',
             'The arguments or the booking changed since the preview, or the preview expired. Nothing was changed.',
-            'Show the new preview (included) and ask again',
+            'Show the user the included fresh preview and what changed; if it has a confirm_token, call again with it',
             { preview: await show(ctx, p) },
           )
         }
@@ -130,12 +134,21 @@ export function defineWriteTool<I extends z.ZodObject, P extends WritePreview>(d
           auditWrite(ctx, { tool: def.name, ...p.audit, booking_id: bookingId, result })
         let done
         try {
-          done = WriteOutput.parse({ preview: false, ...(await def.commit(ctx, args, p)) })
+          done = ResultOutput.parse({ preview: false, ...(await def.commit(ctx, args, p)) })
         } catch (e) {
           await audit(p.audit.booking_id, e instanceof ToolError ? e.code : 'RC_ERROR')
           // RC refused although the preview didn't foresee it (someone was faster): add what the fresh preview saw.
           if (e instanceof ToolError && e.code === 'OCCUPIED') {
             throw new ToolError(e.code, e.message, e.hint, { ...e.details, conflicts: p.view.conflicts ?? null })
+          }
+          // No answer from RC on a change to an existing booking: it may or may not have been saved.
+          if (e instanceof ToolError && e.code === 'RC_ERROR' && p.audit.booking_id != null) {
+            throw new ToolError(
+              e.code,
+              `${e.message}. The change may or may not have been saved.`,
+              'Check with get_booking before trying again',
+              e.details,
+            )
           }
           throw e
         }
