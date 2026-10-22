@@ -157,7 +157,7 @@ Nothing is published (owner, D42): no npm package, and no Docker image for stdio
 
 - Evals gate green on Sonnet and Codex; Haiku results reported.
 - Live read-only client check passes; Claude Desktop check done by the owner.
-- `login` / `check` / `logout` verified by the owner.
+- `login` / `check` / `logout` verified by the owner. ✅ 2054-10-22, `scripts/test-session.sh` (D45)
 - Audit entries written in the live write tests.
 - v1.0.0 tagged; README setup from a checkout.
 
