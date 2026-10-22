@@ -110,15 +110,12 @@ The summary table goes into the commit message of the change that ran it.
 
 ## 3. login / logout
 
-- `realtycalendar-web-mcp login [--keychain]`: asks for the RC username (e-mail or phone) and the password (hidden
-  input, `node:readline` with muted output); `POST /v2/sign_in`; prints the token, or with `--keychain` stores it:
-  macOS `security add-generic-password -U -s realtycalendar-web-mcp -a <username> -w <token>`, Linux
-  `secret-tool store`, elsewhere an error saying to use RC_TOKEN. The password is never stored or logged.
-- The stdio server and `check` read the token from `RC_TOKEN`, else from the keychain.
-- `realtycalendar-web-mcp logout`: `DELETE /v2/sign_in` with that token (ends only this session ✅), removes the
-  keychain entry.
-- Tests: unit tests with a fake `fetch` and a fake keychain runner. Live: the owner runs `login` once (the assistant
-  doesn't handle the password), then `check` and `logout`.
+- `realtycalendar-web-mcp login`: asks for the RC username (e-mail or phone) and the password (hidden input,
+  `node:readline` with muted output, prompts on stderr); `POST /v2/sign_in` without a token header; prints only the
+  token on stdout, for `RC_TOKEN`. The password is never stored or logged. No keychain (owner, D31).
+- `realtycalendar-web-mcp logout`: `DELETE /v2/sign_in` with `RC_TOKEN` (ends only this session ✅).
+- Tests: unit tests with a fake `fetch` (`test/unit/login.test.ts`). Live: the owner runs `login` once (the
+  assistant doesn't handle the password), then `check` and `logout`.
 
 ## 4. Audit log
 

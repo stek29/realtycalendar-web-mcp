@@ -85,8 +85,8 @@ write needs a confirm token from a preview the user saw.
   show up under that user in RC's history, and a read-only RC role is the real guarantee for read-only use. (Sessions
   are independent ✅ A1, so a shared user would also work: the browser's logout doesn't touch the MCP's token.)
 - Token: preferably the bundled `realtycalendar-web-mcp login` CLI (`POST /v2/sign_in {username, password}` →
-  `auth_token`), which creates a **separate session** for the MCP ✅; the password is not stored; the token can go to
-  the OS keychain instead of the config file. Copying the browser's `localStorage.token` also works but ties the MCP to
+  `auth_token`), which creates a **separate session** for the MCP ✅; the password is not stored; the token goes into
+  `RC_TOKEN`. Copying the browser's `localStorage.token` also works but ties the MCP to
   that browser session (logging out there kills it ✅). Rotation/revocation: `realtycalendar-web-mcp logout` →
   `DELETE /v2/sign_in` with the MCP's token, which ends only that session ✅.
 - `RC_ACCESS=read|book|edit|full` (default `read`; levels in spec §1): tools above the level are not registered

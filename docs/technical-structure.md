@@ -158,8 +158,8 @@ serve({ fetch: app.fetch, port })
 
 ```text
 realtycalendar-web-mcp            → runs the stdio server (default)
-realtycalendar-web-mcp login      → asks for RC login + password, POST /v2/sign_in → prints the token (or stores it in
-                                 the OS keychain with --keychain); creates a separate RC session for the MCP
+realtycalendar-web-mcp login      → asks for RC login + password, POST /v2/sign_in → prints the token for RC_TOKEN;
+                                 creates a separate RC session for the MCP
 realtycalendar-web-mcp logout     → DELETE /v2/sign_in with RC_TOKEN (ends only that session)
 realtycalendar-web-mcp check      → GET /v2/info with RC_TOKEN: prints user, agency, access level, token works or not
 ```

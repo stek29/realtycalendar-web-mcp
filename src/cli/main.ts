@@ -1,14 +1,18 @@
-// realtycalendar-web-mcp [check]: no subcommand runs the stdio server.
+// realtycalendar-web-mcp [login | logout | check]: no subcommand runs the stdio server.
 import { parseConfig } from '../config.js'
 import { RcClient } from '../upstream/client.js'
 import { getInfo } from '../upstream/api.js'
 import { ToolError } from '../domain/errors.js'
 import { VERSION } from '../context.js'
 import { runStdio } from '../platforms/stdio.js'
+import { RC_BASE_URL } from '../config.js'
+import { login, logout, terminalIo } from './login.js'
 
 const USAGE = `realtycalendar-web-mcp ${VERSION}
 
   realtycalendar-web-mcp          run the MCP server over stdio (needs RC_TOKEN)
+  realtycalendar-web-mcp login    sign in with your RealtyCalendar login and password; prints a token for RC_TOKEN
+  realtycalendar-web-mcp logout   end the RealtyCalendar session of RC_TOKEN
   realtycalendar-web-mcp check    check that RC_TOKEN works: user, agency, access level
 
 Environment: RC_TOKEN (required), RC_ACCESS=read|book|edit|full (default read),
@@ -44,10 +48,15 @@ export async function check(env: NodeJS.ProcessEnv, out: (s: string) => void = c
   }
 }
 
+const CLI_OPTS = { baseUrl: RC_BASE_URL, userAgent: `realtycalendar-web-mcp/${VERSION}` }
+
 const [command, ...rest] = process.argv.slice(2)
 if (command === undefined) await runStdio()
 else if (command === 'check' && rest.length === 0) process.exitCode = await check(process.env)
-else if (command === '--version') console.log(VERSION)
+else if (command === 'login' && rest.length === 0) process.exitCode = await login(terminalIo(), CLI_OPTS)
+else if (command === 'logout' && rest.length === 0) {
+  process.exitCode = await logout(process.env.RC_TOKEN?.trim(), (s) => console.error(s), CLI_OPTS)
+} else if (command === '--version') console.log(VERSION)
 else {
   console.error(USAGE)
   process.exitCode = command === '--help' || command === '-h' ? 0 : 1

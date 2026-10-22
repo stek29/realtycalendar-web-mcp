@@ -86,7 +86,8 @@ export class RcClient {
           this.fetch(new URL(pathAndQuery, this.opts.baseUrl), {
             method,
             headers: {
-              'X-User-Token': this.token,
+              // No token only for sign-in.
+              ...(this.token ? { 'X-User-Token': this.token } : {}),
               'X-Locale': 'ru',
               'Content-Type': 'application/json',
               Accept: 'application/json',
