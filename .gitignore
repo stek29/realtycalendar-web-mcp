@@ -16,3 +16,6 @@ coverage/
 audit*.jsonl
 
 .DS_Store
+
+# eval reports and transcripts (fake data, but large)
+test/evals/reports/
