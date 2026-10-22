@@ -2,10 +2,11 @@
 // calls and answers, prints a benchmark table and writes a report.
 //   npm run evals -- [--runner claude-sonnet,codex,claude-haiku] [--case U5a,…] [--repeat 3] [--jobs 4]
 // --live: the real server (dist/main.js) with RC_TOKEN and RC_ACCESS=read, read cases only, no transcripts (§2): the
-// token stays in the environment (not in the client's config file) and the client keeps no session on disk.
+// token stays in the environment (not in the client's config file) and the client keeps no session on disk. Every
+// run removes what its client left on disk for it.
 import { spawn } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const ROOT = join(import.meta.dirname, '..', '..')
@@ -89,6 +90,8 @@ interface Server {
   command: string
   args: string[]
   env: Record<string, string>
+  /** Variables the server gets from the client's environment, never written to the client's config. */
+  passEnv: string[]
 }
 
 interface Runner {
@@ -98,6 +101,8 @@ interface Runner {
     prompt: string,
     s: { dir: string; server: Server; session?: string; live: boolean },
   ): Promise<{ turn: Turn; session?: string; raw: string }>
+  /** Deletes the client's own files for this run (its session, project folder). */
+  cleanup(dir: string, session?: string): void
 }
 
 function exec(cmd: string, args: string[], cwd: string): Promise<{ out: string; code: number | null; ms: number }> {
@@ -186,6 +191,11 @@ function claude(name: string, model: string): Runner {
         },
       }
     },
+    cleanup(dir) {
+      // Claude keeps a folder per working directory, named after its real path.
+      const name = realpathSync(dir).replace(/[^a-zA-Z0-9]/g, '-')
+      rmSync(join(homedir(), '.claude', 'projects', name), { recursive: true, force: true })
+    },
   }
 }
 
@@ -194,7 +204,7 @@ function codex(model: string): Runner {
   const toml = (s: string) => JSON.stringify(s)
   return {
     name: 'codex',
-    async turn(prompt, { dir, server, session }) {
+    async turn(prompt, { dir, server, session, live }) {
       const mcp = [
         ['command', toml(server.command)],
         ['args', `[${server.args.map(toml).join(',')}]`],
@@ -204,10 +214,18 @@ function codex(model: string): Runner {
             .map(([k, v]) => `${k}=${toml(v)}`)
             .join(',')}}`,
         ],
+        ['env_vars', `[${server.passEnv.map(toml).join(',')}]`],
         // Write tools aren't read-only, so exec would refuse them without approval.
         ['default_tools_approval_mode', '"approve"'],
       ].flatMap(([k, v]) => ['-c', `mcp_servers.realtycalendar.${k}=${v}`])
-      const common = ['--json', '-m', model, '--skip-git-repo-check', '--ignore-user-config']
+      const common = [
+        '--json',
+        '-m',
+        model,
+        '--skip-git-repo-check',
+        '--ignore-user-config',
+        ...(live ? ['--ephemeral'] : []),
+      ]
       const dis = disable.flatMap((d) => ['--disable', d])
       const args = session
         ? ['exec', 'resume', session, ...common, '-c', 'sandbox_mode="read-only"', ...dis, ...mcp, prompt]
@@ -236,6 +254,18 @@ function codex(model: string): Runner {
           ...(usage.length ? {} : { failed: `codex exit ${code}: no turn.completed` }),
         },
       }
+    },
+    cleanup(_dir, session) {
+      // Codex keeps sessions as ~/.codex/sessions/YYYY/MM/DD/rollout-<time>-<thread id>.jsonl.
+      if (!session) return
+      const root = join(homedir(), '.codex', 'sessions')
+      let files: string[]
+      try {
+        files = readdirSync(root, { recursive: true, encoding: 'utf8' })
+      } catch {
+        return
+      }
+      for (const f of files) if (f.endsWith(`-${session}.jsonl`)) rmSync(join(root, f), { force: true })
     },
   }
 }
@@ -359,8 +389,6 @@ async function main() {
   const reportDir = join(import.meta.dirname, 'reports')
   const transcripts = join(reportDir, stamp)
   if (opts.live && !process.env.RC_TOKEN) throw new Error('--live needs RC_TOKEN')
-  // Codex keeps its sessions on disk; live runs are Claude-only.
-  if (opts.live && opts.runners.some((r) => !r.startsWith('claude'))) throw new Error('--live runs Claude runners only')
 
   const jobs = opts.runners.flatMap((r) => {
     const runner = RUNNERS[r]
@@ -372,8 +400,8 @@ async function main() {
           ? {
               command: 'node',
               args: [join(ROOT, 'dist', 'main.js')],
-              // RC_TOKEN comes from this process's environment, which the client passes on to the server.
               env: { RC_ACCESS: 'read' },
+              passEnv: ['RC_TOKEN'],
             }
           : {
               command: TSX,
@@ -384,6 +412,7 @@ async function main() {
                 RC_ACCESS: c.access,
                 RC_CONFIRM_KEY: 'eval',
               },
+              passEnv: [],
             }
         // An empty working directory per case run: no project files, settings or instructions for the client.
         const cwd = join(dir, 'cwd')
@@ -400,6 +429,7 @@ async function main() {
           }
           if (r.turn.failed) break
         }
+        runner.cleanup(cwd, session)
         rmSync(dir, { recursive: true, force: true })
         const failures = grade(c, turns)
         if (opts.live) {
