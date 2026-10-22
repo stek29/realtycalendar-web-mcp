@@ -115,6 +115,15 @@ answers 401 (JSON responses only; tool calls never stream).
 
 ## Later
 
-Global token bucket towards RC (architecture.md "RC client"): not needed for one hotel; add before a second tenant.
-Login-page rate limiting (RC throttles sign-ins itself). The browser MCP Inspector isn't an allowed client (it
-registers with DCR); the Inspector CLI with a bearer token, `scripts/dev-hosted.ts` and Claude Code cover local checks. Refresh token rotation with replay detection needs state.
+Known gaps, accepted for v0.2 (owner, 2054-10-22): they need shared state to work reliably, and the server stays
+stateless for now.
+- No rate limit on failed logins: `/login` passes passwords to RC's sign-in. Failures are logged with IP and account
+  (D57); RC throttles sign-ins itself.
+- No way to cut off one user: no revocation or account blocklist. Rotating the server key disconnects everyone; the user
+  changing the RC password stops silent re-login.
+- No global token bucket towards RC (architecture.md "RC client"): not needed for one hotel; add before a second
+  tenant.
+- Refresh token rotation with replay detection.
+
+The browser MCP Inspector isn't an allowed client (it registers with DCR); the Inspector CLI with a bearer token,
+`scripts/dev-hosted.ts` and Claude Code cover local checks.
