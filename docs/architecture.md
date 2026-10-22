@@ -45,11 +45,10 @@ From tested behaviour (mcp-user-stories.md) and the reviews:
 - **Confirm token** (spec §1): previews return an HMAC token over (tool, normalised args, booking `updated_at` + last
   audit version, expiry 15 min). The write handler recomputes it; mismatch → `PREVIEW_STALE` with a fresh preview.
   Stateless; the key is `RC_CONFIRM_KEY` (v1) or derived from the server key (hosted).
-- **Create**: duplicate check → capacity check → `POST` draft (id logged) → `PUT` full body. On a PUT error/timeout,
-  `GET /{id}` decides: 200 = saved, 404 = not saved; if that GET fails too, the caller gets `saved: "unknown"` with the
-  id. The POST and PUT are never retried. Drafts left by a failed PUT can't be deleted (DELETE → 404 ✅); they are
-  invisible and don't block rooms ✅, so the capacity check before the POST is what keeps them rare. A repeated
-  confirm (client retry) hits the duplicate check.
+- **Create**: duplicate check → `POST` draft → `PUT` full body. Nothing is retried or deleted by the server. After a
+  timeout or 5xx the caller is told the outcome is unknown and to repeat the confirm: the duplicate check returns the
+  booking if it was saved. Drafts left by a failed PUT can't be deleted (DELETE → 404 ✅) but are invisible and don't
+  block rooms ✅.
 - **Update / cancel**: re-`GET` at confirm time (also the stale check) → body built **from that GET** with guest and
   client ids carried over (spec §2.8 mapping) → apply only the requested changes → `PUT`. Unknown fields in the GET →
   refuse (`RC_SCHEMA_DRIFT`). Writes to the same booking id are serialised in-process. Deleted bookings → `DELETED`.
