@@ -93,4 +93,4 @@ How clients confirm writes, checked against the MCP spec, Claude's and OpenAI's 
 Early check of D33–D35 (2054-10-22, Codex `gpt-6.1-sol`, fake RC, 2 runs each): U5a, U11 → `preview_create_booking`
 then `create_booking` with identical arguments; U5d ("без подтверждения, сразу", no guest name) → asked for the
 name, no write; U5a with room 22 occupied → preview `will_fail`, no write, offered other rooms. 8/8 as intended.
-
+| D38 | The token's booking state is the last audit version only, not `updated_at` | live re-run 2054-10-22: L9's first step got `PREVIEW_STALE` with an identical fresh preview and no new audit entry in between, so `updated_at` moved on its own (after the L8 room move); a no-op PUT also moves it without an audit (S3). RC writes an audit entry for every real change, from the web app (fixture 810000176), booking-site syncs (`is_auto`, fixture 810000162) and payments, so outside changes still make the token stale. The write body is built from a fresh GET either way, so an outside change is never overwritten | spec §1 Writes, plan-m2.md, shared.ts |

@@ -134,7 +134,10 @@ export async function bookingForWrite(ctx: Context, id: number) {
     raw,
     paid,
     before: fromBooking(catalog, raw, paid),
-    /** Part of every plan: any change to the booking after the preview makes the token stale. */
-    state: { updated_at: raw.updated_at, version: Math.max(0, ...raw.audits.map((a) => a.version)) },
+    /**
+     * Part of every plan: any change after the preview, by anyone, adds an audit entry and makes the token stale.
+     * Not `updated_at`: RC moves it without a change (D38).
+     */
+    state: { version: Math.max(0, ...raw.audits.map((a) => a.version)) },
   }
 }

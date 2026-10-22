@@ -40,8 +40,8 @@ S3 (no-op PUT is safe), S8 (drafts: invisible, don't block, can't be deleted), S
 ### Plan → preview → confirm
 
 Each write tool turns its arguments into a **plan**: the resolved target (ids, not names) and the exact field values
-that will be written, plus, for existing bookings, the booking state it was computed from (`updated_at` and the last
-audit version). Preview and commit both build the plan from fresh RC data, so what is confirmed is exactly what was
+that will be written, plus, for existing bookings, the booking state it was computed from (the last
+audit version; not `updated_at`, which RC moves without a change, D38). Preview and commit both build the plan from fresh RC data, so what is confirmed is exactly what was
 shown.
 
 - **Preview** (`preview_<write>`, read-only): plan + capacity check + warnings → `{ preview: true, summary, before,
@@ -101,7 +101,7 @@ Extended to hold state per instance:
 - `writes.test.ts`: no-op round trip of every booking fixture (`putBodyFromGet` → the fields the GET has, ids kept);
   unknown GET key → `RC_SCHEMA_DRIFT`; price rules (3 cases); notes append/replace; status/room/category changes;
   `apartment_id` always from the target room.
-- `confirm.test.ts`: round trip; expiry; any plan change (args, quote, `updated_at`) → mismatch; key change → mismatch.
+- `confirm.test.ts`: round trip; expiry; any plan change (args, quote, booking state) → mismatch; key change → mismatch.
 - `write-tools.test.ts` (fake RC, through `runTool`; previews via `preview_*`, writes via the write tool with the
   token), the spec §3 write stories:
   - U5a create in a room: preview (no change in the fake) → confirm → booking exists; result fields.

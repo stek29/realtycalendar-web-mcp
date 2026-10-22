@@ -155,7 +155,7 @@ also takes a **required** `confirm_token`.
 - **No `confirm_token` in the preview** when the write can't or shouldn't happen: `DUPLICATE` (create) and
   `will_fail: true` (room or category certainly full). The model offers alternatives instead of calling the write.
 - **`<write>` with `confirm_token`** → the server rebuilds the plan from the current arguments and, for existing
-  bookings, the booking's current state (`updated_at` + last audit version); mismatch or older than 15 min →
+  bookings, the booking's current state (its last audit version, D38); mismatch or older than 15 min →
   `PREVIEW_STALE` with a fresh preview. Match → performs the change. Without a token → `VALIDATION` ("Call
   preview_… first and pass its confirm_token"). The write tool never previews by itself.
 - **Result of a write**: `{ "preview": false, "summary": "…", "currency": "₽", "booking": BookingSummary,

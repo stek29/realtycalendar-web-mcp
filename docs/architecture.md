@@ -43,7 +43,7 @@ In memory, keyed by (hash of RC token, agency id):
 From tested behaviour (mcp-user-stories.md) and the reviews:
 
 - **Preview tool + confirm token** (spec §1, D33–D35): a read-only `preview_<write>` tool returns the preview and an
-  HMAC token over (tool, resolved plan, booking `updated_at` + last audit version, expiry 15 min). The write tool
+  HMAC token over (tool, resolved plan, the booking's last audit version, expiry 15 min). The write tool
   (`destructiveHint: true`, so the client asks the user) recomputes it; mismatch → `PREVIEW_STALE` with a fresh
   preview. The token binds the write to what was previewed; the user's approval is the client's prompt.
   Stateless; the key is `RC_CONFIRM_KEY` (v1) or derived from the server key (hosted).
