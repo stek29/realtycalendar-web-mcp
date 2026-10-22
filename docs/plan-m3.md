@@ -61,7 +61,11 @@ each client: "Что свободно на выходные?" → `check_availab
 | `claude-sonnet` | `claude -p <prompt> --model claude-sonnet-5-5 --strict-mcp-config --mcp-config <cfg.json> --tools "" --allowedTools mcp__realtycalendar --setting-sources project --output-format stream-json --verbose --max-budget-usd 1`; turn 2+ adds `--resume <session_id>` (from the `system/init` event) | **gate** |
 | `codex` | `codex exec --json -m gpt-6.1-sol -s read-only --skip-git-repo-check --ignore-user-config -C <dir> <disable…> -c mcp_servers.realtycalendar.command="<tsx>" -c mcp_servers.realtycalendar.args=["<server>"] -c mcp_servers.realtycalendar.default_tools_approval_mode="approve" <prompt>`; turn 2+ `codex exec resume <thread_id> --json -m gpt-6.1-sol -c sandbox_mode="read-only" --skip-git-repo-check --ignore-user-config <disable…> -c mcp_servers… <prompt>` run from the same directory (`resume` takes neither `-s` nor `-C`) | **gate** (non-Claude client; ChatGPT is a target in M4) |
 | `claude-haiku` | as `claude-sonnet` with `--model claude-haiku-5-5` | floor: reported, not gating |
+| `opencode:<model>` | `opencode run --pure --format json --dir <dir> -m opencode/<model> [-s <session>] <prompt>`, MCP server and permissions (shell, edits, web denied) in `<dir>/opencode.json` | extra, e.g. OpenCode's free models (`opencode models`); fake RC only, refused in `--live` |
 
+- Every client runs under `sandbox-exec` (macOS): it can't read `rc.token` / `.rc-credentials` or write in the
+  repo (D49). OpenCode's free tier refuses requests without opencode's built-in tools, so those stay, denied by
+  permissions and the sandbox.
 - Use during implementation (owner, D37): small checks run on `codex` only; `claude-sonnet` (and Haiku) are for the
   full eval runs.
 - Codex refuses tools that aren't read-only ("MCP tool call requires approval, but approval policy is never") unless

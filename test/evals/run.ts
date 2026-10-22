@@ -1,10 +1,10 @@
 // Eval harness (plan-m3.md §1): runs the spec §3 cases on headless clients against the fake-RC server, grades the tool
 // calls and answers, prints a benchmark table and writes a report.
-//   npm run evals -- [--runner claude-sonnet,codex,claude-haiku] [--case U5a,…] [--repeat 3] [--jobs 4]
+//   npm run evals -- [--runner claude-sonnet,codex,claude-haiku,opencode:<model>] [--case U5a,…] [--repeat 3] [--jobs 4]
 // --live: the real server (dist/main.js) with RC_TOKEN and RC_ACCESS=read, read cases only, no transcripts (§2): the
 // token stays in the environment (not in the client's config file) and the client keeps no session on disk. Every
 // run removes what its client left on disk for it.
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -112,10 +112,19 @@ interface Runner {
   cleanup(dir: string, session?: string): void
 }
 
+/** macOS sandbox for every client run: no reading the repo's secrets, no writing in the repo. */
+const SANDBOX = `(version 1)(allow default)
+(deny file-read* (literal "${ROOT}/rc.token") (literal "${ROOT}/.rc-credentials"))
+(deny file-write* (subpath "${ROOT}"))`
+
 function exec(cmd: string, args: string[], cwd: string): Promise<{ out: string; code: number | null; ms: number }> {
   const started = Date.now()
   return new Promise((resolve) => {
-    const child = spawn(cmd, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] })
+    const child = spawn('sandbox-exec', ['-p', SANDBOX, cmd, ...args], {
+      cwd,
+      env: { ...process.env, PWD: cwd },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
     let out = ''
     child.stdout.on('data', (d) => (out += d))
     child.stderr.on('data', () => {})
@@ -280,6 +289,87 @@ function codex(model: string): Runner {
   }
 }
 
+/** opencode with one of its models, e.g. `opencode:glm-5.3-flash-free` (OpenCode's free models: `opencode models`). */
+function opencode(model: string): Runner {
+  return {
+    name: `opencode:${model}`,
+    async turn(prompt, { dir, server, session }) {
+      // The free tier refuses requests without opencode's built-in tools, so only shell, edits and web are denied;
+      // the sandbox in exec() covers the rest.
+      writeFileSync(
+        join(dir, 'opencode.json'),
+        JSON.stringify({
+          $schema: 'https://opencode.ai/config.json',
+          mcp: {
+            realtycalendar: {
+              type: 'local',
+              command: [server.command, ...server.args],
+              environment: {
+                ...server.env,
+                ...Object.fromEntries(server.passEnv.map((k) => [k, `{env:${k}}`])),
+              },
+            },
+          },
+          permission: { edit: 'deny', bash: 'deny', webfetch: 'deny' },
+        }),
+      )
+      const args = [
+        'run',
+        '--pure',
+        '--format',
+        'json',
+        '--dir',
+        dir,
+        '-m',
+        `opencode/${model}`,
+        ...(session ? ['-s', session] : []),
+      ]
+      const { out, ms, code } = await exec('opencode', [...args, prompt], dir)
+      const events = jsonLines(out)
+      const parts = events.map((e) => e.part ?? {})
+      const finishes = parts.filter((p) => p.type === 'step-finish')
+      const error = events.find((e) => e.type === 'error')?.error
+      const isError = (output: unknown) => {
+        try {
+          return 'error' in JSON.parse(String(output))
+        } catch {
+          return false
+        }
+      }
+      return {
+        session: events.find((e) => e.sessionID)?.sessionID ?? session,
+        raw: out,
+        turn: {
+          calls: parts
+            .filter((p) => p.type === 'tool')
+            .map((p) => ({
+              tool: String(p.tool).replace(/^realtycalendar_/, ''),
+              args: (p.state?.input ?? {}) as Record<string, unknown>,
+              error: p.state?.status !== 'completed' || isError(p.state?.output),
+            })),
+          answer: parts
+            .filter((p) => p.type === 'text')
+            .map((p) => String(p.text ?? ''))
+            .join('\n'),
+          cost_usd: finishes.reduce((s, p) => s + (p.cost ?? 0), 0),
+          input_tokens: finishes.reduce(
+            (s, p) => s + (p.tokens?.input ?? 0) + (p.tokens?.cache?.read ?? 0) + (p.tokens?.cache?.write ?? 0),
+            0,
+          ),
+          output_tokens: finishes.reduce((s, p) => s + (p.tokens?.output ?? 0), 0),
+          ms,
+          ...(error || !finishes.length
+            ? { failed: `opencode exit ${code}: ${error?.data?.message ?? error?.name ?? 'no step-finish'}` }
+            : {}),
+        },
+      }
+    },
+    cleanup(dir, session) {
+      if (session) spawnSync('opencode', ['session', 'delete', session], { cwd: dir, stdio: 'ignore' })
+    },
+  }
+}
+
 const RUNNERS: Record<string, Runner> = {
   'claude-sonnet': claude('claude-sonnet', 'claude-sonnet-5-5'),
   'claude-haiku': claude('claude-haiku', 'claude-haiku-5-5'),
@@ -401,8 +491,10 @@ async function main() {
   if (opts.live && !process.env.RC_TOKEN) throw new Error('--live needs RC_TOKEN')
 
   const jobs = opts.runners.flatMap((r) => {
-    const runner = RUNNERS[r]
+    const runner = r.startsWith('opencode:') ? opencode(r.slice('opencode:'.length)) : RUNNERS[r]
     if (!runner) throw new Error(`unknown runner ${r}`)
+    // Free-tier prompts may be kept by the model provider: fake data only.
+    if (opts.live && r.startsWith('opencode:')) throw new Error('--live: no opencode runners')
     return cases.flatMap((c) =>
       Array.from({ length: opts.repeat }, (_, k) => async (): Promise<Run> => {
         const dir = mkdtempSync(join(tmpdir(), 'rc-eval-'))
