@@ -1,9 +1,10 @@
 // Eval harness (plan-m3.md §1): runs the spec §3 cases on headless clients against the fake-RC server, grades the tool
 // calls and answers, prints a benchmark table and writes a report.
 //   npm run evals -- [--runner claude-sonnet,codex,claude-haiku] [--case U5a,…] [--repeat 3] [--jobs 4]
-// --live: the real server (dist/main.js) with RC_TOKEN and RC_ACCESS=read, read cases only, no transcripts (§2).
+// --live: the real server (dist/main.js) with RC_TOKEN and RC_ACCESS=read, read cases only, no transcripts (§2): the
+// token stays in the environment (not in the client's config file) and the client keeps no session on disk.
 import { spawn } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -95,7 +96,7 @@ interface Runner {
   /** Runs one turn; `session` carries the client's conversation id between turns. */
   turn(
     prompt: string,
-    s: { dir: string; server: Server; session?: string },
+    s: { dir: string; server: Server; session?: string; live: boolean },
   ): Promise<{ turn: Turn; session?: string; raw: string }>
 }
 
@@ -126,7 +127,7 @@ const jsonLines = (s: string) =>
 function claude(name: string, model: string): Runner {
   return {
     name,
-    async turn(prompt, { dir, server, session }) {
+    async turn(prompt, { dir, server, session, live }) {
       const cfg = join(dir, 'mcp.json')
       writeFileSync(cfg, JSON.stringify({ mcpServers: { realtycalendar: server } }))
       const args = [
@@ -149,6 +150,7 @@ function claude(name: string, model: string): Runner {
         '--max-budget-usd',
         '1',
         ...(session ? ['--resume', session] : []),
+        ...(live ? ['--no-session-persistence'] : []),
       ]
       const { out, ms, code } = await exec('claude', args, dir)
       const events = jsonLines(out)
@@ -357,6 +359,8 @@ async function main() {
   const reportDir = join(import.meta.dirname, 'reports')
   const transcripts = join(reportDir, stamp)
   if (opts.live && !process.env.RC_TOKEN) throw new Error('--live needs RC_TOKEN')
+  // Codex keeps its sessions on disk; live runs are Claude-only.
+  if (opts.live && opts.runners.some((r) => !r.startsWith('claude'))) throw new Error('--live runs Claude runners only')
 
   const jobs = opts.runners.flatMap((r) => {
     const runner = RUNNERS[r]
@@ -368,7 +372,8 @@ async function main() {
           ? {
               command: 'node',
               args: [join(ROOT, 'dist', 'main.js')],
-              env: { RC_TOKEN: process.env.RC_TOKEN!, RC_ACCESS: 'read' },
+              // RC_TOKEN comes from this process's environment, which the client passes on to the server.
+              env: { RC_ACCESS: 'read' },
             }
           : {
               command: TSX,
@@ -386,7 +391,7 @@ async function main() {
         const turns: Turn[] = []
         let session: string | undefined
         for (const [i, prompt] of c.turns.entries()) {
-          const r = await runner.turn(prompt, { dir: cwd, server, session })
+          const r = await runner.turn(prompt, { dir: cwd, server, session, live: opts.live })
           session = r.session
           turns.push(r.turn)
           if (!opts.live) {
@@ -395,6 +400,7 @@ async function main() {
           }
           if (r.turn.failed) break
         }
+        rmSync(dir, { recursive: true, force: true })
         const failures = grade(c, turns)
         if (opts.live) {
           // Live: only that no call failed; nothing about the data is kept.

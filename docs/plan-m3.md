@@ -114,7 +114,9 @@ The summary table goes into the commit message of the change that ran it.
 - **Live read-only check** (replaces the M1 Claude Desktop gate): the same harness in `--live` mode starts the real
   server (`dist/main.js`) with `RC_TOKEN` and `RC_ACCESS=read`, runs the M1 read cases (U1–U4, U9, U10, U12, R1–R3)
   on `claude-sonnet`, and checks tool calls and that no call errors. Transcripts are **not** written to disk (real
-  guest data); only pass/fail and counts. Real guest data reaches Anthropic, as in any real use.
+  guest data); only pass/fail and counts. Claude runs with `--no-session-persistence` (Codex is refused: it keeps
+  sessions on disk), `RC_TOKEN` stays in the environment instead of the client's config file, and each run's temp
+  directory is removed. Real guest data reaches Anthropic, as in any real use.
 - **Claude Desktop**, once before the v1 release: the owner adds the server to Claude Desktop and asks three prompts
   (U1a, U4a, X5). Confirms the client launches the server, shows the tools and uses the instructions.
 
