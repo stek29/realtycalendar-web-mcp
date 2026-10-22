@@ -3,7 +3,7 @@
 MCP server for [RealtyCalendar](https://realtycalendar.ru) — lets Claude, ChatGPT and other MCP clients check
 availability and manage bookings through RealtyCalendar's web app API.
 
-Status: v1 — 4 read tools and 4 write tools (create, update, cancel, delete), each write with a read-only preview
+Status: v0.1.0 — 4 read tools and 4 write tools (create, update, cancel, delete), each write with a read-only preview
 tool; audit log; `login` / `logout`. Not published: run it with Node from a checkout. A Docker image comes with the
 hosted HTTP server (M4), for Kubernetes / docker compose.
 

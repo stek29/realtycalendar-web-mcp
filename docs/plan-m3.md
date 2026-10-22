@@ -95,8 +95,8 @@ each client: "Что свободно на выходные?" → `check_availab
 - Deterministic: tool calls and arguments from the event stream; answer regexes. No LLM judge in v1; failures are
   reviewed by reading the transcript.
 - Each case runs 3 times per runner (models are not deterministic). A case passes on a runner if ≥ 2 of 3 runs pass.
-- **Gate (M3 "evals green")**: every case passes on **both** `claude-sonnet` and `codex`. Haiku is reported, not
-  gating; a case that regresses on it is looked at.
+- **Gate (M3 "evals green")**: every case passes on `claude-sonnet` (owner, D50: Codex was rate-limited and the
+  free models throttled; they are reported, not gating). A case that regresses on another runner is looked at.
 - A failure that only one client shows is fixed in our descriptions, schemas or instructions, not with
   client-specific wording, unless the transcript shows a client bug.
 
@@ -164,11 +164,12 @@ Nothing is published (owner, D42): no npm package, and no Docker image for stdio
 
 ## Done when
 
-- Evals gate green on Sonnet and Codex; Haiku results reported.
-- Live read-only client check passes. (Claude Desktop check dropped, D48.)
+- Evals green on Sonnet (41/41, 2 of 3 runs each). ✅ 2054-10-22 (D50). Codex, Haiku and free models: reported when
+  they run, not gating (owner).
+- Live read-only client check passes. ✅ 18/18 on Sonnet, 2054-10-22 (D50). (Claude Desktop check dropped, D48.)
 - `login` / `check` / `logout` verified by the owner. ✅ 2054-10-22, `scripts/test-session.sh` (D45)
-- Audit entries written in the live write tests.
-- v0.1.0 tagged; README setup from a checkout.
+- Audit entries written in the live write tests. ✅ checked by L1 in test/live (D43)
+- v0.1.0 tagged; README setup from a checkout. ✅
 
 ## TODO (M4): when the tools should not be called
 
