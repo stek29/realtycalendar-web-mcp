@@ -183,7 +183,7 @@ means the user's own weekend. Before the M4 release:
   ones, and add negative cases where the right answer calls no tool (personal calendar, "кто свободен из
   сотрудников", general questions); grading supports `forbid` already.
 - Status 2054-10-22 (D59): descriptions and instructions done; cases N1–N6 (no tool may be called) and C1–C3 (bare
-  prompts with hotel context) added; not run yet.
+  prompts with hotel context) added; 11/11 on Sonnet with U1a and U4a (`--repeat 1`), only our server loaded.
 - Run some cases with a second, decoy MCP server (e.g. a fake calendar with "free/busy" tools) to measure picking
   the right one.
 
