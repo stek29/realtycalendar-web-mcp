@@ -529,7 +529,7 @@ same turn; the user approves in the client's prompt (D35).
 | U1b | "Есть двухместный на 7–9 ноября?" | `check_availability(2054-11-07, 2054-11-09, category="двухместный")` | all matching categories; bookable counts |
 | U1c | "Какие у нас вообще номера?" | `list_rooms()` | categories and rooms; no availability claims |
 | U2 | "22-й свободен 8 ноября?" | `check_availability(2054-11-08, 2054-11-09, room="22")` | yes/no; who's there; "category full" if that's the reason; hold if any |
-| U3a | "Что занято на завтра?" | `check_availability(2054-10-23, 2054-10-24)` | busy rooms with guests, unassigned bookings |
+| U3a | "Что занято на завтра?" | `check_availability(2054-10-23, 2054-10-24, detail="rooms")` | busy rooms with guests, unassigned bookings |
 | U3b | "Кто живёт сегодня?" | `list_bookings()` (from = today, match = staying) | guests in house with rooms |
 | U3c | "В каком номере Иванов?" | `list_bookings(query="Иванов")` | room(s), dates; asks if several |
 | U4a | "Кто заезжает завтра и откуда?" | `list_bookings(from=2054-10-23, match="arriving")` | room, guest, phone, time, source |
@@ -557,7 +557,7 @@ same turn; the user approves in the client's prompt (D35).
 | U12c | "Сколько мы заработали в ноябре по броням?" | `list_bookings(2054-11-01, 2054-12-01)` | totals (says stays overlapping the month are counted in full) |
 | R1 | "На какой минимальный срок можно забронировать 22-й на Новый год?" | `check_availability(2054-12-31, 2055-01-01, room="22")` | min stay 3 nights (from stay_rules), whether 22 is free then |
 | R2 | "Есть номер на троих на 7–9 ноября?" | `check_availability(2054-11-07, 2054-11-09, guests=3)` | only categories for ≥ 3 guests (05, 08, 09) and whether they're bookable |
-| R3 | "Можно заехать 31-го на одну ночь?" | `check_availability(2054-12-31, 2055-01-01)` | stay_ok false: min stay 3 |
+| R3 | "Можно заехать 31 декабря на одну ночь?" | `check_availability(2054-12-31, 2055-01-01)` | stay_ok false: min stay 3 |
 | Q1 | "Сколько стоит 5-й на 20–23 января?" | `check_availability(2055-01-20, 2055-01-23, room="5")` | 33 000 (11 000/night), and whether 5 is free |
 | P1 | "Найди бронь по телефону 916 123 45 67" | `list_bookings(query="9161234567")` | the booking, or "not found in the next 180 days" |
 | X1 | "Какие брони создали вчера?" | none (or list_bookings + explanation) | can't filter by date made |

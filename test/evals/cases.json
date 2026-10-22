@@ -94,7 +94,8 @@
               "tool": "check_availability",
               "args": {
                 "check_in": "2054-10-23",
-                "check_out": "2054-10-24"
+                "check_out": "2054-10-24",
+                "detail": "rooms"
               }
             }
           ],
@@ -197,9 +198,7 @@
               "tool": "list_bookings",
               "args": {
                 "from": "2054-10-22",
-                "to": {
-                  "oneOf": ["2054-10-26", "2054-10-25"]
-                },
+                "to": "2054-10-26",
                 "match": "arriving",
                 "unpaid_only": true
               }
@@ -771,7 +770,8 @@
               }
             }
           ],
-          "forbid": ["create_booking", "update_booking", "cancel_booking", "delete_booking"]
+          "forbid": ["create_booking", "update_booking", "cancel_booking", "delete_booking"],
+          "answer": ["(?i)целиком|полност|пересека|захват|частично|выходят за"]
         }
       ]
     },
@@ -820,7 +820,7 @@
     {
       "id": "R3",
       "access": "full",
-      "turns": ["Можно заехать 31-го на одну ночь?"],
+      "turns": ["Можно заехать 31 декабря на одну ночь?"],
       "expect": [
         {
           "calls": [
