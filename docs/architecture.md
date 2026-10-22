@@ -96,7 +96,7 @@ write needs a confirm token from a preview the user saw.
 - `RC_ACCESS=read|book|edit|full` (default `read`; levels in spec §1): tools above the level are not registered
   **and** their handlers refuse calls (second guard if a client cached the tool list).
 - `RC_SITE_BOOKINGS=protect|allow` (default `protect`, D40): writes don't change what a booking site sold. Hosted, it
-  can become per connection (an OAuth scope picked on the login page), like per-user access levels.
+  is server-wide in v0.2; the access level is picked per connection on the login page, capped by `RC_ACCESS` (D51).
 - Not published (D42): no npm package and no stdio image; run from a checkout with Node. The Docker image (M4) is
   for the hosted HTTP server only.
 
@@ -123,7 +123,7 @@ Goal: one URL that users add as a connector in Claude or ChatGPT; the server kee
 
   | Client | `client_id` (CIMD URL) | Redirect URI |
   |---|---|---|
-  | Claude (web, Desktop, mobile) | Anthropic-hosted CIMD | `https://claude.ai/api/mcp/auth_callback` |
+  | Claude (web, Desktop, mobile) | `https://claude.ai/oauth/mcp-oauth-client-metadata` | `https://claude.ai/api/mcp/auth_callback` |
   | Claude Code | `https://claude.ai/oauth/claude-code-client-metadata` | `http://localhost:<any>/callback`, `http://127.0.0.1:<any>/callback` (match ignoring the port) |
   | ChatGPT | `https://chatgpt.com/oauth/client.json` | `https://chatgpt.com/connector_platform_oauth_redirect` |
 
