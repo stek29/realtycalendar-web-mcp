@@ -544,7 +544,7 @@ same turn; the user approves in the client's prompt (D35).
 | U6b | "Продли Иванова на одну ночь", then "Оставь прежнюю цену за ночь" | `list_bookings(query="Иванов")` → (asks if several) → `preview_update_booking(id, check_out=+1)` → asks which price (PRICE_CHANGED says "Ask"); turn 2: `preview_update_booking(…)` → `update_booking(…, token)` | new total |
 | U6c | "Гость отменил бронь 810000208" | `preview_cancel_booking(810000208)` → `cancel_booking(810000208, token)` | cancel, not delete; BOOKING_SITE note if relevant |
 | U6d | "Удали бронь 810000208, я её по ошибке создал" | `preview_delete_booking(810000208)` → `delete_booking(810000208, token)` | |
-| U6e | "Сними бронь Петровой" | `list_bookings(query="Петрова")` → asks: cancel or delete? | asks |
+| U6e | "Сними бронь Петровой" | `list_bookings(query="Петрова")` → asks: cancel or delete? | asks; if the booking is from a booking site and `RC_SITE_BOOKINGS=protect`, says to do it on the site instead |
 | U6f | "Добавь в заметку к брони 810000208, что нужна детская кроватка" | `preview_update_booking(810000208, notes_append="Нужна детская кроватка")` → `update_booking(…, token)` | old note kept |
 | U6g | user changes a detail after the preview ("а давай до 10-го") | a new preview, not the old token | not in evals: headless clients approve writes at once, so there is no gap to change a detail in; "changed args → PREVIEW_STALE" is a unit test |
 | U9 | "Что за бронь с Островка вчера пришла?" | `list_bookings(source="островок")` → `get_booking(id)` (asks if several) | booking-site details incl. "Дата бронирования"; says it can't filter by date made |
@@ -555,7 +555,7 @@ same turn; the user approves in the client's prompt (D35).
 | U12a | "Бронь 810000208 оплачена?" | `get_booking(810000208)` | total / paid / left |
 | U12b | "Кто нам должен за ноябрь?" | `list_bookings(2054-11-01, 2054-12-01, unpaid_only=true)` | list + totals.left |
 | U12c | "Сколько мы заработали в ноябре по броням?" | `list_bookings(2054-11-01, 2054-12-01)` | totals (says stays overlapping the month are counted in full) |
-| R1 | "На какой минимальный срок можно забронировать 22-й на Новый год?" | `check_availability(2054-12-31, 2055-01-01, room="22")` | min stay 3 nights (from stay_rules), whether 22 is free then |
+| R1 | "На какой минимальный срок можно забронировать 22-й на Новый год?" | `check_availability(2054-12-31, 2055-01-01, room="22")` (any range from late December over New Year is fine) | min stay 3 nights (from stay_rules), whether 22 is free then |
 | R2 | "Есть номер на троих на 7–9 ноября?" | `check_availability(2054-11-07, 2054-11-09, guests=3)` | only categories for ≥ 3 guests (05, 08, 09) and whether they're bookable |
 | R3 | "Можно заехать 31 декабря на одну ночь?" | `check_availability(2054-12-31, 2055-01-01)` | stay_ok false: min stay 3 |
 | Q1 | "Сколько стоит 5-й на 20–23 января?" | `check_availability(2055-01-20, 2055-01-23, room="5")` | 33 000 (11 000/night), and whether 5 is free |

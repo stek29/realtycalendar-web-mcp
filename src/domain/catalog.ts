@@ -35,7 +35,8 @@ export interface Catalog {
 }
 
 /** Sources that are not booking sites (the hotel's own channels). */
-const OWN_SOURCES = new Set(['Продление', 'Модуль бронирования', 'Корзина', 'Постоянный гость', 'Партнёрство'])
+/** Sources that are the hotel's own channels; every other source is a booking site. */
+export const OWN_SOURCES = new Set(['Продление', 'Модуль бронирования', 'Корзина', 'Постоянный гость', 'Партнёрство'])
 
 /** Russian names of sources that transliteration doesn't reach. */
 const SOURCE_ALIASES: Record<string, string> = {

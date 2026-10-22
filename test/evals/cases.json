@@ -516,7 +516,7 @@
       "id": "U6e",
       "access": "full",
       "turns": ["Сними бронь Петровой"],
-      "needs": ["one upcoming booking of 'Анна Петрова'"],
+      "needs": ["one upcoming booking of 'Анна Петрова' (from Yandex Travel in the fixtures)"],
       "expect": [
         {
           "calls": [
@@ -529,7 +529,7 @@
               }
             }
           ],
-          "answer": ["(?i)отмен", "(?i)удал"],
+          "answer": ["(?i)отмен", "(?i)удал|яндекс|сайт|площадк"],
           "forbid": ["cancel_booking", "delete_booking"]
         }
       ]
@@ -785,7 +785,9 @@
             {
               "tool": "check_availability",
               "args": {
-                "check_in": "2054-12-31",
+                "check_in": {
+                  "re": "^2054-12-(2[4-9]|3[01])$"
+                },
                 "room": {
                   "re": "^22"
                 }

@@ -2,6 +2,7 @@
 // live tests (mcp-user-stories.md "Write API", "Write baseline"): drafts, strict PUT bodies, occupancy, soft delete.
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { OWN_SOURCES } from '../src/domain/catalog.js'
 import { canonicalJson } from '../src/domain/confirm.js'
 import type { Apartments, Grid, GridEvent, StayRules } from '../src/upstream/schemas.js'
 
@@ -287,8 +288,15 @@ function occupied(
 
 const nextDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
 
+/** Like RC (spec §5 S1): a booking from a site has platform_name even when the grid's is_external is false. */
+function siteSource(id: number | null): string | null {
+  const sources = fixture<{ agency: { sources_list: { id: number; title: string }[] } }>('info').agency.sources_list
+  const title = sources.find((s) => s.id === id)?.title
+  return title && !OWN_SOURCES.has(title) ? title : null
+}
+
 /** The booking's detail: written before, a fixture, or built from its grid event. Drafts and unknown ids: none. */
-function detailOf(state: FakeState, id: number): Detail | undefined {
+export function detailOf(state: FakeState, id: number): Detail | undefined {
   if (state.drafts[id]) return undefined
   if (state.details[id]) return state.details[id]
   if (fixtures.has(`booking_${id}`)) return (state.details[id] = fixture<Detail>(`booking_${id}`))
@@ -337,7 +345,7 @@ function detailOf(state: FakeState, id: number): Detail | undefined {
     guest: { ...person, id: id + 2, notes: null, attachments: [] },
     oki_doki_contract: null,
     external: null,
-    platform_name: e.is_external ? 'Booking site' : null,
+    platform_name: e.is_external ? 'Booking site' : siteSource(e.source_id),
     audits: [
       { version: 1, created_at: '2054-10-01 12:00:00 MSK', record: { title: `Создание Брони (${id})` }, changes: [] },
     ],
