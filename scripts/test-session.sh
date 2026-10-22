@@ -2,7 +2,7 @@
 # Live check of login / check / logout (plan-m3.md §3), run by the owner: signs in with .rc-credentials
 # (username:password), checks the new token, signs it out, and checks that the token in rc.token (the MCP's own
 # session) still works, i.e. logout ends only its own session. Prints no token or password.
-#   scripts/test-session.sh            (builds dist/ first if needed)
+#   scripts/test-session.sh            (builds dist/ first)
 set -u
 cd "$(dirname "$0")/.." || exit 2
 
@@ -27,7 +27,7 @@ IFS= read -r creds < .rc-credentials
 user=${creds%%:*}
 pass=${creds#*:}
 [[ $creds == *:* && -n $user && -n $pass ]] || { echo ".rc-credentials must be username:password"; exit 2; }
-[[ -f dist/main.js ]] || npm run build >/dev/null || { echo "build failed"; exit 2; }
+npm run build >/dev/null || { echo "build failed"; exit 2; }
 main_token=$(tr -d '[:space:]' < rc.token 2>/dev/null)
 token=
 
