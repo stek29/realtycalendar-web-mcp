@@ -300,3 +300,7 @@ before and after.
 | 5–7 Apr, all rooms closed | saved (S2: closures not enforced) |
 | Cancel (status `canceled`) then `DELETE` | 200 / 200; `DELETE` returns the booking with `is_delete: true` |
 | Guest records | each create made a new guest record (no reuse by phone) |
+| `DELETE` on a draft (never saved, or after a refused `PUT`) | 404 `{"error":"not found"}`: drafts can't be removed |
+| `PUT` to a draft after that `DELETE` | 200: the draft became a real booking. Drafts stay saveable |
+| Full booking saved over an open draft, same room and dates | 200: drafts don't block the room |
+| Leftovers | three invisible test drafts (810000209, 810000210, 810000211) |

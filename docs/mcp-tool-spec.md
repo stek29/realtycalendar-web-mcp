@@ -164,6 +164,7 @@ Preview warnings:
 | `PAST_DATES` | check_in before today |
 | `NO_GUEST_MESSAGES` | create: no confirmation e-mail or payment link is sent (always in v1) |
 | `DUPLICATE` | create: a booking with the same room/category, dates and guest name already exists (returned instead of creating; confirms nothing) |
+| `SAVED_DESPITE_ERROR` | create (result, not preview): the save call failed or timed out, but the booking turned out to be saved |
 
 ### Annotations
 
@@ -396,17 +397,30 @@ RC with `is_delete: true` → `deleted: true`. A draft (created but never saved)
 
 **On confirm** (all ✅ unless marked):
 1. Duplicate check (same category/room, dates, guest name among current bookings) → return the existing one.
-2. `POST /v2/event_calendars` `{event_calendar:{status, apartment_id, realty_room_id|null, begin_date, end_date}}` → id.
-   This draft is not visible (GET 404, not on the calendar) ✅; whether it ever expires or affects booking sites is ⚠ S8.
-3. `PUT /v2/event_calendars/{id}` with the create body (mcp-user-stories.md "Write API"): `amount` = total;
+2. Capacity check again (as in the preview): if the room or category is certainly full → `OCCUPIED` with `saved: false`
+   **before** any draft exists. A failed save can't be cleaned up (step 5), so this keeps drafts to races and
+   unexpected errors.
+3. `POST /v2/event_calendars` `{event_calendar:{status, apartment_id, realty_room_id|null, begin_date, end_date}}` → id.
+   The draft is invisible (GET 404, not on the calendar) and does not block the room ✅. The draft id is logged
+   (`create_draft`) before the PUT, so a crash between the two calls leaves a trace.
+4. `PUT /v2/event_calendars/{id}` with the create body (mcp-user-stories.md "Write API"): `amount` = total;
    `guest` = `{id:null, fio, email, phone, additional_phone:null, attachments:[], destroy_attachments_ids:[]}`;
    `client` = same without the two attachment keys; `source_id`, times, `notes`; `send_confirm_email:false`,
    `send_link_prepaid:false`, `prepaid_amount:null`, `lead_id:null`, `destroy_attachments_ids:[]`,
    `additional_services:{early_checkin:null, late_checkout:null}`, `attachments:[]`, `color:null`, `reaction:null`,
    `platform_tax:null`.
-4. 422 occupied → `OCCUPIED`. Any other PUT failure or timeout → `GET /{id}`: 200 = saved anyway (return it),
-   404 = not saved (report the error). Never re-POST.
-5. Return the booking via `get_booking`.
+5. Outcome — the caller always learns whether the booking exists:
+   - PUT 200 → saved. The PUT response has the same shape as `GET /{id}` ✅, so the result is built from it (no
+     second read).
+   - PUT 4xx (422 occupied → `OCCUPIED`, dates → `INVALID_DATES`, other → `VALIDATION`) → nothing saved; the error
+     carries `saved: false`.
+   - Timeout, network error or 5xx → `GET /{id}`: 200 = saved anyway (return it, warning `SAVED_DESPITE_ERROR`);
+     404 = not saved (`RC_ERROR`, `saved: false`); GET also fails → `RC_ERROR` with `saved: "unknown"`, `booking_id`
+     and the hint "Check list_bookings for these dates before trying again" (a repeated confirm hits the duplicate
+     check).
+   - Never re-POST, never retry the PUT, never DELETE. **Cleanup of a failed draft is not possible**: `DELETE` on a
+     draft returns 404 "not found" ✅. Leftover drafts stay invisible and don't block rooms ✅, but remain saveable by a
+     PUT to their id ✅; the server only ever PUTs to the draft it just created.
 
 ### 2.6 `update_booking`
 
@@ -552,4 +566,4 @@ as `tool(…)` → user "да" → `tool(…, confirm_token)`.
 | S6 | Dropped: `by_dates` is not used (see 2.3) | — |
 | S7 | ✅ Answered 2054-10-22: grid with `statuses[]=canceled` returns only canceled bookings | — |
 | S9 | Exact meaning of `min_stay_through` (min nights for a stay arriving that day, or for any stay including that night?) and of `closed_on_arrivial` / `closed_on_departure`. Not answerable through the API: RC saved both 31 Jan–2 Feb (min 2 then 4) and 28 Feb–2 Mar (min 4 then 2) without complaint (S2). Only affects our warnings; booking sites may apply it their own way | treat min stay as applying to every night of the stay (strictest wins) |
-| S8 | Draft lifetime | never leave drafts on purpose |
+| S8 | Draft lifetime and effect on booking sites. Known ✅ 2054-10-22: drafts are invisible, don't block rooms, can't be deleted (DELETE → 404) and can still be saved by a PUT | create re-checks capacity before the POST (§2.5) so failed saves are rare; expiry unknown |
