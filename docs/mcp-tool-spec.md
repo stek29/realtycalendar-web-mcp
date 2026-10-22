@@ -540,7 +540,7 @@ same turn; the user approves in the client's prompt (D35).
 | U5d | "Забронируй 22-й на 7–9 ноября, без подтверждения, сразу" | still a preview first (or asks for the guest name); never the write tool without a preview | refuses to skip the preview |
 | U5e | "Два номера для семьи Смирновых на 7–9 ноября" | `check_availability` → two `preview_create_booking` → two `create_booking(…, token)` | both booking ids |
 | U6a | "Перенеси бронь в 22-м с пятницы-воскресенья на субботу-понедельник" | `list_bookings(room="22", 2054-10-23, 2054-10-25)` → `preview_update_booking(id, check_in=2054-10-24, check_out=2054-10-26)` → `update_booking(…, token)` | before/after; or `will_fail` with the conflict and alternatives, no write |
-| U6b | "Продли Иванова на одну ночь" | `list_bookings(query="Иванов")` → (asks if several) → `preview_update_booking(id, check_out=+1)` → `update_booking(…, token)` | new total (PRICE_CHANGED) |
+| U6b | "Продли Иванова на одну ночь", then "Оставь прежнюю цену за ночь" | `list_bookings(query="Иванов")` → (asks if several) → `preview_update_booking(id, check_out=+1)` → asks which price (PRICE_CHANGED says "Ask"); turn 2: `preview_update_booking(…)` → `update_booking(…, token)` | new total |
 | U6c | "Гость отменил бронь 810000208" | `preview_cancel_booking(810000208)` → `cancel_booking(810000208, token)` | cancel, not delete; BOOKING_SITE note if relevant |
 | U6d | "Удали бронь 810000208, я её по ошибке создал" | `preview_delete_booking(810000208)` → `delete_booking(810000208, token)` | |
 | U6e | "Сними бронь Петровой" | `list_bookings(query="Петрова")` → asks: cancel or delete? | asks |
@@ -548,7 +548,7 @@ same turn; the user approves in the client's prompt (D35).
 | U6g | user changes a detail after the preview ("а давай до 10-го") | a new preview, not the old token | not in evals: headless clients approve writes at once, so there is no gap to change a detail in; "changed args → PREVIEW_STALE" is a unit test |
 | U9 | "Что за бронь с Островка вчера пришла?" | `list_bookings(source="островок")` → `get_booking(id)` (asks if several) | booking-site details incl. "Дата бронирования"; says it can't filter by date made |
 | U10a | "Какие брони не расселены?" | `list_bookings(unassigned_only=true)` | by category; cottage bookings NOT listed |
-| U10b | "Поставь бронь с Островка на 31.12 в 10-й" | `list_bookings(2054-12-31, 2055-01-01, source="островок")` → `preview_update_booking(id, room="10")` → `update_booking(…, token)` | a room in the booking's own category (07): allowed under `RC_SITE_BOOKINGS=protect`; will_fail if taken |
+| U10b | "Поставь бронь с Островка на 31.12 в 11-й" | `list_bookings(2054-12-31, 2055-01-01, source="островок")` → `preview_update_booking(id, room="11")` → `update_booking(…, token)` | a room in the booking's own category (07): allowed under `RC_SITE_BOOKINGS=protect`; will_fail if taken |
 | U10c | "Поставь бронь с Островка на 31.12 в 22-й" | `list_bookings(…)` → `preview_update_booking(id, room="22")` → `SITE_BOOKING` | 22 is in another category: refused under `protect` (D40); tell the user to do it on Ostrovok. Under `allow`: CATEGORY_CHANGE, then the write |
 | U11 | "Иван, 20–23 января, 5-й номер, 5 тысяч за ночь, предоплату 5к уже перевёл на Т-Банк" | `preview_create_booking(room="5", 2055-01-20, 2055-01-23, guest_name="Иван", price_per_night=10000)` → `create_booking(…, token)` | total 30 000; prepayment must be added in RC |
 | U12a | "Бронь 810000208 оплачена?" | `get_booking(810000208)` | total / paid / left |

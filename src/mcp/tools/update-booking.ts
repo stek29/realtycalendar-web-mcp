@@ -82,8 +82,9 @@ export const updateBookingTools = defineWriteTool({
   level: 'edit',
   title: 'Update booking',
   description:
-    'Change a booking: dates (перенести, продлить, сократить), room or category (переселить), put an unassigned ' +
-    'booking in a room (расселить, поставь в 22-й) or take it out, confirm a hold (заявка → бронь), price, ' +
+    'Change an existing booking: dates (перенести, продлить, сократить), room or category (переселить), put an ' +
+    'unassigned booking in a room (расселить, "поставь бронь с Островка в 22-й") or take it out, confirm a hold ' +
+    '(заявка → бронь), price, ' +
     'arrival/departure time, note. Pass only what changes. Without a new price, a different number of nights keeps ' +
     'the old price per night and a new category keeps the total; the preview then says so and asks. Not for ' +
     "cancelling (preview_cancel_booking); can't change the guest's name or contacts.",

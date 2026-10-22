@@ -26,7 +26,9 @@ export const createBookingTools = defineWriteTool({
   level: 'book',
   title: 'Create booking',
   description:
-    'New booking or hold (забронируй, поставь бронь; заявка = hold). Give room, or category when any room will do ' +
+    'New booking or hold (забронируй, новая бронь; заявка = hold). Not for a booking that already exists ("бронь с ' +
+    'Островка", "бронь Петровой"): find it with list_bookings and use preview_update_booking. Give room, or category ' +
+    'when any room will do ' +
     '(the booking stays unassigned) or for a single unit (коттедж). Guest name is required: ask if missing. Price: ' +
     "price_per_night or total, else RealtyCalendar's quote. Can't record a prepayment: say to add it in " +
     'RealtyCalendar ("Добавить платеж"). Never messages the guest.',
