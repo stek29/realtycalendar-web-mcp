@@ -30,6 +30,10 @@ Claude Desktop (`claude_desktop_config.json`), until the package is published:
 | [docs/technical-structure.md](docs/technical-structure.md) | Stack, repository layout, interfaces, entrypoints, build order |
 | [docs/mcp-user-stories.md](docs/mcp-user-stories.md) | User stories and the live-tested API behaviour behind the design |
 | [docs/api-scope.md](docs/api-scope.md) | Reference of the web app's API (what exists) |
+| [docs/plan-m2.md](docs/plan-m2.md) | M2 (write tools): modules, confirm tokens, fake RC, unit tests, live test protocol and approved scope |
+| [docs/plan-m3.md](docs/plan-m3.md) | M3: evals and benchmark (Sonnet, Haiku, Codex), real-client checks, login/logout, audit log, release |
+| [docs/decisions.md](docs/decisions.md) | Log of decisions and agreed scope since the design, with the evidence |
+| [test/evals/cases.json](test/evals/cases.json) | Spec §3 stories as machine-readable eval cases |
 | [docs/endpoints/](docs/endpoints/) | Endpoint lists extracted from the web app bundles (`scripts/extract_endpoints.py`) |
 
 ## Local secrets
