@@ -143,20 +143,15 @@ Per confirmed write (architecture.md "Write path"), one JSON line:
 
 ## 5. Packaging and release
 
-Shipped as a **Docker image only**, no npm package (owner, D42).
+Nothing is published (owner, D42): no npm package, and no Docker image for stdio. v1 is run with Node from a checkout.
 
-- `Dockerfile`, multi-stage: build with dev dependencies, then a slim Node 22 runtime image with `dist/` and production
-  dependencies only, running as a non-root user; `ENTRYPOINT ["node", "dist/main.js"]`, so `login`, `logout` and
-  `check` work as `docker run … <image> check`. Version `1.0.0` in `package.json` and as the image tag.
-- Checked by a script or CI step: the image builds, `docker run --rm <image> check` without a token prints the usage error, and the image holds no
-  fixtures, docs, tests or `.rc-*` files (`.dockerignore`).
-- Runs today over stdio: clients start it as `docker run -i --rm -e RC_TOKEN … <image>` (README). Kubernetes and
-  docker compose need the HTTP entrypoint (M4); the same image serves it then.
-- README: the Docker client config, `login` / `check`, access levels, the dedicated RC user recommendation, a short
-  personal-data note for hotels (architecture.md "Personal data").
-- CI (needs the GitHub remote): GitHub Actions for typecheck, lint, unit tests (includes the fixture-PII check) and
-  the image build; evals optional (need an API key secret). Workflow file prepared; enabled when the remote exists.
-- Registry: the owner's choice (e.g. GHCR once the remote exists); pushing needs the owner.
+- `package.json`: version `1.0.0`, `bin`, `engines.node >= 22`; tag `v1.0.0` in git.
+- README: setup from a checkout (`npm ci && npm run build`, client config `node /path/to/dist/main.js`), `login` /
+  `check`, access levels, the dedicated RC user recommendation, a short personal-data note for hotels
+  (architecture.md "Personal data").
+- CI (needs the GitHub remote): GitHub Actions for typecheck, lint, unit tests (includes the fixture-PII check);
+  evals optional (need an API key secret). Workflow file prepared; enabled when the remote exists.
+- The Docker image is M4 and serves only the hosted HTTP server (Kubernetes, docker compose).
 
 ## Done when
 
@@ -164,7 +159,7 @@ Shipped as a **Docker image only**, no npm package (owner, D42).
 - Live read-only client check passes; Claude Desktop check done by the owner.
 - `login` / `check` / `logout` verified by the owner.
 - Audit entries written in the live write tests.
-- Image `1.0.0` built and its contents checked; pushed to the owner's registry (owner).
+- v1.0.0 tagged; README setup from a checkout.
 
 ## Later (M4 candidate): MCP elicitation
 
