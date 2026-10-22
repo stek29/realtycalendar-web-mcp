@@ -14,6 +14,8 @@ export interface RcClientOptions {
   timeoutMs?: number
   /** Delay before the one GET retry; tests set 0. */
   retryDelayMs?: () => number
+  /** Called when RC answers 401; hosted turns the whole HTTP request into a 401 (architecture.md "Hosted"). */
+  onUnauthorized?: () => void
 }
 
 const MAX_CONCURRENT = 4
@@ -127,12 +129,14 @@ export class RcClient {
   }
 
   private mapError(status: number, body: unknown, endpoint: string): ToolError {
-    if (status === 401)
+    if (status === 401) {
+      this.opts.onUnauthorized?.()
       return new ToolError(
         'AUTH',
         'RealtyCalendar rejected the token',
         'RC token expired; the admin must update RC_TOKEN',
       )
+    }
     if (status === 404)
       return new ToolError('NOT_FOUND', 'Not found in RealtyCalendar', 'Check the id; find it with list_bookings')
     if (status === 400 && isObject(body) && body.error === 'date range') {

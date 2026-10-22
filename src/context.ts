@@ -27,6 +27,8 @@ export interface ContextOptions {
   log?: Logger
   audit?: AuditSink
   now?: () => Date
+  /** RC answered 401 (hosted: the request becomes an HTTP 401). */
+  onUnauthorized?: () => void
 }
 
 export function makeContext(rcToken: string, config: Config, cache: Cache, opts: ContextOptions = {}): Context {
@@ -36,6 +38,7 @@ export function makeContext(rcToken: string, config: Config, cache: Cache, opts:
     fetch: opts.fetch,
     log,
     userAgent: `realtycalendar-web-mcp/${VERSION}`,
+    onUnauthorized: opts.onUnauthorized,
   })
   let loading: Promise<Catalog> | undefined
   const locks = new Map<number, Promise<unknown>>()

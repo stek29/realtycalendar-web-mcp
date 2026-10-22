@@ -17,7 +17,7 @@ platform adapters differ between deployments.
 | Token encryption | `jose` (JWE, `A256GCM`) |
 | Schemas | Zod v4 (tool inputs/outputs and RC responses) |
 | RC HTTP client | native `fetch` |
-| Login page | Hono JSX |
+| Login page | `hono/html` templates |
 | CLI | plain `process.argv` parsing, no framework |
 | Build | `tsup` → `dist/` |
 | Tests | Vitest; MCP Inspector for manual checks |
@@ -61,10 +61,12 @@ src/
     api.ts                one typed function per endpoint
     schemas.ts            Zod schemas of RC responses
   oauth/                  hosted only
-    app.ts                Hono routes: metadata, /authorize, login form, /token
+    app.ts                Hono routes: metadata, /authorize, login form, /token; bearer() for /mcp
     tokens.ts             JWE encrypt/decrypt for login state, codes, access and refresh tokens (no server-side state)
+    keys.ts               server key(s) → JWE keys by kid, confirm-token key (D53)
     cimd.ts               client allowlist + CIMD document fetch/validation
-    login.tsx             login page
+    login.ts              login page (hono/html; no JSX build config)
+  hosted.ts               the hosted Hono app: oauth routes + /mcp + /healthz (portable; node.ts serves it)
   context.ts              Context type + makeContext(rcToken, config, cache)
   audit.ts                AuditEntry, AuditSink, streamAudit (one JSON line per write; RC_AUDIT=summary|full)
   config.ts               Config type + parse(env-like record)
@@ -72,6 +74,7 @@ src/
   log.ts                  Logger: structured JSON lines, every line through domain/redact.ts
   cli/
     main.ts               login / logout / check
+    server.ts             hosted entrypoint (dist/server.js, the Docker image's command)
   platforms/
     stdio.ts              v1 entrypoint
     node.ts               hosted entrypoint (M4)
@@ -143,15 +146,15 @@ const config = parseConfig(process.env)
 const ctx = makeContext(process.env.RC_TOKEN!, config, memoryCache())
 serveStdio(() => createMcpServer(ctx))
 
-// platforms/node.ts (M4)
-const app = new Hono()
-app.route('/', oauthApp(config))                               // discovery, /authorize, login, /token
+// hosted.ts (M4): one handler; the request's Context reaches the factory through authInfo.extra
+const handler = createMcpHandler(req => createMcpServer(req.authInfo.extra.ctx), { legacy: 'stateless' })
+app.route('/', oauthApp(oauth))                                // discovery, /authorize, login, /token
 app.all('/mcp', async c => {
-  const rcToken = await accessTokenToRcToken(c.req.raw, config) // 401 + WWW-Authenticate on failure
-  const ctx = makeContext(rcToken, config, sharedCache)
-  return createMcpHandler(() => createMcpServer(ctx), { legacy: 'stateless' })(c.req.raw)
+  const auth = await bearer(c.req.raw, oauth)                  // 401 + WWW-Authenticate on failure
+  const ctx = makeContext(auth.rcToken, { ...config, access: auth.access }, sharedCache, { onUnauthorized })
+  return handler.fetch(c.req.raw, { authInfo: { …, extra: { ctx } } })  // RC 401 seen → HTTP 401 instead
 })
-serve({ fetch: app.fetch, port })
+// platforms/node.ts: env → config + keys, serve({ fetch: app.fetch, port })
 ```
 
 - Stateless Streamable HTTP; older clients served through the SDK's `legacy: 'stateless'` mode; no HTTP+SSE

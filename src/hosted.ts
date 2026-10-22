@@ -1,0 +1,86 @@
+// The hosted server as a Hono app: OAuth routes, /mcp (Streamable HTTP, stateless), /healthz. Web-standard only;
+// platforms/node.ts serves it.
+import { createMcpHandler } from '@modelcontextprotocol/server'
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { streamAudit } from './audit.js'
+import type { Cache } from './cache.js'
+import type { Config } from './config.js'
+import { makeContext, type Context } from './context.js'
+import { jsonLogger } from './log.js'
+import { createMcpServer } from './mcp/server.js'
+import { bearer, oauthApp, unauthorized, type OAuthOptions } from './oauth/app.js'
+
+export interface HostedOptions extends Omit<OAuthOptions, 'maxAccess' | 'rcBaseUrl' | 'log'> {
+  /** Server-wide config; `access` is the highest level a connection may pick, `confirmKey` comes from the server key. */
+  config: Config
+  cache: Cache
+  /** Log and audit lines (stdout in node.ts). */
+  write: (line: string) => void
+}
+
+export function hostedApp(o: HostedOptions): Hono {
+  const log = jsonLogger(o.write)
+  const oauth: OAuthOptions = { ...o, maxAccess: o.config.access, rcBaseUrl: o.config.rcBaseUrl, log }
+  const app = new Hono()
+
+  app.get('/healthz', (c) => c.text('ok'))
+  app.route('/', oauthApp(oauth))
+
+  // The factory gets the request's Context through authInfo.extra: one handler, a fresh server per request.
+  const handler = createMcpHandler((req) => createMcpServer((req.authInfo?.extra as { ctx: Context }).ctx), {
+    legacy: 'stateless',
+    onerror: (e) => log.log('warn', 'mcp_error', { error: String(e) }),
+  })
+
+  app.use(
+    '/mcp',
+    cors({
+      origin: '*',
+      allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+      allowHeaders: [
+        'Authorization',
+        'Content-Type',
+        'Accept',
+        'Mcp-Protocol-Version',
+        'Mcp-Session-Id',
+        'Last-Event-ID',
+      ],
+      exposeHeaders: ['WWW-Authenticate', 'Mcp-Session-Id', 'Mcp-Protocol-Version'],
+      maxAge: 600,
+    }),
+  )
+  app.all('/mcp', async (c) => {
+    const auth = await bearer(c.req.raw, oauth)
+    if (auth instanceof Response) return auth
+    let rcRejected = false
+    const ctx = makeContext(auth.rcToken, { ...o.config, access: auth.access }, o.cache, {
+      fetch: o.fetch,
+      now: o.now,
+      log: jsonLogger(o.write, [auth.rcToken, auth.token]),
+      audit: streamAudit(o.write, o.config.audit),
+      onUnauthorized: () => (rcRejected = true),
+    })
+    const res = await handler.fetch(c.req.raw, {
+      authInfo: {
+        token: auth.token,
+        clientId: auth.clientId,
+        scopes: auth.scopes,
+        expiresAt: auth.expiresAt,
+        extra: { ctx },
+      },
+    })
+    if (c.req.method !== 'POST') return res
+    // Read the whole answer first: an RC 401 anywhere in it turns the request into an HTTP 401, so the client
+    // refreshes (and the refresh signs in to RC again) instead of showing the model an AUTH error.
+    const body = await res.arrayBuffer()
+    if (rcRejected) return unauthorized(oauth, true)
+    return new Response(body, { status: res.status, headers: res.headers })
+  })
+
+  app.onError((e, c) => {
+    log.log('error', 'http_error', { path: c.req.path, error: String(e) })
+    return c.json({ error: 'server_error' }, 500)
+  })
+  return app
+}
