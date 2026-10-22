@@ -1,0 +1,21 @@
+# Typecheck, lint and unit tests (includes the fixture PII check). Evals need client CLIs and API keys: run them
+# locally (plan-m3.md §1).
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build

@@ -149,7 +149,7 @@ Nothing is published (owner, D42): no npm package, and no Docker image for stdio
 - README: setup from a checkout (`npm ci && npm run build`, client config `node /path/to/dist/main.js`), `login` /
   `check`, access levels, the dedicated RC user recommendation, a short personal-data note for hotels
   (architecture.md "Personal data").
-- CI (needs the GitHub remote): GitHub Actions for typecheck, lint, unit tests (includes the fixture-PII check);
+- CI (needs the GitHub remote): `.github/workflows/ci.yml` runs `npm ci`, `npm run check` (typecheck, lint, unit tests with the fixture-PII check) and `npm run build` on Node 22;
   evals optional (need an API key secret). Workflow file prepared; enabled when the remote exists.
 - The Docker image is M4 and serves only the hosted HTTP server (Kubernetes, docker compose).
 

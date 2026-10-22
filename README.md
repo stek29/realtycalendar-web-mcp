@@ -3,18 +3,44 @@
 MCP server for [RealtyCalendar](https://realtycalendar.ru) — lets Claude, ChatGPT and other MCP clients check
 availability and manage bookings through RealtyCalendar's web app API.
 
-Status: M1 (read tools) and M2 (write tools: create, update, cancel, delete, each with a read-only preview tool)
-done; from M3, the audit log and `login` / `logout` are in. Evals and the release are next. Not published: run it
-with Node from a checkout. A Docker image comes with the hosted HTTP server (M4), for Kubernetes / docker compose.
+Status: v1 — 4 read tools and 4 write tools (create, update, cancel, delete), each write with a read-only preview
+tool; audit log; `login` / `logout`. Not published: run it with Node from a checkout. A Docker image comes with the
+hosted HTTP server (M4), for Kubernetes / docker compose.
 
-## Run locally
+## Set up
+
+Needs Node 22+.
+
+1. **A RealtyCalendar user for the MCP** (Settings → Users), recommended: give it only the objects and role it needs.
+   Its actions then show up under its own name in RC's history, and a read-only RC role is the real guarantee for
+   read-only use.
+2. **Build** from a checkout of the release tag:
+
+   ```sh
+   git checkout v1.0.0
+   npm ci && npm run build
+   ```
+
+3. **Token**: `node dist/main.js login` asks for that user's login and password and prints a token. The password is
+   not stored. The token is a separate RC session: logging out in the browser doesn't end it.
+4. **Check**: `RC_TOKEN=… node dist/main.js check` shows the user, the agency and the access level.
+5. **Add it to your client** (below) with `RC_TOKEN` and the `RC_ACCESS` level you want.
+
+To revoke the token: `RC_TOKEN=… node dist/main.js logout` (ends only that session).
+
+### Personal data
+
+Guest names, phones and notes pass through the server (nothing is stored; logs carry no guest data) and go to the
+model provider of your MCP client (Anthropic, OpenAI…), as with any use of an AI assistant. The hotel is the operator
+of this data under 152-FZ and may need to mention the transfer, including abroad, in its privacy notice.
+`RC_AUDIT=full` writes guest data to the log stream; use it only when you need it.
+
+## Develop
 
 ```sh
-npm install && npm run build
-node dist/main.js login                 # asks for the RC login and password, prints a token for RC_TOKEN
-RC_TOKEN=… node dist/main.js check      # token works? user, agency, access level
-RC_TOKEN=… node dist/main.js logout     # ends that RC session
 npm run check                           # typecheck, lint, unit tests
+npm run tools                           # print the instructions and tools/list for RC_ACCESS / RC_SITE_BOOKINGS
+npm run evals -- --case U5a --repeat 1  # evals on the fake RC (plan-m3.md); needs the claude / codex CLIs
 RC_LIVE=1 RC_TOKEN=… npm run test:live  # live write tests on the approved test window (plan-m2.md)
 ```
 

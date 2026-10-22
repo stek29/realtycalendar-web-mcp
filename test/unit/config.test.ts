@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { accessAllows, parseConfig } from '../../src/config.js'
 import { memoryCache } from '../../src/cache.js'
+import { VERSION } from '../../src/context.js'
 
 describe('parseConfig', () => {
   it('defaults to read and Europe/Moscow with a random key', () => {
@@ -33,5 +35,11 @@ describe('memoryCache', () => {
     expect(await c.get('k')).toBe(1)
     t = 10_000
     expect(await c.get('k')).toBeUndefined()
+  })
+})
+
+describe('VERSION', () => {
+  it('matches package.json', () => {
+    expect(VERSION).toBe(JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version)
   })
 })
