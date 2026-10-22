@@ -120,9 +120,14 @@ export function resolveRoom(catalog: Catalog, query: string): Room {
       },
     )
   }
-  throw new ToolError('UNKNOWN_NAME', `No room "${query}"`, 'Pick from `known` or ask the user', {
-    known: rooms.map((r) => r.title),
-  })
+  throw new ToolError(
+    'UNKNOWN_NAME',
+    `No room "${query}"`,
+    "Use a name from `known` only if it is clearly what the user meant; otherwise ask. Don't substitute another one",
+    {
+      known: rooms.map((r) => r.title),
+    },
+  )
 }
 
 /** Categories by id, number ("02") or title words. Read tools use all matches; none → UNKNOWN_NAME. */
@@ -136,9 +141,14 @@ export function resolveCategories(catalog: Catalog, query: string): Category[] {
       nameMatches(qWords, c.title),
   )
   if (matches.length) return matches
-  throw new ToolError('UNKNOWN_NAME', `No category matches "${query}"`, 'Pick from `known` or ask the user', {
-    known: catalog.categories.map((c) => c.shortTitle),
-  })
+  throw new ToolError(
+    'UNKNOWN_NAME',
+    `No category matches "${query}"`,
+    "Use a name from `known` only if it is clearly what the user meant; otherwise ask. Don't substitute another one",
+    {
+      known: catalog.categories.map((c) => c.shortTitle),
+    },
+  )
 }
 
 /** One category for a write tool: several matches → AMBIGUOUS with the candidates. */
@@ -177,7 +187,12 @@ export function resolveSources(catalog: Catalog, query: string): Source[] {
     return nameMatches(qWords, t) || nameMatches(qLatin, t) || nameMatches(qLatin, tLatin)
   })
   if (matches.length) return matches
-  throw new ToolError('UNKNOWN_NAME', `No source matches "${query}"`, 'Pick from `known` or ask the user', {
-    known: catalog.sources.map((s) => s.title),
-  })
+  throw new ToolError(
+    'UNKNOWN_NAME',
+    `No source matches "${query}"`,
+    "Use a name from `known` only if it is clearly what the user meant; otherwise ask. Don't substitute another one",
+    {
+      known: catalog.sources.map((s) => s.title),
+    },
+  )
 }

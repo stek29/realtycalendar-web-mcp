@@ -5,7 +5,7 @@ import type { Access } from '../../config.js'
 import type { Context } from '../../context.js'
 import { signPlan, verifyPlan } from '../../domain/confirm.js'
 import { ToolError } from '../../domain/errors.js'
-import { PreviewOutput, ResultOutput } from './shared.js'
+import { PreviewOutput, ResultOutput, today } from './shared.js'
 
 export interface ToolDef<I extends z.ZodObject = z.ZodObject, O extends z.ZodObject = z.ZodObject> {
   name: string
@@ -77,6 +77,7 @@ export function defineWriteTool<I extends z.ZodObject, P extends WritePreview>(d
   async function show(ctx: Context, p: P) {
     return {
       preview: true,
+      today: today(ctx).today,
       ...p.view,
       ...(p.blocked ? {} : { confirm_token: await signPlan(ctx.config.confirmKey, signed(p), ctx.now()) }),
     }
@@ -134,7 +135,7 @@ export function defineWriteTool<I extends z.ZodObject, P extends WritePreview>(d
           auditWrite(ctx, { tool: def.name, ...p.audit, booking_id: bookingId, result })
         let done
         try {
-          done = ResultOutput.parse({ preview: false, ...(await def.commit(ctx, args, p)) })
+          done = ResultOutput.parse({ preview: false, today: today(ctx).today, ...(await def.commit(ctx, args, p)) })
         } catch (e) {
           await audit(p.audit.booking_id, e instanceof ToolError ? e.code : 'RC_ERROR')
           // RC refused although the preview didn't foresee it (someone was faster): add what the fresh preview saw.

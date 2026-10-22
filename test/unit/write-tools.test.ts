@@ -120,17 +120,35 @@ describe('access levels (X5, X7)', () => {
 })
 
 describe('create_booking', () => {
+  it('a stay over 62 nights: RANGE_TOO_LONG that says not to split it', async () => {
+    const { call } = setup()
+    expect(await call('preview_create_booking', { ...ANNA, check_out: '2055-01-15' })).toMatchObject({
+      error: 'RANGE_TOO_LONG',
+      hint: expect.stringMatching(/Never split/),
+    })
+  })
+
   it('U5a: preview changes nothing; confirm creates the booking', async () => {
     const { call, writes } = setup()
     const preview = await call('preview_create_booking', ANNA)
     expect(writes()).toEqual([])
-    expect(preview).toMatchObject({ preview: true, before: null, will_fail: false, price_source: 'quote' })
+    expect(preview).toMatchObject({
+      preview: true,
+      today: '2054-10-22',
+      before: null,
+      will_fail: false,
+      price_source: 'quote',
+    })
     expect(preview.summary).toMatch(/^Бронь: 22, 8–10 ноября, Анна Петрова, [\d ]+ ₽$/)
     expect(preview.after).toMatchObject({ id: null, room: '22', nights: 2, total: preview.quote, paid: 0 })
     expect(codes(preview)).toContain('NO_GUEST_MESSAGES')
 
     const done = await call('create_booking', { ...ANNA, confirm_token: preview.confirm_token })
-    expect(done).toMatchObject({ preview: false, booking: { room: '22', status: 'booked', total: preview.quote } })
+    expect(done).toMatchObject({
+      preview: false,
+      today: '2054-10-22',
+      booking: { room: '22', status: 'booked', total: preview.quote },
+    })
     expect(writes().map((c) => c.split(' ')[0])).toEqual(['POST', 'PUT'])
     const id = done.booking.id
 

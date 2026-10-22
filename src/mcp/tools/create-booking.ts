@@ -15,7 +15,7 @@ import { bookingBrief, bookingLine, pastDates, stayWarnings, type Warning } from
 import { createBody, type CreateFields } from '../../domain/writes.js'
 import { createDraft, getGrid, getPrice, getStayRules, putBooking } from '../../upstream/api.js'
 import { defineWriteTool } from './define.js'
-import { CATEGORY_HINT, checkRange, dateInput, timeInput, today, withCatalog } from './shared.js'
+import { CATEGORY_HINT, checkRange, dateInput, STAY_TOO_LONG, timeInput, today, withCatalog } from './shared.js'
 
 const MAX_NIGHTS = 62
 
@@ -79,7 +79,7 @@ export const createBookingTools = defineWriteTool({
     if (args.price_per_night != null && args.total != null) {
       throw new ToolError('VALIDATION', 'Give price_per_night or total, not both')
     }
-    const nights = checkRange(args.check_in, args.check_out, MAX_NIGHTS)
+    const nights = checkRange(args.check_in, args.check_out, MAX_NIGHTS, undefined, STAY_TOO_LONG)
 
     const { catalog, category, roomId, sourceId } = await withCatalog(ctx, (catalog) => {
       let category

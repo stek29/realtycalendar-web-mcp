@@ -83,7 +83,8 @@ what to send. No parameter uses `null` to mean an action; explicit booleans are 
 ### Output
 
 Every tool returns one JSON object as text and as `structuredContent`, with an `outputSchema` declared (preview tools:
-`PreviewOutput`; write tools: `ResultOutput`, both in `src/mcp/tools/shared.ts`). Shared shapes:
+`PreviewOutput`; write tools: `ResultOutput`, both in `src/mcp/tools/shared.ts`). The booking shapes carry a schema id, so each output schema has
+them once under `$defs`. Shared shapes:
 
 ```jsonc
 // BookingSummary — lists and check_availability
@@ -145,7 +146,7 @@ also takes a **required** `confirm_token`.
   asking; ChatGPT asks before any tool without `readOnlyHint`. The confirm token doesn't approve anything (the model
   holds it and could use it at once): it binds the write to the previewed plan and catches changes since the preview.
 - **`preview_<write>`** → nothing changes. Returns
-  `{ "preview": true, "summary": "…one line in Russian…", "currency": "₽", "before": …, "after": …, "changes": [...],
+  `{ "preview": true, "today": "2054-10-22", "summary": "…one line in Russian…", "currency": "₽", "before": …, "after": …, "changes": [...],
      "warnings": [...], "will_fail": false, "conflicts": [], "confirm_token": "…" }`. `before`/`after` are
   BookingSummary (+ `departure_time`; `before: null` and `after.id: null` for a create); `changes` =
   `[{field, from, to}]` in the tools' words (`check_in`, `room`, `total`, …; rooms and categories by title).
@@ -158,7 +159,7 @@ also takes a **required** `confirm_token`.
   bookings, the booking's current state (its last audit version, D38); mismatch or older than 15 min →
   `PREVIEW_STALE` with a fresh preview. Match → performs the change. Without a token → `VALIDATION` ("Call
   preview_… first and pass its confirm_token"). The write tool never previews by itself.
-- **Result of a write**: `{ "preview": false, "summary": "…", "currency": "₽", "booking": BookingSummary,
+- **Result of a write**: `{ "preview": false, "today": "…", "summary": "…", "currency": "₽", "booking": BookingSummary,
   "deleted"?: true, "note"?: "…" }`, `booking` built from RC's PUT / DELETE response; `paid` from the payments read at
   confirm time (0 for a create).
 - The token is an HMAC (server key) over tool name, the resolved plan, booking state, and expiry — stateless, no

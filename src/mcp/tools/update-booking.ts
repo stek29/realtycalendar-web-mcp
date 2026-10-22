@@ -14,6 +14,7 @@ import {
   guardSiteBooking,
   dateInput,
   CATEGORY_HINT,
+  STAY_TOO_LONG,
   timeInput,
   today,
   withCatalog,
@@ -141,7 +142,7 @@ export const updateBookingTools = defineWriteTool({
     })
     const begin = args.check_in ?? now.begin_date
     const end = args.check_out ?? now.end_date
-    const nights = checkRange(begin, end, MAX_NIGHTS)
+    const nights = checkRange(begin, end, MAX_NIGHTS, undefined, STAY_TOO_LONG)
     const categoryChanged = target.apartment_id !== now.apartment_id
     const price = updatedAmount({
       amount: now.amount,
