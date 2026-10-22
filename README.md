@@ -3,7 +3,23 @@
 MCP server for [RealtyCalendar](https://realtycalendar.ru) — lets Claude, ChatGPT and other MCP clients check
 availability and manage bookings through RealtyCalendar's web app API.
 
-Status: design done, implementation starting (milestone M1).
+Status: milestone M1 (read-only tools over stdio) implemented; M2 (writes) next.
+
+## Run locally
+
+```sh
+npm install && npm run build
+RC_TOKEN=… node dist/main.js check      # token works? user, agency, access level
+npm run check                           # typecheck, lint, unit tests
+```
+
+Claude Desktop (`claude_desktop_config.json`), until the package is published:
+
+```jsonc
+{ "mcpServers": { "realtycalendar": {
+    "command": "node", "args": ["/path/to/realty/dist/main.js"],
+    "env": { "RC_TOKEN": "…", "RC_ACCESS": "read", "RC_TIMEZONE": "Europe/Moscow" } } } }
+```
 
 ## Docs
 
