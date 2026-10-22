@@ -169,8 +169,9 @@ The password is never stored or logged. The CLI is the only place besides the ho
 - A lint rule (or a simple test) enforces the portability rule: no `node:` imports outside `platforms/` and `cli/`.
 - Evals and the real-client check run headless CLIs against the server in fake-RC mode (no live data):
   `claude -p --model sonnet|haiku --strict-mcp-config --mcp-config <json> --output-format stream-json --verbose`
-  (tool calls are read from the stream), and `codex exec -m gpt-6.1-sol --json --ephemeral` with the server passed as
-  `-c mcp_servers.realtycalendar.command=…`. One run on Claude Desktop before a release.
+  (tool calls are read from the stream), and `codex exec -m gpt-6.1-sol --json` with the server passed as
+  `-c mcp_servers.realtycalendar.command=…`; both gate. Exact flags: plan-m3.md §1. One run on Claude Desktop before
+  a release.
 - CI (GitHub Actions): typecheck, lint, unit tests, fixture-PII check; evals when `src/mcp/` changes. Live tests never
   run in CI.
 - Release: npm with provenance; config examples pin the version.

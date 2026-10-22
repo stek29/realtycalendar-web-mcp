@@ -49,6 +49,6 @@ why, and where the docs were updated. The specs remain the source of truth; this
 | # | Decision | Where |
 |---|---|---|
 | D22 | M1's Claude Desktop gate replaced by a real-client check with `claude -p` (Sonnet) against the live account, read-only; one Claude Desktop run before the v1 release | plan-m3.md |
-| D23 | Evals run on cheaper models: Claude Sonnet by default, Haiku as a floor, Codex `gpt-6.1-sol` as a non-Claude client; against the fake RC only | plan-m3.md |
+| D23 | Evals run on cheaper models against the fake RC only. Gate: Claude Sonnet **and** Codex `gpt-6.1-sol` (owner: test Codex too, not just Claude); Haiku reported as a floor. Both clients verified end to end with a two-turn smoke run on 2054-10-22 | plan-m3.md |
 | D24 | Live write tests approved by the owner (2054-10-22): "TEST MCP" guests (phone +79990000001, e-mail test-mcp@example.com), dates 20–23 Jan 2055 (main window), plus 31 Jan–2 Feb, 28 Feb–2 Mar and 5–7 Apr 2055 (S2/S9, done) | plan-m2.md |
 | D25 | Known live leftovers: test guest records and soft-deleted test bookings (from the design phase and the baseline), three invisible drafts (810000209, 810000210, 810000211) | mcp-user-stories.md |

@@ -45,18 +45,31 @@ No live data reaches a model in evals.
 
 ### Runners
 
-Each runner spawns a headless client per turn and reads the tool calls from its event stream.
+Each runner spawns a headless client per turn, with stdin from `/dev/null` and the working directory set to an empty
+temp directory per case, and reads the tool calls from its event stream. The server is started by the client as
+`node_modules/.bin/tsx test/evals/fake-server.ts`. Verified 2054-10-22 with a throwaway fake-RC server (two turns on
+each client: "Что свободно на выходные?" → `check_availability(2054-10-23, 2054-10-25)`, then "А на следующие?" →
+`check_availability(2054-10-30, 2054-11-01)`).
 
 | Runner | Command (per turn) | Role |
 |---|---|---|
-| `claude-sonnet` | `claude -p <prompt> --model sonnet --strict-mcp-config --mcp-config <cfg.json> --tools "" --allowedTools mcp__realtycalendar --output-format stream-json --verbose`; turn 2+ adds `--resume <session_id>` | gate |
-| `claude-haiku` | same with `--model haiku` | floor: "still works on a small model" |
-| `codex` | `codex exec --json -m gpt-6.1-sol -s read-only --skip-git-repo-check -c mcp_servers.realtycalendar.command=… -c mcp_servers.realtycalendar.args=[…] -c mcp_servers.realtycalendar.env={…} <prompt>`; turn 2+ `codex exec resume <id>` | non-Claude client (ChatGPT is a target in M4) |
+| `claude-sonnet` | `claude -p <prompt> --model sonnet --strict-mcp-config --mcp-config <cfg.json> --tools "" --allowedTools mcp__realtycalendar --setting-sources project --output-format stream-json --verbose --max-budget-usd 1`; turn 2+ adds `--resume <session_id>` (from the `system/init` event) | **gate** |
+| `codex` | `codex exec --json -m gpt-6.1-sol -s read-only --skip-git-repo-check --ignore-user-config -C <dir> <disable…> -c mcp_servers.realtycalendar.command="<tsx>" -c mcp_servers.realtycalendar.args=["<server>"] <prompt>`; turn 2+ `codex exec resume <thread_id> --json -m gpt-6.1-sol -c sandbox_mode="read-only" --skip-git-repo-check --ignore-user-config <disable…> -c mcp_servers… <prompt>` run from the same directory (`resume` takes neither `-s` nor `-C`) | **gate** (non-Claude client; ChatGPT is a target in M4) |
+| `claude-haiku` | as `claude-sonnet` with `--model haiku` | floor: reported, not gating |
 
-- `--tools ""` removes Claude Code's built-in tools so only the MCP tools are available; `--strict-mcp-config` ignores
-  the user's other MCP servers. To verify when building: that user settings/plugins/hooks don't leak into `-p` runs
-  (`--setting-sources`), and Codex's approval setting for MCP tool calls in `exec` (`-c approval_policy=…`) and its
-  JSONL event names.
+- Claude: `--tools ""` leaves only the MCP tools (the `init` event lists exactly the four `mcp__realtycalendar__*`
+  tools); `--strict-mcp-config` ignores the user's other MCP servers; `--setting-sources project` with an empty
+  working directory keeps user settings, hooks and plugins out. Tool calls: `assistant` events with `tool_use`
+  blocks; cost, turns and duration: the final `result` event (about $0.04–0.06 per turn on Sonnet).
+- Codex: `<disable…>` = `--disable shell_tool --disable unified_exec --disable plugins --disable apps --disable
+  browser_use --disable in_app_browser --disable computer_use`. Without them the model first explored the filesystem
+  with a shell command and used ~95k input tokens per turn; with them only the MCP tool is called (~56k, mostly
+  cached). `--ignore-user-config` keeps the user's Codex config and MCP servers out (auth still works). MCP tool calls
+  need no approval in `exec`. Events: `thread.started` (`thread_id`), `item.completed` with `item.type ==
+  "mcp_tool_call"` (`tool`, `arguments`, `result`, `error`), `agent_message` (the answer text), `turn.completed`
+  (`usage`: token counts; Codex reports no cost).
+- Each case gets its own environment: `RC_ACCESS` from the case, a fixed `RC_CONFIRM_KEY`, `EVAL_STATE` pointing at
+  a fresh temp file, passed via the MCP config's `env`.
 - Caveat: these clients have their own system prompts (a coding agent), not Claude Desktop's or ChatGPT's. Evals test
   our descriptions and instructions, not the exact production client — hence the release check in §2.
 - Cost limits: `--max-budget-usd` per Claude run; a whole run is about 40 cases × 2 turns × 3 repeats per runner.
@@ -66,8 +79,10 @@ Each runner spawns a headless client per turn and reads the tool calls from its 
 - Deterministic: tool calls and arguments from the event stream; answer regexes. No LLM judge in v1; failures are
   reviewed by reading the transcript.
 - Each case runs 3 times per runner (models are not deterministic). A case passes on a runner if ≥ 2 of 3 runs pass.
-- **Gate (M3 "evals green")**: every case passes on `claude-sonnet`. Haiku and Codex are reported, not gating;
-  a case that regresses on them is looked at.
+- **Gate (M3 "evals green")**: every case passes on **both** `claude-sonnet` and `codex`. Haiku is reported, not
+  gating; a case that regresses on it is looked at.
+- A failure that only one client shows is fixed in our descriptions, schemas or instructions, not with
+  client-specific wording, unless the transcript shows a client bug.
 
 ### Benchmark report
 
@@ -79,7 +94,7 @@ Each runner spawns a headless client per turn and reads the tool calls from its 
 | pass rate | cases passed / total, and per story group (U, R, Q, P, X) |
 | tool calls per case | mean, and extra calls beyond the expected ones (efficiency of descriptions) |
 | wrong-tool rate | first call to a tool other than the expected one |
-| tokens and cost | from the CLI's result event, per case and total |
+| tokens and cost | Claude: cost and tokens from the `result` event; Codex: tokens from `turn.completed` (no cost reported) |
 | latency | wall time per turn |
 
 The summary table goes into the commit message of the change that ran it.
@@ -129,7 +144,7 @@ Per confirmed write (architecture.md "Write path"):
 
 ## Done when
 
-- Evals gate green on Sonnet; Haiku and Codex results reported.
+- Evals gate green on Sonnet and Codex; Haiku results reported.
 - Live read-only client check passes; Claude Desktop check done by the owner.
 - `login` / `check` / `logout` verified by the owner.
 - Audit entries written in the live write tests.
