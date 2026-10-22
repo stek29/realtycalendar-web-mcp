@@ -1,5 +1,6 @@
 # Hosted HTTP server only (D42): stdio users run Node from a checkout.
-FROM node:22-alpine AS build
+# dist/ and the prod dependencies are plain JS (no native modules), so one build on the runner serves every arch.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
@@ -8,6 +9,10 @@ COPY src ./src
 RUN npm run build && npm prune --omit=dev
 
 FROM node:22-alpine
+ARG VERSION=dev
+LABEL org.opencontainers.image.source=https://github.com/stek29/realtycalendar-web-mcp \
+      org.opencontainers.image.description="RealtyCalendar MCP server (hosted HTTP, OAuth)" \
+      org.opencontainers.image.version=$VERSION
 ENV NODE_ENV=production PORT=8080
 WORKDIR /app
 COPY --from=build /app/package.json ./

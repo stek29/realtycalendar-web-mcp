@@ -1,16 +1,42 @@
-# Example: the hosted server behind your own HTTPS reverse proxy (Caddy, nginx, Traefik).
-# .env.server (git-ignored, chmod 600):
-#   MCP_PUBLIC_URL=https://rc.example.com
+# The hosted server with docker compose. The image is private: `docker login ghcr.io` first, with a GitHub token that
+# has read:packages.
+#
+# .env (next to this file, git-ignored, chmod 600):
+#   MCP_DOMAIN=rc.example.com          # DNS A/AAAA record pointing at this host
 #   MCP_SERVER_KEY=<openssl rand -base64 32>
-#   RC_ACCESS=edit            # the highest level a connection may pick on the login page
+#   RC_ACCESS=edit                     # the highest level a connection may pick on the login page
 #   RC_SITE_BOOKINGS=protect
+#   MCP_IMAGE_TAG=0.2.0                # default latest (the newest release tag); main = the main branch
+#
+# With HTTPS from the bundled Caddy (Let's Encrypt; ports 80 and 443 must be free and reachable):
+#   docker compose --profile tls up -d
+# Behind your own reverse proxy instead: `docker compose up -d` and proxy https://$MCP_DOMAIN to 127.0.0.1:8080.
 services:
-  realtycalendar-mcp:
-    image: realtycalendar-web-mcp:0.2.0 # docker build -t realtycalendar-web-mcp:0.2.0 .
-    env_file: .env.server
+  mcp:
+    image: ghcr.io/stek29/realtycalendar-web-mcp:${MCP_IMAGE_TAG:-latest}
+    environment:
+      MCP_PUBLIC_URL: https://${MCP_DOMAIN:?set MCP_DOMAIN in .env}
+      MCP_SERVER_KEY: ${MCP_SERVER_KEY:?set MCP_SERVER_KEY in .env}
+      RC_ACCESS: ${RC_ACCESS:-read}
+      RC_SITE_BOOKINGS: ${RC_SITE_BOOKINGS:-protect}
     ports:
-      - '127.0.0.1:8080:8080' # the proxy terminates TLS and forwards here
+      - '127.0.0.1:8080:8080'
     read_only: true
     cap_drop: [ALL]
     security_opt: ['no-new-privileges:true']
     restart: unless-stopped
+
+  caddy:
+    profiles: [tls]
+    image: caddy:2-alpine
+    command: caddy reverse-proxy --from ${MCP_DOMAIN} --to mcp:8080
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - caddy_data:/data
+    depends_on: [mcp]
+    restart: unless-stopped
+
+volumes:
+  caddy_data:

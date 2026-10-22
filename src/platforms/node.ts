@@ -40,7 +40,12 @@ export async function runHttp(env: NodeJS.ProcessEnv = process.env): Promise<voi
     keys,
     config,
     cache: memoryCache(),
-    clients: cimdRegistry({}),
+    clients: cimdRegistry({
+      onFallback: (client_id, reason) =>
+        write(
+          JSON.stringify({ time: new Date().toISOString(), level: 'warn', event: 'cimd_fallback', client_id, reason }),
+        ),
+    }),
     write,
   })
   const server = serve({ fetch: app.fetch, port, hostname: env.HOST || '0.0.0.0' })

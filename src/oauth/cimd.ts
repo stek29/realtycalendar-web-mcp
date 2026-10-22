@@ -1,17 +1,28 @@
 // Client registration: CIMD only, allowlisted URLs (D52). The document is fetched and its redirect URIs checked.
 
-/** Fetched 2054-10-22. */
-export const ALLOWED_CLIENTS: readonly string[] = [
-  'https://claude.ai/oauth/mcp-oauth-client-metadata',
-  'https://claude.ai/oauth/claude-code-client-metadata',
-  'https://chatgpt.com/oauth/client.json',
-]
-
 export interface ClientInfo {
   client_id: string
   client_name: string
   redirect_uris: string[]
 }
+
+/**
+ * The allowlist, with the documents as fetched 2054-10-22. The copy is used when a fetch fails (D55): claude.ai and
+ * chatgpt.com sit behind Cloudflare, which may challenge requests from a datacenter IP.
+ */
+export const KNOWN_CLIENTS: Readonly<Record<string, ClientInfo>> = Object.fromEntries(
+  [
+    ['https://claude.ai/oauth/mcp-oauth-client-metadata', 'Claude', ['https://claude.ai/api/mcp/auth_callback']],
+    [
+      'https://claude.ai/oauth/claude-code-client-metadata',
+      'Claude Code',
+      ['http://localhost/callback', 'http://127.0.0.1/callback'],
+    ],
+    ['https://chatgpt.com/oauth/client.json', 'ChatGPT', ['https://chatgpt.com/connector_platform_oauth_redirect']],
+  ].map(([id, name, uris]) => [id, { client_id: id, client_name: name, redirect_uris: uris }] as const),
+) as Record<string, ClientInfo>
+
+export const ALLOWED_CLIENTS: readonly string[] = Object.keys(KNOWN_CLIENTS)
 
 const CACHE_MS = 3600_000
 const FETCH_TIMEOUT_MS = 5000
@@ -25,6 +36,8 @@ export function cimdRegistry(opts: {
   fetch?: typeof fetch
   now?: () => number
   allowed?: readonly string[]
+  /** Called when the bundled copy stands in for a document that couldn't be fetched. */
+  onFallback?: (clientId: string, reason: string) => void
 }): ClientRegistry {
   const doFetch = opts.fetch ?? globalThis.fetch.bind(globalThis)
   const now = opts.now ?? Date.now
@@ -35,20 +48,28 @@ export function cimdRegistry(opts: {
       if (!allowed.includes(clientId)) return undefined
       const hit = cache.get(clientId)
       if (hit && hit.expires > now()) return hit.info
+      // A stale document, then the bundled copy, is better than locking users out when the client's host is down
+      // or blocks us. A document that was fetched but is wrong is refused.
+      const fallback = (reason: string) => {
+        const info = hit?.info ?? KNOWN_CLIENTS[clientId]
+        if (info) opts.onFallback?.(clientId, reason)
+        return info
+      }
+      let doc: unknown
       try {
         const res = await doFetch(clientId, {
           headers: { Accept: 'application/json' },
           redirect: 'error',
           signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
         })
-        if (!res.ok) return hit?.info
-        const info = parseDocument(clientId, await res.json())
-        if (info) cache.set(clientId, { info, expires: now() + CACHE_MS })
-        return info
-      } catch {
-        // A stale document is better than locking users out while the client's host has a hiccup.
-        return hit?.info
+        if (!res.ok) return fallback(`HTTP ${res.status}`)
+        doc = await res.json()
+      } catch (e) {
+        return fallback(String(e))
       }
+      const info = parseDocument(clientId, doc)
+      if (info) cache.set(clientId, { info, expires: now() + CACHE_MS })
+      return info
     },
   }
 }

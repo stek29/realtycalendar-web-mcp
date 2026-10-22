@@ -315,6 +315,20 @@ describe('authorization request errors', () => {
     expect(ALLOWED_CLIENTS).toContain(CLAUDE)
   })
 
+  it('falls back to the bundled document when the fetch fails (e.g. a Cloudflare challenge)', async () => {
+    const fallbacks: string[] = []
+    const registry = cimdRegistry({
+      fetch: async () => new Response('<html>challenge</html>', { status: 403 }),
+      onFallback: (id) => fallbacks.push(id),
+    })
+    expect((await registry.get(CHATGPT))?.redirect_uris).toEqual([
+      'https://chatgpt.com/connector_platform_oauth_redirect',
+    ])
+    const offline = cimdRegistry({ fetch: async () => Promise.reject(new TypeError('fetch failed')) })
+    expect((await offline.get(CLAUDE))?.redirect_uris).toEqual([CLAUDE_CB])
+    expect(fallbacks).toEqual([CHATGPT])
+  })
+
   it('matches loopback redirects on any port, other URIs exactly', () => {
     const cc = DOCS[CLAUDE_CODE] as { client_id: string; client_name: string; redirect_uris: string[] }
     expect(redirectAllowed(cc, 'http://127.0.0.1:8000/callback')).toBe(true)

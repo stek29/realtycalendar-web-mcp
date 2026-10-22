@@ -94,8 +94,10 @@ answers 401 (JSON responses only; tool calls never stream).
 
 - `Dockerfile`: multi-stage, `node:22-alpine`, `npm ci` + build, runtime with prod deps only, `USER node`,
   `HEALTHCHECK` on `/healthz`, `CMD ["node", "dist/server.js"]`. HTTP only.
-- `deploy/docker-compose.yml`: the image, `env_file: .env.server`, port, restart policy; TLS from the owner's reverse
-  proxy.
+- `.github/workflows/image.yml` (D54): after `npm run check`, builds linux/amd64 + linux/arm64 and pushes to the private
+  `ghcr.io/stek29/realtycalendar-web-mcp` (`:main`, `:sha-…`; release tags `:X.Y.Z`, `:latest`).
+- `deploy/docker-compose.yml`: the image with settings from `.env`; `--profile tls` adds Caddy for HTTPS (Let's
+  Encrypt), otherwise the owner's reverse proxy forwards to `127.0.0.1:8080`.
 - `deploy/k8s.yaml`: Deployment (non-root, read-only root FS, probes), Service, Secret reference; Ingress left to the
   owner. Any number of replicas works (stateless).
 
@@ -113,4 +115,5 @@ answers 401 (JSON responses only; tool calls never stream).
 ## Later
 
 Global token bucket towards RC (architecture.md "RC client"): not needed for one hotel; add before a second tenant.
-Login-page rate limiting (RC throttles sign-ins itself). Refresh token rotation with replay detection needs state.
+Login-page rate limiting (RC throttles sign-ins itself). The browser MCP Inspector isn't an allowed client (it
+registers with DCR); the Inspector CLI with a bearer token, `scripts/dev-hosted.ts` and Claude Code cover local checks. Refresh token rotation with replay detection needs state.

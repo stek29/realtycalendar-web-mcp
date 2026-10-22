@@ -185,8 +185,8 @@ The password is never stored or logged. The CLI is the only place besides the ho
   are checked in M4 (D48).
 - CI (GitHub Actions): typecheck, lint, unit tests, fixture-PII check; evals when `src/mcp/` changes. Live tests
   (`RC_LIVE=1 RC_TOKEN=… npm run test:live`) never run in CI.
-- Release: a git tag (stdio, run from a checkout); from M4, a Docker image of the HTTP server tagged with the version
-  (D42). No npm package.
+- Release: a git tag (stdio, run from a checkout); from M4, a Docker image of the HTTP server tagged with the version,
+  built for amd64 + arm64 by `.github/workflows/image.yml` into the private GHCR package (D42, D54). No npm package.
 
 ## Build order
 

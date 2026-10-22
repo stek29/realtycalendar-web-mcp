@@ -42,11 +42,12 @@ their RealtyCalendar login on the server's page and picks an access level (up to
 is in tokens encrypted with `MCP_SERVER_KEY`. Clients: Claude (web, Desktop, mobile), Claude Code, ChatGPT
 ([plan-m4.md](docs/plan-m4.md)).
 
-```sh
-docker build -t realtycalendar-web-mcp:0.2.0 .
-```
+The image `ghcr.io/stek29/realtycalendar-web-mcp` (linux/amd64, linux/arm64; private: `docker login ghcr.io` with a
+GitHub token that has `read:packages`) is built by GitHub Actions: `:main` from the main branch, `:X.Y.Z` and `:latest`
+from release tags. `docker build .` builds it locally.
 
-Run it behind HTTPS with `deploy/docker-compose.yml` or `deploy/k8s.yaml`. Settings, besides the ones below:
+Deploy with [deploy/docker-compose.yml](deploy/docker-compose.yml) (`--profile tls` adds Caddy with Let's Encrypt) or
+[deploy/k8s.yaml](deploy/k8s.yaml). Settings, besides the ones below:
 
 | Variable | Meaning |
 |---|---|
