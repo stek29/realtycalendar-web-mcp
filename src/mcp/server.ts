@@ -6,12 +6,25 @@ import { todayIn } from '../domain/dates.js'
 import { ToolError } from '../domain/errors.js'
 import { instructions } from './instructions.js'
 import type { ToolDef } from './tools/define.js'
+import { cancelBooking } from './tools/cancel-booking.js'
 import { checkAvailability } from './tools/check-availability.js'
+import { createBooking } from './tools/create-booking.js'
+import { deleteBooking } from './tools/delete-booking.js'
 import { getBooking } from './tools/get-booking.js'
 import { listBookings } from './tools/list-bookings.js'
 import { listRooms } from './tools/list-rooms.js'
+import { updateBooking } from './tools/update-booking.js'
 
-export const TOOLS: ToolDef[] = [listRooms, checkAvailability, listBookings, getBooking] as unknown as ToolDef[]
+export const TOOLS: ToolDef[] = [
+  listRooms,
+  checkAvailability,
+  listBookings,
+  getBooking,
+  createBooking,
+  updateBooking,
+  cancelBooking,
+  deleteBooking,
+] as unknown as ToolDef[]
 
 /** An MCP server with the tools allowed by ctx.config.access. */
 export function createMcpServer(ctx: Context): McpServer {

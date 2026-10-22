@@ -51,7 +51,7 @@ src/
     tools/                one file per tool (8), plus define.ts (defineTool, defineWriteTool) and shared.ts
                           (input checks, BookingSummary output shape)
   domain/                 pure logic, no IO
-    catalog.ts  match.ts  dates.ts  calendar.ts  bookings.ts  writes.ts  confirm.ts  errors.ts  redact.ts
+    catalog.ts  match.ts  dates.ts  calendar.ts  bookings.ts  writes.ts  confirm.ts  warnings.ts  errors.ts  redact.ts
   upstream/               the only code that talks to RealtyCalendar
     client.ts             RcClient: fetch, headers, retries, error mapping, response validation
     api.ts                one typed function per endpoint

@@ -214,3 +214,68 @@ export function availability(input: AvailabilityInput): CategoryAvailability[] {
     }
   })
 }
+
+export interface StayCheckInput {
+  catalog: Catalog
+  category: Category
+  /** null = unassigned, or the unit of a single-unit category. */
+  roomId: number | null
+  status: string
+  grid: Grid
+  stayRules: StayRules
+  checkIn: string
+  checkOut: string
+  /** The booking being changed: its own nights don't count against it. */
+  excludeBookingId?: number
+}
+
+export interface StayCheck {
+  /** RC will certainly refuse: the room has a booked night, or the category is full on some night. */
+  will_fail: boolean
+  /** The booked stays that fill the room or the category on the failing nights. */
+  conflicts: BookingSummary[]
+  /** Holds overlapping the stay in the same room (or the category, without a room); RC allows these. */
+  holds: BookingSummary[]
+  /** Nights the room (or single unit) is closed; RC doesn't enforce closures (S2). */
+  closed_nights: string[]
+  /** Broken stay rules (min stay, no check-in / check-out day, closed); RC doesn't enforce them either. */
+  stay_problems: string[]
+}
+
+/**
+ * The capacity check of a write preview (spec §1 Writes), by the rule RC enforces: per room one `booked`, per
+ * category assigned + unassigned `booked` ≤ rooms (1 for a single unit). Holds never fail. Unlike
+ * check_availability's bookable counts, closed rooms don't reduce capacity here, because RC ignores closures.
+ */
+export function stayCheck(input: StayCheckInput): StayCheck {
+  const { catalog, category, roomId, checkIn, checkOut } = input
+  const nights = nightsOf(checkIn, checkOut)
+  const rows = input.grid.items.filter((i) => i.apartment_id === category.id)
+  const events = rows.flatMap((row) =>
+    row.events
+      .filter((e) => active(e) && e.id !== input.excludeBookingId && e.begin_date < checkOut && e.end_date > checkIn)
+      .map((e) => ({ row, e })),
+  )
+  const inRoom = (x: { row: Row }) => roomId == null || x.row.room_id === roomId
+
+  const conflicts = new Map<number, BookingSummary>()
+  if (input.status === 'booked') {
+    for (const night of nights) {
+      const booked = events.filter((x) => x.e.status === 'booked' && covers(x.e, night))
+      const roomBusy = roomId != null && booked.filter((x) => x.row.room_id === roomId)
+      const failing = roomBusy && roomBusy.length ? roomBusy : booked.length >= category.capacity ? booked : []
+      for (const x of failing) conflicts.set(x.e.id, fromGridEvent(catalog, x.e, x.row))
+    }
+  }
+  const holds = events
+    .filter((x) => x.e.status === 'request' && inRoom(x))
+    .map((x) => fromGridEvent(catalog, x.e, x.row))
+  const unitRow = roomId != null || category.singleUnit ? rows.find((r) => r.room_id === roomId) : undefined
+  return {
+    will_fail: conflicts.size > 0,
+    conflicts: sortBookings([...conflicts.values()]),
+    holds: sortBookings(holds),
+    closed_nights: unitRow ? nights.filter((n) => closedOn(unitRow.special_prices, n)) : [],
+    stay_problems: stayRulesFor(input.stayRules, category.id, checkIn, checkOut, nights).problems,
+  }
+}

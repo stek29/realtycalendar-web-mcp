@@ -16,6 +16,8 @@ export interface Context {
   now(): Date
   config: Config
   log: Logger
+  /** Runs `fn` after any earlier write to the same booking id has finished (writes serialised in-process). */
+  withBookingLock<T>(id: number, fn: () => Promise<T>): Promise<T>
 }
 
 export interface ContextOptions {
@@ -33,6 +35,7 @@ export function makeContext(rcToken: string, config: Config, cache: Cache, opts:
     userAgent: `realtycalendar-web-mcp/${VERSION}`,
   })
   let loading: Promise<Catalog> | undefined
+  const locks = new Map<number, Promise<unknown>>()
 
   async function load(key: string): Promise<Catalog> {
     const [apartments, info] = await Promise.all([getApartments(rc), getInfo(rc)])
@@ -47,6 +50,14 @@ export function makeContext(rcToken: string, config: Config, cache: Cache, opts:
     config,
     log,
     now: opts.now ?? (() => new Date()),
+    async withBookingLock(id, fn) {
+      const previous = locks.get(id) ?? Promise.resolve()
+      const run = previous.catch(() => {}).then(fn)
+      const tail = run.catch(() => {})
+      locks.set(id, tail)
+      void tail.then(() => locks.get(id) === tail && locks.delete(id))
+      return run
+    },
     async catalog({ refresh = false } = {}) {
       // Keyed by a hash of the RC token, so a shared cache never mixes users.
       const key = `catalog:${await sha256(rcToken)}`

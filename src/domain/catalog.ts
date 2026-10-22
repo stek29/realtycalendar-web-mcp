@@ -139,6 +139,32 @@ export function resolveCategories(catalog: Catalog, query: string): Category[] {
   })
 }
 
+/** One category for a write tool: several matches → AMBIGUOUS with the candidates. */
+export function resolveCategory(catalog: Catalog, query: string): Category {
+  const matches = resolveCategories(catalog, query)
+  if (matches.length === 1) return matches[0]!
+  throw new ToolError(
+    'AMBIGUOUS',
+    `"${query}" matches several categories`,
+    'Ask the user which one; show `candidates` by name',
+    { candidates: matches.map((c) => ({ category: c.shortTitle, category_id: c.id })) },
+  )
+}
+
+/** One source for a write tool: several matches → AMBIGUOUS with the candidates. */
+export function resolveSource(catalog: Catalog, query: string): Source {
+  const matches = resolveSources(catalog, query)
+  if (matches.length === 1) return matches[0]!
+  throw new ToolError(
+    'AMBIGUOUS',
+    `"${query}" matches several sources`,
+    'Ask the user which one; show `candidates` by name',
+    {
+      candidates: matches.map((s) => s.title),
+    },
+  )
+}
+
 /** Sources by name in Latin or Cyrillic ("островок", "ostrovok", "яндекс"). Read tools use all matches. */
 export function resolveSources(catalog: Catalog, query: string): Source[] {
   const qWords = words(query).map((w) => SOURCE_ALIASES[w] ?? w)

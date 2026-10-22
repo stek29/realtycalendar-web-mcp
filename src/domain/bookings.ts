@@ -176,30 +176,42 @@ export function auditTime(s: string): string {
 /** Detail fields like "2054-10-21T20:38:35.123+03:00" → without milliseconds. */
 const isoSeconds = (s: string) => s.replace(/\.\d+(?=[+-Z])/, '')
 
+/** A booking from its detail (or a PUT / DELETE response, same shape) with `paid` from its payments. */
+export function fromBooking(
+  catalog: Catalog,
+  b: Booking,
+  paid: number,
+): BookingSummary & { departure_time: string | null } {
+  const guest = b.client ?? b.guest
+  return {
+    ...summary(catalog, {
+      id: b.id,
+      status: b.status,
+      apartmentId: b.apartment_id,
+      roomId: b.realty_room_id,
+      begin: b.begin_date,
+      end: b.end_date,
+      fio: guest?.fio ?? b.guest?.fio,
+      phone: guest?.phone ?? b.guest?.phone,
+      sourceId: b.source_id,
+      fromBookingSite: b.platform_name != null,
+      arrivalTime: b.arrival_time,
+      amount: b.amount,
+      paid,
+      notes: b.notes,
+    }),
+    departure_time: b.departure_time,
+  }
+}
+
+export const paidOf = (payments: Payments) => payments.data.reduce((s, p) => s + p.payment.amount, 0)
+
 export function fromDetail(catalog: Catalog, b: Booking, payments: Payments) {
-  const paid = payments.data.reduce((s, p) => s + p.payment.amount, 0)
   const guest = b.client ?? b.guest
   const fields = b.external?.fields ?? []
-  const base = summary(catalog, {
-    id: b.id,
-    status: b.status,
-    apartmentId: b.apartment_id,
-    roomId: b.realty_room_id,
-    begin: b.begin_date,
-    end: b.end_date,
-    fio: guest?.fio ?? b.guest?.fio,
-    phone: guest?.phone ?? b.guest?.phone,
-    sourceId: b.source_id,
-    fromBookingSite: b.platform_name != null,
-    arrivalTime: b.arrival_time,
-    amount: b.amount,
-    paid,
-    notes: b.notes,
-  })
   const first = [...b.audits].sort((x, y) => x.version - y.version)[0]
   return {
-    ...base,
-    departure_time: b.departure_time,
+    ...fromBooking(catalog, b, paidOf(payments)),
     guest_email: guest?.email ?? b.guest?.email ?? null,
     booking_site: b.platform_name
       ? {

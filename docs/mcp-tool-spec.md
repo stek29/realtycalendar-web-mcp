@@ -137,16 +137,30 @@ MCP tool errors (`isError: true`) with `{ "error": CODE, "message": "…", "hint
 Every write tool has an optional `confirm_token: string`.
 
 - **Without `confirm_token`** → nothing changes. Returns
-  `{ "preview": true, "summary": "…one line in Russian…", "before": …, "after": …, "changes": [...],
-     "warnings": [...], "will_fail": false, "confirm_token": "…" }`.
+  `{ "preview": true, "summary": "…one line in Russian…", "currency": "₽", "before": …, "after": …, "changes": [...],
+     "warnings": [...], "will_fail": false, "conflicts": [], "confirm_token": "…" }`. `before`/`after` are
+  BookingSummary (+ `departure_time`; `before: null` and `after.id: null` for a create); `changes` =
+  `[{field, from, to}]` in the tools' words (`check_in`, `room`, `total`, …; rooms and categories by title).
+  `summary` examples: "Бронь: 22, 7–9 ноября, Анна Петрова, 17 200 ₽" (create; "Заявка: …" for a hold),
+  "Изменить бронь 123 (22, 7–9 ноября, Анна Петрова, 17 200 ₽): выезд 2054-11-09 → 2054-11-10; сумма 17200 → 25800",
+  "Отменить бронь 123: …", "Удалить бронь 123: …".
+- **No `confirm_token` in the preview** when the write can't or shouldn't happen: `DUPLICATE` (create) and
+  `will_fail: true` (room or category certainly full). The model offers alternatives instead of asking for a "да"
+  that can only fail.
+- **Result of a confirmed write**: `{ "preview": false, "summary": "…", "currency": "₽", "booking": BookingSummary,
+  "deleted"?: true, "note"?: "…" }`, `booking` built from RC's PUT / DELETE response; `paid` from the payments read at
+  confirm time (0 for a create).
 - **With `confirm_token`** → the server recomputes the token from the current arguments and, for existing bookings,
   the booking's current state (`updated_at` + last audit version); mismatch or older than 15 min → `PREVIEW_STALE`
   with a fresh preview. Match → performs the change and returns the resulting booking.
 - The token is an HMAC (server key) over tool name, normalised arguments, booking state, and expiry — stateless, no
   storage. It can't be single-use without state; repeat protection for creates is the duplicate check below.
-- Previews run the same capacity check as `check_availability`; if RC will certainly refuse (room or category full),
-  the preview sets `will_fail: true` and lists `conflicts`, so the model offers alternatives instead of asking for
-  confirmation. RC still decides at save time.
+- Previews run a capacity check by the rule RC enforces (per room one `booked`; per category assigned + unassigned
+  `booked` ≤ rooms, 1 for a single unit; holds and canceled don't count; an update's own nights don't count). Unlike
+  `check_availability`'s bookable counts, closed rooms don't reduce capacity here, because RC ignores closures (S2).
+  If RC will certainly refuse, the preview sets `will_fail: true` and lists `conflicts` (the booked stays that fill
+  the room or category). RC still decides at save time; an `OCCUPIED` at confirm carries the fresh preview's
+  `conflicts`.
 - Clients that support MCP elicitation may later replace the chat "yes" step; the token stays.
 - Note for setup: each tool call may show a client permission prompt; owners can "always allow" the write tools —
   the confirm token, not the client prompt, is what guarantees the preview was shown.
@@ -391,8 +405,14 @@ RC with `is_delete: true` → `deleted: true`. A draft (created but never saved)
   "confirm_token": "string"
 }
 ```
-**Preview**: BookingSummary with `id: null`, `price_source` (`quote | per_night | total`), capacity check result
-(`will_fail`, `conflicts`), warnings incl. `DUPLICATE` if an identical booking exists (then no token is issued).
+**Input checks** (`VALIDATION` unless noted): `room` or `category` (both only if they agree, else
+`ROOM_NOT_IN_CATEGORY`); a category or source that matches several → `AMBIGUOUS`; `guest_name` non-empty; at most
+one of `price_per_night` / `total`, both ≥ 0; times `HH:MM`; `check_out > check_in` (`INVALID_DATES`), at most 62
+nights (`RANGE_TOO_LONG`).
+
+**Preview**: `after` = BookingSummary with `id: null`, `price_source` (`quote | per_night | total`), `quote` (RC's
+price for the stay), capacity check result (`will_fail`, `conflicts`), warnings incl. `DUPLICATE` if an identical
+booking exists (then no token is issued) and always `NO_GUEST_MESSAGES`.
 
 **On confirm** (all ✅ unless marked):
 1. Duplicate check (same category/room, dates, guest name among current bookings) → return the existing one.
@@ -438,8 +458,10 @@ RC with `is_delete: true` → `deleted: true`. A draft (created but never saved)
   "confirm_token": "string"
 }
 ```
-At least one change is required; `room`/`category`/`unassign` are mutually exclusive. Guest name/phone/e-mail changes
-are not in v1 (⚠ S3).
+At least one change is required; `room`/`category`/`unassign`, `notes_append`/`notes_replace`,
+`price_per_night`/`total`, `arrival_time`/`clear_arrival_time` and `departure_time`/`clear_departure_time` are
+mutually exclusive (`VALIDATION`). A request that changes nothing (the booking already has those values) →
+`VALIDATION`. Guest name/phone/e-mail changes are not in v1 (⚠ S3).
 
 **Price rules** (RC never re-prices on its own ✅ for a category change; ⚠ for a date change):
 - price given → use it;
@@ -447,8 +469,10 @@ are not in v1 (⚠ S3).
   the current RC quote for comparison;
 - category changes, same nights, no price → keep the total; warn `PRICE_KEPT` with the current quote.
 
-**Preview**: before/after BookingSummary, changed fields, warnings (`CATEGORY_CHANGE`, `BOOKING_SITE`,
-`PRICE_CHANGED`/`PRICE_KEPT`, `HOLD_OVERLAP`, `CLOSED_DATES`, `PAST_DATES`), `will_fail` from the capacity check.
+**Preview**: before/after BookingSummary, changed fields, warnings (`CATEGORY_CHANGE`, `BOOKING_SITE` when dates,
+status, room, category or total change, `PRICE_CHANGED`/`PRICE_KEPT`, `HOLD_OVERLAP`, `CLOSED_DATES`, `PAST_DATES`
+when check-in moves into the past), `will_fail` from the capacity check (run when dates, room, category or status
+change).
 
 **On confirm**: re-`GET /v2/event_calendars/{id}`; if `is_delete` → `DELETED`; if its state differs from the preview
 → `PREVIEW_STALE`. Build the PUT body **from that GET** (field mapping below), apply the changes, set `apartment_id`
@@ -476,7 +500,8 @@ If the GET contains fields the builder doesn't know, the write is refused with `
 > user says the booking was entered by mistake. Call without confirm_token for a preview first.
 
 **Input**: `{ "booking_id": "integer", "confirm_token": "string" }`
-**Preview**: the booking; warnings `BOOKING_SITE` (cancel on the site separately), `HAS_PAYMENTS`.
+**Preview**: the booking; warnings `BOOKING_SITE` (cancel on the site separately), `HAS_PAYMENTS`. Already canceled
+→ `VALIDATION`; deleted → `DELETED`.
 **On confirm**: same path as update with `status: "canceled"` ✅ (canceled frees the room ✅).
 
 ### 2.8 `delete_booking`
@@ -488,6 +513,7 @@ If the GET contains fields the builder doesn't know, the write is refused with `
 **Preview**: the booking; warnings `BOOKING_SITE` (deleting in RC doesn't cancel on the site), `HAS_PAYMENTS`.
 **On confirm**: `DELETE /v2/event_calendars/{id}` ✅ (soft delete; the booking disappears from the calendar and can be
 restored with `POST …/restore` ✅ — the web app has a restore action too; not a v1 tool). Already deleted → `DELETED`.
+Result: the booking with `deleted: true`.
 
 ## 3. Stories with sample prompts (acceptance tests)
 

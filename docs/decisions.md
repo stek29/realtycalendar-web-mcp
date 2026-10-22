@@ -52,3 +52,12 @@ why, and where the docs were updated. The specs remain the source of truth; this
 | D23 | Evals run on cheaper models against the fake RC only. Gate: Claude Sonnet **and** Codex `gpt-6.1-sol` (owner: test Codex too, not just Claude); Haiku reported as a floor. Both clients verified end to end with a two-turn smoke run on 2054-10-22 | plan-m3.md |
 | D24 | Live write tests approved by the owner (2054-10-22): "TEST MCP" guests (phone +79990000001, e-mail test-mcp@example.com), dates 20–23 Jan 2055 (main window), plus 31 Jan–2 Feb, 28 Feb–2 Mar and 5–7 Apr 2055 (S2/S9, done) | plan-m2.md |
 | D25 | Known live leftovers: test guest records and soft-deleted test bookings (from the design phase and the baseline), three invisible drafts (810000209, 810000210, 810000211) | mcp-user-stories.md |
+
+## Writes (M2 implementation)
+
+| # | Decision | Why | Where |
+|---|---|---|---|
+| D26 | The preview's capacity check (`stayCheck`) ignores closed rooms; `check_availability` still counts them | RC saves bookings on closed nights (S2), so a closed room doesn't make a write fail; closures stay a `CLOSED_DATES` warning | spec §1 Writes, plan-m2.md |
+| D27 | `create_booking` accepts `room` and `category` together when they agree (plan-m2 said exactly one) | spec §1's naming rule for all tools; a model often sends both | spec §2.5, plan-m2.md |
+| D28 | Write tools have one output shape: `preview: true` with before/after/changes/warnings/token, or `preview: false` with `booking` (+ `deleted`, `note`) | MCP allows one `outputSchema` per tool | spec §1 Writes |
+| D29 | An update that changes nothing, and a cancel of a canceled booking, are `VALIDATION` errors | nothing to confirm; also what a repeated confirm of an applied update sees | spec §2.6, §2.7 |

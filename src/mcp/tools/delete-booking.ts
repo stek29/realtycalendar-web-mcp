@@ -1,0 +1,51 @@
+import { z } from 'zod'
+import { fromBooking } from '../../domain/bookings.js'
+import { bookingLine, bookingSite, hasPayments, type Warning } from '../../domain/warnings.js'
+import { deleteBooking as rcDelete } from '../../upstream/api.js'
+import { defineWriteTool, WRITE_ANNOTATIONS } from './define.js'
+import { bookingForWrite, today } from './shared.js'
+
+export const deleteBooking = defineWriteTool({
+  name: 'delete_booking',
+  level: 'full',
+  title: 'Delete booking',
+  description:
+    'WRITE: REMOVE A MISTAKE. Delete a booking that was entered by mistake or is a duplicate (ошибочная, дубль, ' +
+    'удалить). If the guest cancelled, use cancel_booking. If unsure which, ask. Call without confirm_token first.',
+  input: z.object({ booking_id: z.number().int().positive().describe('Booking id, e.g. from list_bookings') }),
+  annotations: WRITE_ANNOTATIONS.change,
+  lockId: (args) => args.booking_id,
+
+  async preview(ctx, args) {
+    const { catalog, raw, paid, before, state } = await bookingForWrite(ctx, args.booking_id)
+    const warnings: Warning[] = []
+    if (raw.platform_name) warnings.push(bookingSite(raw.platform_name, 'deleting it here'))
+    if (paid !== 0) warnings.push(hasPayments(paid, catalog.currency))
+    const t = today(ctx).today
+    return {
+      plan: { booking_id: raw.id, state, delete: true },
+      view: {
+        summary: `Удалить бронь ${raw.id}: ${bookingLine(before, catalog.currency, t)}`,
+        currency: catalog.currency,
+        before,
+        warnings,
+        will_fail: false,
+      },
+      blocked: false,
+      paid,
+      catalog,
+      today: t,
+    }
+  },
+
+  async commit(ctx, args, p) {
+    const deleted = await rcDelete(ctx.rc, args.booking_id)
+    const booking = fromBooking(p.catalog, deleted, p.paid)
+    return {
+      summary: `Бронь ${booking.id} удалена: ${bookingLine(booking, p.catalog.currency, p.today)}`,
+      currency: p.catalog.currency,
+      booking,
+      deleted: deleted.is_delete,
+    }
+  },
+})

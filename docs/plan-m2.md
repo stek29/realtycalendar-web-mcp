@@ -29,14 +29,12 @@ S3 (no-op PUT is safe), S8 (drafts: invisible, don't block, can't be deleted), S
 | `upstream/api.ts` | `createDraft(rc, {status, apartment_id, realty_room_id, begin_date, end_date})`, `putBooking(rc, id, body)`, `deleteBooking(rc, id)` — all `rc.send`, never retried |
 | `domain/writes.ts` | `KNOWN_BOOKING_KEYS` (the 36 keys of a live GET, 2054-10-22); `putBodyFromGet(raw)` (spec §2.6 mapping; unknown key → `RC_SCHEMA_DRIFT`); `createBody(plan)`; `applyChanges(body, plan)`; price rules (given / keep average per night × new nights / keep total on category change); notes append (`old + "\n" + new`) or replace |
 | `domain/confirm.ts` | `signPlan(key, plan, now)` / `verifyPlan(key, token, plan, now)` — see "Confirm token" |
-| `domain/calendar.ts` | `availability()` gains `excludeBookingId` so an update's own nights don't count against it |
-| `domain/warnings.ts`¹ | builds the preview warnings (`HOLD_OVERLAP`, `CLOSED_DATES`, `BOOKING_SITE`, `CATEGORY_CHANGE`, `PRICE_CHANGED`, `PRICE_KEPT`, `HAS_PAYMENTS`, `PAST_DATES`, `NO_GUEST_MESSAGES`, `DUPLICATE`) and `will_fail` / `conflicts` from an availability result |
+| `domain/calendar.ts` | `stayCheck()`: the preview's capacity check (`will_fail`, `conflicts`, overlapping holds, closed nights, stay-rule problems), with `excludeBookingId` so an update's own nights don't count against it. Separate from `availability()` because RC ignores closures, so closed rooms must not count as full here (D26) |
+| `domain/warnings.ts` | builds the preview warnings (`HOLD_OVERLAP`, `CLOSED_DATES`, `BOOKING_SITE`, `CATEGORY_CHANGE`, `PRICE_CHANGED`, `PRICE_KEPT`, `HAS_PAYMENTS`, `PAST_DATES`, `NO_GUEST_MESSAGES`, `DUPLICATE`) and `will_fail` / `conflicts` from an availability result |
 | `mcp/tools/define.ts` | `defineWriteTool({…, preview, commit})`: adds `confirm_token` to the input; without it runs `preview`; with it re-runs `preview` (fresh state), verifies the token against the new plan, and only then `commit` |
 | `mcp/tools/create-booking.ts`, `update-booking.ts`, `cancel-booking.ts`, `delete-booking.ts` | one per tool |
 | `context.ts` | `withBookingLock(id, fn)`: writes to the same booking id serialised in-process |
 
-¹ New file, listed in technical-structure.md when added (`domain/` currently names `writes.ts` and `confirm.ts`;
-warnings may live in `writes.ts` if small).
 
 ### Plan → preview → confirm
 
@@ -79,7 +77,7 @@ payments list read at confirm time (create: 0, no call).
 
 ### Input validation (all `VALIDATION` with a message saying what to send)
 
-- create: exactly one of `room` / `category`; `guest_name` non-empty; at most one of `price_per_night` / `total`,
+- create: `room` or `category` (both only if they agree, spec §1 naming rule, D27); `guest_name` non-empty; at most one of `price_per_night` / `total`,
   both ≥ 0; `arrival_time` / `departure_time` as `HH:MM`; `check_out > check_in`, at most 62 nights.
 - update: at least one change; exclusivity rules above; `clear_arrival_time` with `arrival_time` → `VALIDATION`.
 - Guest contact fields are not inputs of update (spec).
