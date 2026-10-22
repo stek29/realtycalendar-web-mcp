@@ -112,6 +112,13 @@ the calendar is back to its earlier state.
    This is only a draft: `GET` on it returns 404, it is not on the calendar, there is **no availability check** at this
    step, and a draft that never gets its `PUT` never shows up anywhere we can see (whether RC deletes it later or it
    affects booking sites is unknown).
+
+   The web UI does the same (chessmate bundle, `EventModal`): the POST goes out as the form opens (end date defaults to
+   check-in + 1), and the form then edits the returned draft. While `preparing: true` the form hides the info, chat,
+   history and auto-message tabs, drops "canceled" from the statuses and fills in the total and prepayment from
+   `apartments/{id}/price` and `event_calendars/prepaid_amount`. Closing the form sends nothing, so every abandoned
+   "new booking" form leaves a draft. The UI has no draft list, no resume and no draft cleanup; its only `DELETE` is the
+   "Delete" action on saved bookings. Drafts left by our server are no different from the UI's own.
 2. `PUT /v2/event_calendars/{id}` → 200 with the full body (exactly what the form sent):
    ```json
    {
