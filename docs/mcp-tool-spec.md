@@ -156,7 +156,7 @@ Preview warnings:
 | Warning | When |
 |---|---|
 | `HOLD_OVERLAP` | the stay overlaps a hold (`request`) in the same room/category; RC allows it ✅ |
-| `CLOSED_DATES` | the stay breaks `stay_rules` (closed night, below min stay, no check-in/check-out day); RC's own enforcement untested (§5 S2) |
+| `CLOSED_DATES` | the stay breaks `stay_rules` (closed night, below min stay, no check-in/check-out day). RC's API accepts such bookings ✅ (§5 S2), so this warning is the only guard: the preview says RC will save it anyway |
 | `BOOKING_SITE` | booking from a booking site: changes to dates, status, room, category or price are not sent to the site (RC shows the same warning) |
 | `CATEGORY_CHANGE` | the update moves the booking to another category (e.g. assigning a room of another category) |
 | `PRICE_CHANGED` / `PRICE_KEPT` | see update rules |
@@ -545,11 +545,11 @@ as `tool(…)` → user "да" → `tool(…, confirm_token)`.
 | # | Question | Until answered |
 |---|---|---|
 | S1 | `from_booking_site` in lists: grid has `is_external` (true for Ostrovok) but Yandex Travel / Ttravel bookings had `is_external: false` with `platform_name` set in the detail | lists: `is_external OR source ∈ booking-site sources`; writes use the detail's `platform_name` |
-| S2 | Does RC refuse bookings on closed nights / below min stay? | warn only |
-| S3 | GET→PUT mapping: does a no-op PUT keep the booking and the guest record unchanged (no duplicate guest)? Our update tests sent `guest.id: null` in some cases. Guest contact edits | must pass before update/cancel ship; guest edits out |
+| S2 | ✅ Answered 2054-10-22: **no**. The API saved a 1-night stay where min stay is 2 (20–21 Jan 2055) and a stay on closed nights (5–7 Apr 2055, all rooms closed) | warn only (`CLOSED_DATES`) |
+| S3 | ✅ Answered 2054-10-22: a PUT built from the GET with the §2.6 mapping changed nothing (field-by-field diff empty), kept the guest and client ids and added no audit entry; only `updated_at` moved. Guest contact edits still untested | update/cancel may ship; guest edits out |
 | S4 | ✅ Answered 2054-10-22: grid `client.phone` is a string when known (23 of 54), else null; `by_dates` has the same phones | `guest_phone` nullable; phone `query` searches the grid |
 | S5 | ✅ Answered 2054-10-22: in the category's `room_id: null` grid row | — |
 | S6 | Dropped: `by_dates` is not used (see 2.3) | — |
 | S7 | ✅ Answered 2054-10-22: grid with `statuses[]=canceled` returns only canceled bookings | — |
-| S9 | Exact meaning of `min_stay_through` (min nights for a stay arriving that day, or for any stay including that night?) and of `closed_on_arrivial` / `closed_on_departure` per date | treat min stay as applying to every night of the stay (strictest wins); verify with one booking attempt on the New Year window or from RC's help |
+| S9 | Exact meaning of `min_stay_through` (min nights for a stay arriving that day, or for any stay including that night?) and of `closed_on_arrivial` / `closed_on_departure`. Not answerable through the API: RC saved both 31 Jan–2 Feb (min 2 then 4) and 28 Feb–2 Mar (min 4 then 2) without complaint (S2). Only affects our warnings; booking sites may apply it their own way | treat min stay as applying to every night of the stay (strictest wins) |
 | S8 | Draft lifetime | never leave drafts on purpose |

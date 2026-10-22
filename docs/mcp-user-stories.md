@@ -281,6 +281,22 @@ tested ✅ and can come back cheaply if a story needs them.
 ## Open questions
 
 1. **Notifications (U7).** Do new bookings appear in the bell list? Check after the next real booking.
-2. **Closed dates.** Does RC refuse a booking on dates closed for that room? Needs a test booking in a closed period.
+2. ~~Closed dates~~ — answered 2054-10-22: the API accepts bookings on closed nights and below min stay (spec §5 S2).
 3. **Leftovers from tests.** Test guest records ("TEST MCP …", phone +79990000001) stay in the guest base; the
-   deleted test booking keeps its (refunded) payment history.
+   deleted test booking keeps its (refunded) payment history. Every create with `guest.id: null` makes a **new** guest
+   record, even with the same name and phone (5 creates → 5 guest records, 2054-10-22).
+
+### Write baseline (tested 2054-10-22)
+
+Five test bookings in category 01 ("TEST MCP Иван"), all deleted within a minute; the windows were checked empty
+before and after.
+
+| Test | Result |
+|---|---|
+| Create 20–23 Jan, room 5 | `POST` 200 returns a draft in the detail shape (`amount: 0`, `guest: null`, `preparing: true`); `PUT` 200 returns the full booking, same keys as `GET` |
+| No-op `PUT` built from the `GET` (spec §2.6 mapping) | 200; no field changed, same guest and client ids, no new audit entry; `updated_at` moved (S3 ✅) |
+| 1 night 20–21 Jan where min stay is 2 | saved (S2: min stay not enforced) |
+| 31 Jan–2 Feb (min 2, then 4) and 28 Feb–2 Mar (min 4, then 2) | both saved (S9 can't be learned from the API) |
+| 5–7 Apr, all rooms closed | saved (S2: closures not enforced) |
+| Cancel (status `canceled`) then `DELETE` | 200 / 200; `DELETE` returns the booking with `is_delete: true` |
+| Guest records | each create made a new guest record (no reuse by phone) |
