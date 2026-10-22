@@ -11,6 +11,8 @@ export interface LoginIo {
   out(s: string): void
   /** stderr: everything else. */
   err(s: string): void
+  /** Releases stdin when done. */
+  close?(): void
 }
 
 interface Opts {
@@ -23,6 +25,7 @@ interface Opts {
 export async function login(io: LoginIo, opts: Opts): Promise<number> {
   const username = (await io.ask('RealtyCalendar login (e-mail or phone): ')).trim()
   const password = await io.ask('Password: ', true)
+  io.close?.()
   if (!username || !password) {
     io.err('Login and password are required.')
     return 1
@@ -62,25 +65,43 @@ export async function logout(token: string | undefined, err: (s: string) => void
   }
 }
 
-/** Prompts on stderr; hidden input is not echoed. */
+/**
+ * Prompts on stderr; hidden input is not echoed on a terminal. One readline with a line queue, so piped input
+ * (`printf 'login\npassword\n' | … login`) works too: lines that arrive before their question are kept.
+ */
 export function terminalIo(): LoginIo {
+  const tty = process.stdin.isTTY === true
+  const rl = createInterface({ input: process.stdin, output: process.stderr, terminal: tty })
+  const rlOut = rl as unknown as { _writeToOutput(s: string): void }
+  const write = rlOut._writeToOutput.bind(rl)
+  let muted = false
+  rlOut._writeToOutput = (s) => (muted ? undefined : write(s))
+  const lines: string[] = []
+  const waiting: ((line: string) => void)[] = []
+  let closed = false
+  rl.on('line', (line) => (waiting.length ? waiting.shift()!(line) : lines.push(line)))
+  rl.on('close', () => {
+    closed = true
+    waiting.splice(0).forEach((w) => w(''))
+  })
   return {
     ask(question, hidden = false) {
-      const rl = createInterface({ input: process.stdin, output: process.stderr, terminal: true })
-      let muted = false
-      const rlOut = rl as unknown as { _writeToOutput(s: string): void }
-      const write = rlOut._writeToOutput.bind(rl)
-      rlOut._writeToOutput = (s) => (muted ? undefined : write(s))
+      process.stderr.write(question)
+      muted = hidden && tty
       return new Promise((resolve) => {
-        rl.question(question, (answer) => {
-          rl.close()
-          if (hidden) process.stderr.write('\n')
-          resolve(answer)
-        })
-        muted = hidden
+        const answer = (line: string) => {
+          if (muted) process.stderr.write('\n')
+          muted = false
+          resolve(line)
+        }
+        const line = lines.shift()
+        if (line !== undefined) answer(line)
+        else if (closed) answer('')
+        else waiting.push(answer)
       })
     },
     out: (s) => process.stdout.write(s + '\n'),
     err: (s) => process.stderr.write(s + '\n'),
+    close: () => rl.close(),
   }
 }
