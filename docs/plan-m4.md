@@ -39,6 +39,7 @@ to that URL anyway (single resource).
 | `MCP_SERVER_KEY` | base64url, ≥ 32 bytes (`openssl rand -base64 32`); required |
 | `MCP_SERVER_KEY_PREVIOUS` | optional, rotation (below) |
 | `PORT` | default 8080 |
+| `MCP_TRUST_PROXY_HOPS` | reverse proxies in front that append to `X-Forwarded-For` (default 0); for the client IP in logs |
 | `RC_ACCESS` | the **highest** level a connection may pick (default `read`) |
 | `RC_SITE_BOOKINGS`, `RC_TIMEZONE`, `RC_AUDIT` | as stdio, server-wide |
 
@@ -96,8 +97,8 @@ answers 401 (JSON responses only; tool calls never stream).
   `HEALTHCHECK` on `/healthz`, `CMD ["node", "dist/server.js"]`. HTTP only.
 - `.github/workflows/image.yml` (D54): after `npm run check`, builds linux/amd64 + linux/arm64 and pushes to the private
   `ghcr.io/stek29/realtycalendar-web-mcp` (`:main`, `:sha-…`; release tags `:X.Y.Z`, `:latest`).
-- `deploy/docker-compose.yml`: the image with settings from `.env`; `--profile tls` adds Caddy for HTTPS (Let's
-  Encrypt), otherwise the owner's reverse proxy forwards to `127.0.0.1:8080`.
+- `deploy/docker-compose.yml`: a hardened sample without TLS, behind the owner's reverse proxy on `127.0.0.1:8080`;
+  `MCP_TRUST_PROXY_HOPS` for the real client IP in logs (D56). Deployment itself is not from this repo.
 - `deploy/k8s.yaml`: Deployment (non-root, read-only root FS, probes), Service, Secret reference; Ingress left to the
   owner. Any number of replicas works (stateless).
 

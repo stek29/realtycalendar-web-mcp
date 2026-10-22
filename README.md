@@ -46,8 +46,8 @@ The image `ghcr.io/stek29/realtycalendar-web-mcp` (linux/amd64, linux/arm64; pri
 GitHub token that has `read:packages`) is built by GitHub Actions: `:main` from the main branch, `:X.Y.Z` and `:latest`
 from release tags. `docker build .` builds it locally.
 
-Deploy with [deploy/docker-compose.yml](deploy/docker-compose.yml) (`--profile tls` adds Caddy with Let's Encrypt) or
-[deploy/k8s.yaml](deploy/k8s.yaml). Settings, besides the ones below:
+Samples: [deploy/docker-compose.yml](deploy/docker-compose.yml) (hardened, plain HTTP behind your TLS reverse proxy)
+and [deploy/k8s.yaml](deploy/k8s.yaml). Settings, besides the ones below:
 
 | Variable | Meaning |
 |---|---|
@@ -55,6 +55,7 @@ Deploy with [deploy/docker-compose.yml](deploy/docker-compose.yml) (`--profile t
 | `MCP_SERVER_KEY` | secret, `openssl rand -base64 32`; losing or changing it disconnects every user |
 | `MCP_SERVER_KEY_PREVIOUS` | the old key while rotating: tokens under it still work; drop it after 30 days |
 | `PORT` | default 8080; `GET /healthz` for probes |
+| `MCP_TRUST_PROXY_HOPS` | reverse proxies in front that append to `X-Forwarded-For` (default 0); logs then show the real client IP, and a client can't fake it |
 
 `RC_ACCESS` is the highest level a connection may pick; `RC_TOKEN` and `RC_CONFIRM_KEY` are not used. Add the
 connector with the URL `https://…/mcp` (Claude: Settings → Connectors → Add custom connector; ChatGPT: Settings → Apps

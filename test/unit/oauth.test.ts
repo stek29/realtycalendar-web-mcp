@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { memoryCache } from '../../src/cache.js'
 import { parseConfig, type Access } from '../../src/config.js'
 import { hostedApp } from '../../src/hosted.js'
+import { clientIp } from '../../src/client-ip.js'
 import { cimdRegistry, redirectAllowed, ALLOWED_CLIENTS } from '../../src/oauth/cimd.js'
 import { serverKeys } from '../../src/oauth/keys.js'
 import { open, seal } from '../../src/oauth/tokens.js'
@@ -57,6 +58,8 @@ async function setup(opts: { maxAccess?: Access; now?: () => Date; previousKey?:
     fetch: rc.fetch,
     now: () => clock.now(),
     write: (l) => lines.push(l),
+    socketIp: () => '10.0.0.5',
+    trustProxyHops: 1,
   })
   const req = (path: string, init?: RequestInit) => app.request(`${PUBLIC}${path}`, init)
 
@@ -450,5 +453,46 @@ describe('tokens and RC sessions', () => {
 
   it('refuses a short server key', async () => {
     await expect(serverKeys('c2hvcnQ')).rejects.toThrow(/at least 32 bytes/)
+  })
+})
+
+describe('client IP and access log', () => {
+  it('takes the address the trusted proxies saw, never what the client claims', () => {
+    expect(clientIp('10.0.0.5', undefined, 1)).toBe('10.0.0.5')
+    expect(clientIp('10.0.0.5', '203.0.113.7', 0)).toBe('10.0.0.5')
+    expect(clientIp('10.0.0.5', '203.0.113.7', 1)).toBe('203.0.113.7')
+    expect(clientIp('10.0.0.5', '6.6.6.6, 203.0.113.7', 1)).toBe('203.0.113.7') // spoofed entry on the left
+    expect(clientIp('10.0.0.5', '6.6.6.6, 203.0.113.7, 10.0.0.9', 2)).toBe('203.0.113.7')
+    expect(clientIp('10.0.0.5', '203.0.113.7', 5)).toBe('203.0.113.7')
+  })
+
+  it('logs one line per request with the client IP and no query string; login events carry the IP', async () => {
+    const s = await setup()
+    const { cookie } = await s.authorize()
+    await s.req('/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Forwarded-For': '6.6.6.6, 198.51.100.4',
+        Cookie: cookie!,
+      },
+      body: new URLSearchParams({ username: USER, password: 'wrong', action: 'allow' }),
+    })
+    const events = s.lines.map((l) => JSON.parse(l))
+    const auth = events.find((e) => e.event === 'http' && e.path === '/authorize')
+    expect(auth).toMatchObject({ method: 'GET', status: 200 })
+    expect(JSON.stringify(auth)).not.toContain('code_challenge')
+    expect(events.find((e) => e.event === 'oauth_login_rejected')).toMatchObject({ ip: '198.51.100.4' })
+    expect(events.find((e) => e.event === 'http' && e.path === '/login')).toMatchObject({ ip: '198.51.100.4' })
+  })
+
+  it('refuses oversized form posts', async () => {
+    const s = await setup()
+    const res = await s.req('/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=refresh_token&refresh_token=' + 'a'.repeat(20_000),
+    })
+    expect(res.status).toBe(413)
   })
 })

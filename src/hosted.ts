@@ -1,15 +1,17 @@
 // The hosted server as a Hono app: OAuth routes, /mcp (Streamable HTTP, stateless), /healthz. Web-standard only;
 // platforms/node.ts serves it.
 import { createMcpHandler } from '@modelcontextprotocol/server'
-import { Hono } from 'hono'
+import { Hono, type Context as HonoContext } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
+import { clientIp } from './client-ip.js'
 import { streamAudit } from './audit.js'
 import type { Cache } from './cache.js'
 import type { Config } from './config.js'
 import { makeContext, type Context } from './context.js'
 import { jsonLogger } from './log.js'
 import { createMcpServer } from './mcp/server.js'
-import { bearer, oauthApp, unauthorized, type OAuthOptions } from './oauth/app.js'
+import { bearer, oauthApp, unauthorized, type HttpEnv, type OAuthOptions } from './oauth/app.js'
 
 export interface HostedOptions extends Omit<OAuthOptions, 'maxAccess' | 'rcBaseUrl' | 'log'> {
   /** Server-wide config; `access` is the highest level a connection may pick, `confirmKey` comes from the server key. */
@@ -17,14 +19,34 @@ export interface HostedOptions extends Omit<OAuthOptions, 'maxAccess' | 'rcBaseU
   cache: Cache
   /** Log and audit lines (stdout in node.ts). */
   write: (line: string) => void
+  /** The TCP peer's address (platform-specific). */
+  socketIp?: (c: HonoContext<HttpEnv>) => string | undefined
+  /** MCP_TRUST_PROXY_HOPS: reverse proxies in front that append to X-Forwarded-For (default 0: use the peer). */
+  trustProxyHops?: number
 }
 
-export function hostedApp(o: HostedOptions): Hono {
+const MCP_BODY_LIMIT = 1024 * 1024
+
+export function hostedApp(o: HostedOptions): Hono<HttpEnv> {
   const log = jsonLogger(o.write)
   const oauth: OAuthOptions = { ...o, maxAccess: o.config.access, rcBaseUrl: o.config.rcBaseUrl, log }
-  const app = new Hono()
+  const app = new Hono<HttpEnv>()
 
   app.get('/healthz', (c) => c.text('ok'))
+  // One access line per request: path without the query (codes and states ride in it), status, the real client IP.
+  app.use('*', async (c, next) => {
+    const started = Date.now()
+    c.set('ip', clientIp(o.socketIp?.(c), c.req.header('X-Forwarded-For'), o.trustProxyHops ?? 0))
+    await next()
+    log.log(c.res.status >= 500 ? 'error' : 'info', 'http', {
+      method: c.req.method,
+      path: c.req.path,
+      status: c.res.status,
+      duration_ms: Date.now() - started,
+      ip: c.get('ip'),
+      user_agent: c.req.header('User-Agent')?.slice(0, 200),
+    })
+  })
   app.route('/', oauthApp(oauth))
 
   // The factory gets the request's Context through authInfo.extra: one handler, a fresh server per request.
@@ -50,6 +72,7 @@ export function hostedApp(o: HostedOptions): Hono {
       maxAge: 600,
     }),
   )
+  app.use('/mcp', bodyLimit({ maxSize: MCP_BODY_LIMIT, onError: (c) => c.json({ error: 'request too large' }, 413) }))
   app.all('/mcp', async (c) => {
     const auth = await bearer(c.req.raw, oauth)
     if (auth instanceof Response) return auth

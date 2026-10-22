@@ -1,5 +1,6 @@
 // Hosted entrypoint (M4): the HTTP server for Claude and ChatGPT connectors. Logs and audit lines go to stdout.
 import { serve } from '@hono/node-server'
+import { getConnInfo } from '@hono/node-server/conninfo'
 import { memoryCache } from '../cache.js'
 import { parseConfig } from '../config.js'
 import { VERSION } from '../context.js'
@@ -34,6 +35,8 @@ export async function runHttp(env: NodeJS.ProcessEnv = process.env): Promise<voi
     return fail((e as Error).message)
   }
   const port = Number(env.PORT || 8080)
+  const hops = Number(env.MCP_TRUST_PROXY_HOPS || 0)
+  if (!Number.isInteger(hops) || hops < 0) fail('MCP_TRUST_PROXY_HOPS must be a whole number (proxies in front)')
   const write = (line: string) => process.stdout.write(line + '\n')
   const app = hostedApp({
     publicUrl: url.origin,
@@ -47,6 +50,8 @@ export async function runHttp(env: NodeJS.ProcessEnv = process.env): Promise<voi
         ),
     }),
     write,
+    socketIp: (c) => getConnInfo(c).remote.address,
+    trustProxyHops: hops,
   })
   const server = serve({ fetch: app.fetch, port, hostname: env.HOST || '0.0.0.0' })
   write(
@@ -58,6 +63,7 @@ export async function runHttp(env: NodeJS.ProcessEnv = process.env): Promise<voi
       port,
       public_url: url.origin,
       max_access: config.access,
+      trust_proxy_hops: hops,
       site_bookings: config.siteBookings,
     }),
   )

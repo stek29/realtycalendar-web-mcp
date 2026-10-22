@@ -24,6 +24,7 @@ spec:
           ports: [{ containerPort: 8080, name: http }]
           env:
             - { name: MCP_PUBLIC_URL, value: https://rc.example.com }
+            - { name: MCP_TRUST_PROXY_HOPS, value: '1' } # the Ingress controller
             - { name: RC_ACCESS, value: edit }
             - { name: RC_SITE_BOOKINGS, value: protect }
           envFrom:

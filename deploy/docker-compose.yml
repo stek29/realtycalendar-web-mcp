@@ -1,42 +1,37 @@
-# The hosted server with docker compose. The image is private: `docker login ghcr.io` first, with a GitHub token that
-# has read:packages.
+# Sample: the hosted server with docker compose, behind your own TLS-terminating reverse proxy (nginx, Traefik,
+# Caddy…). The server speaks plain HTTP; MCP_PUBLIC_URL must still be the https:// address users reach.
 #
-# .env (next to this file, git-ignored, chmod 600):
-#   MCP_DOMAIN=rc.example.com          # DNS A/AAAA record pointing at this host
-#   MCP_SERVER_KEY=<openssl rand -base64 32>
-#   RC_ACCESS=edit                     # the highest level a connection may pick on the login page
-#   RC_SITE_BOOKINGS=protect
-#   MCP_IMAGE_TAG=0.2.0                # default latest (the newest release tag); main = the main branch
+# .env next to this file (git-ignored, chmod 600):
+#   MCP_PUBLIC_URL=https://rc.example.com
+#   MCP_SERVER_KEY=<openssl rand -base64 32>   # losing or changing it disconnects every user
+#   RC_ACCESS=edit                             # the highest level a connection may pick on the login page
 #
-# With HTTPS from the bundled Caddy (Let's Encrypt; ports 80 and 443 must be free and reachable):
-#   docker compose --profile tls up -d
-# Behind your own reverse proxy instead: `docker compose up -d` and proxy https://$MCP_DOMAIN to 127.0.0.1:8080.
+# The proxy must forward https://rc.example.com/* to 127.0.0.1:8080 and append the client address to
+# X-Forwarded-For (nginx: proxy_add_x_forwarded_for; Traefik and Caddy do it by default). MCP_TRUST_PROXY_HOPS is the
+# number of such proxies, so logs show the real client IP and a client can't fake it with its own header.
 services:
   mcp:
-    image: ghcr.io/stek29/realtycalendar-web-mcp:${MCP_IMAGE_TAG:-latest}
+    image: ghcr.io/stek29/realtycalendar-web-mcp:${MCP_IMAGE_TAG:-main}
     environment:
-      MCP_PUBLIC_URL: https://${MCP_DOMAIN:?set MCP_DOMAIN in .env}
+      MCP_PUBLIC_URL: ${MCP_PUBLIC_URL:?set MCP_PUBLIC_URL in .env}
       MCP_SERVER_KEY: ${MCP_SERVER_KEY:?set MCP_SERVER_KEY in .env}
+      MCP_TRUST_PROXY_HOPS: ${MCP_TRUST_PROXY_HOPS:-1}
       RC_ACCESS: ${RC_ACCESS:-read}
       RC_SITE_BOOKINGS: ${RC_SITE_BOOKINGS:-protect}
+      RC_AUDIT: summary # full would put guest data into the logs
     ports:
-      - '127.0.0.1:8080:8080'
+      - '127.0.0.1:8080:8080' # only the local proxy reaches it
+    user: '1000:1000'
     read_only: true
     cap_drop: [ALL]
     security_opt: ['no-new-privileges:true']
+    init: true
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: 1
+    stop_grace_period: 10s
+    # The image's HEALTHCHECK polls /healthz.
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '5' }
     restart: unless-stopped
-
-  caddy:
-    profiles: [tls]
-    image: caddy:2-alpine
-    command: caddy reverse-proxy --from ${MCP_DOMAIN} --to mcp:8080
-    ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - caddy_data:/data
-    depends_on: [mcp]
-    restart: unless-stopped
-
-volumes:
-  caddy_data:

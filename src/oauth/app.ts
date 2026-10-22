@@ -1,5 +1,6 @@
 // OAuth 2.1 authorization server for the hosted MCP (architecture.md "Hosted: stateless OAuth", plan-m4.md).
 import { Hono, type Context as HonoContext } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { ACCESS_LEVELS, accessAllows, type Access } from '../config.js'
@@ -27,6 +28,9 @@ export interface OAuthOptions {
   log?: Logger
 }
 
+/** Request variables set by hosted.ts: the client IP for logs. */
+export type HttpEnv = { Variables: { ip: string | undefined } }
+
 export interface Bearer {
   token: string
   rcToken: string
@@ -36,6 +40,7 @@ export interface Bearer {
   expiresAt: number
 }
 
+const FORM_LIMIT = 16 * 1024
 const COOKIE = 'rc_login' // sent as __Host-rc_login (prefix: 'host')
 const SCOPES = ['offline_access']
 
@@ -80,8 +85,8 @@ export async function bearer(req: Request, o: OAuthOptions): Promise<Bearer | Re
   }
 }
 
-export function oauthApp(o: OAuthOptions): Hono {
-  const app = new Hono()
+export function oauthApp(o: OAuthOptions): Hono<HttpEnv> {
+  const app = new Hono<HttpEnv>()
   const u = urls(o.publicUrl)
   const ts = scopeOf(o)
   const log = o.log ?? silentLogger
@@ -92,8 +97,11 @@ export function oauthApp(o: OAuthOptions): Hono {
   const openCors = cors({ origin: '*', allowMethods: ['GET', 'POST', 'OPTIONS'], maxAge: 600 })
   app.use('/.well-known/*', openCors)
   app.use('/token', openCors)
+  const formLimit = bodyLimit({ maxSize: FORM_LIMIT, onError: (c) => c.json({ error: 'invalid_request' }, 413) })
+  app.use('/token', formLimit)
+  app.use('/login', formLimit)
 
-  const protectedResource = (c: HonoContext) =>
+  const protectedResource = (c: HonoContext<HttpEnv>) =>
     c.json({
       resource: u.resource,
       authorization_servers: [u.issuer],
@@ -104,7 +112,7 @@ export function oauthApp(o: OAuthOptions): Hono {
   app.get('/.well-known/oauth-protected-resource', protectedResource)
   app.get('/.well-known/oauth-protected-resource/mcp', protectedResource)
 
-  const asMetadata = (c: HonoContext) =>
+  const asMetadata = (c: HonoContext<HttpEnv>) =>
     c.json({
       issuer: u.issuer,
       authorization_endpoint: `${u.issuer}/authorize`,
@@ -188,10 +196,10 @@ export function oauthApp(o: OAuthOptions): Hono {
       rcToken = (await signIn(rc(''), username, password)).auth_token
     } catch (e) {
       if (e instanceof ToolError && (e.code === 'AUTH' || e.code === 'VALIDATION')) {
-        log.log('info', 'oauth_login_rejected', { client_id: client.client_id })
+        log.log('info', 'oauth_login_rejected', { ip: c.get('ip'), client_id: client.client_id })
         return again('Неверный логин или пароль RealtyCalendar.')
       }
-      log.log('warn', 'oauth_login_failed', { client_id: client.client_id, error: String(e) })
+      log.log('warn', 'oauth_login_failed', { ip: c.get('ip'), client_id: client.client_id, error: String(e) })
       return again('RealtyCalendar сейчас недоступен. Попробуйте ещё раз.', 502)
     }
     const code = await seal(ts, 'code', {
@@ -204,7 +212,7 @@ export function oauthApp(o: OAuthOptions): Hono {
       rc_user: username,
       rc_password: password,
     })
-    log.log('info', 'oauth_login', { client_id: client.client_id, access })
+    log.log('info', 'oauth_login', { ip: c.get('ip'), client_id: client.client_id, access })
     return back({ code })
   })
 
@@ -231,7 +239,7 @@ export function oauthApp(o: OAuthOptions): Hono {
       if (!verifier || (await s256(verifier)) !== code.code_challenge) {
         return fail('invalid_grant', 'PKCE verification failed')
       }
-      log.log('info', 'oauth_token', { client_id: code.client_id, grant: 'authorization_code' })
+      log.log('info', 'oauth_token', { ip: c.get('ip'), client_id: code.client_id, grant: 'authorization_code' })
       return c.json(await issue(code))
     }
 
@@ -246,23 +254,27 @@ export function oauthApp(o: OAuthOptions): Hono {
         await getInfo(rc(rcToken))
       } catch (e) {
         if (!(e instanceof ToolError && e.code === 'AUTH')) {
-          log.log('warn', 'oauth_refresh_rc_unavailable', { client_id: refresh.client_id, error: String(e) })
+          log.log('warn', 'oauth_refresh_rc_unavailable', {
+            ip: c.get('ip'),
+            client_id: refresh.client_id,
+            error: String(e),
+          })
           return fail('temporarily_unavailable', 'RealtyCalendar is not reachable', 503)
         }
         // The RC session died: sign in again with the stored login.
         try {
           rcToken = (await signIn(rc(''), refresh.rc_user, refresh.rc_password)).auth_token
-          log.log('info', 'oauth_rc_relogin', { client_id: refresh.client_id })
+          log.log('info', 'oauth_rc_relogin', { ip: c.get('ip'), client_id: refresh.client_id })
         } catch (e2) {
           if (e2 instanceof ToolError && (e2.code === 'AUTH' || e2.code === 'VALIDATION')) {
-            log.log('info', 'oauth_relogin_rejected', { client_id: refresh.client_id })
+            log.log('info', 'oauth_relogin_rejected', { ip: c.get('ip'), client_id: refresh.client_id })
             return fail('invalid_grant', 'RealtyCalendar login no longer works; reconnect')
           }
-          log.log('warn', 'oauth_relogin_failed', { client_id: refresh.client_id, error: String(e2) })
+          log.log('warn', 'oauth_relogin_failed', { ip: c.get('ip'), client_id: refresh.client_id, error: String(e2) })
           return fail('temporarily_unavailable', 'RealtyCalendar is not reachable', 503)
         }
       }
-      log.log('info', 'oauth_token', { client_id: refresh.client_id, grant: 'refresh_token' })
+      log.log('info', 'oauth_token', { ip: c.get('ip'), client_id: refresh.client_id, grant: 'refresh_token' })
       return c.json(await issue({ ...refresh, rc_token: rcToken }))
     }
 
