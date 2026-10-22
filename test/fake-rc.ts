@@ -495,3 +495,38 @@ function blankEvent(state: FakeState): GridEvent {
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 }
+
+export interface SignInRc {
+  fetch: typeof fetch
+  /** RC tokens that still work; clear it to end every session. */
+  live: Set<string>
+  /** Usernames of every sign-in attempt. */
+  signIns: string[]
+  setPassword(password: string): void
+}
+
+/** The fake RC behind a sign-in: POST sign_in issues tokens for one user, any other call needs a live token. */
+export function signInRc(user: { username: string; password: string }, rc: FakeRc = fakeRc()): SignInRc {
+  const live = new Set<string>()
+  const signIns: string[] = []
+  let password = user.password
+  let n = 0
+  const fetch: typeof globalThis.fetch = async (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : input)
+    if (url.pathname === '/v2/sign_in' && init?.method === 'POST') {
+      const body = JSON.parse(String(init.body)) as { username: string; password: string }
+      signIns.push(body.username)
+      if (body.username !== user.username || body.password !== password) {
+        return Response.json({ error: 'Неверный логин или пароль' }, { status: 401 })
+      }
+      const token = `rc-${++n}`
+      live.add(token)
+      return Response.json({ auth_token: token, success: true })
+    }
+    if (!live.has(new Headers(init?.headers).get('X-User-Token') ?? '')) {
+      return Response.json({ error: 'unauthorized' }, { status: 401 })
+    }
+    return rc.fetch(input, init)
+  }
+  return { fetch, live, signIns, setPassword: (p) => (password = p) }
+}

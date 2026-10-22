@@ -6,7 +6,7 @@ import { hostedApp } from '../../src/hosted.js'
 import { cimdRegistry, redirectAllowed, ALLOWED_CLIENTS } from '../../src/oauth/cimd.js'
 import { serverKeys } from '../../src/oauth/keys.js'
 import { open, seal } from '../../src/oauth/tokens.js'
-import { fakeRc } from '../fake-rc.js'
+import { signInRc } from '../fake-rc.js'
 
 const PUBLIC = 'https://rc.example.test'
 const MCP = `${PUBLIC}/mcp`
@@ -39,37 +39,8 @@ async function s256(v: string) {
   return Buffer.from(d).toString('base64url')
 }
 
-/** The fake RC behind a sign-in: POST sign_in issues tokens, any other call needs a live one. */
-function authedRc() {
-  const rc = fakeRc()
-  const live = new Set<string>()
-  let n = 0
-  let password = PASSWORD
-  const signIns: string[] = []
-  const fetch: typeof globalThis.fetch = async (input, init) => {
-    const url = new URL(input instanceof Request ? input.url : input)
-    const headers = new Headers(init?.headers)
-    if (url.pathname === '/v2/sign_in' && init?.method === 'POST') {
-      const body = JSON.parse(String(init.body)) as { username: string; password: string }
-      signIns.push(body.username)
-      if (body.username !== USER || body.password !== password) return Response.json({ error: 'bad' }, { status: 401 })
-      const token = `rc-${++n}`
-      live.add(token)
-      return Response.json({ auth_token: token, success: true })
-    }
-    if (!live.has(headers.get('X-User-Token') ?? '')) return Response.json({ error: 'unauthorized' }, { status: 401 })
-    return rc.fetch(input, init)
-  }
-  return {
-    fetch,
-    live,
-    signIns,
-    setPassword: (p: string) => (password = p),
-  }
-}
-
 async function setup(opts: { maxAccess?: Access; now?: () => Date; previousKey?: string; key?: string } = {}) {
-  const rc = authedRc()
+  const rc = signInRc({ username: USER, password: PASSWORD })
   const lines: string[] = []
   const clock = { now: opts.now ?? (() => new Date()) }
   const keys = await serverKeys(opts.key ?? KEY, opts.previousKey)
