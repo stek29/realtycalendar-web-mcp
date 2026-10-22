@@ -443,12 +443,6 @@
         {
           "calls": [
             {
-              "tool": "preview_update_booking",
-              "args": {
-                "check_out": "2054-10-25"
-              }
-            },
-            {
               "tool": "update_booking",
               "args": {
                 "check_out": "2054-10-25"
