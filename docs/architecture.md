@@ -4,7 +4,8 @@ Status: final draft, 2054-10-22. Tools: [mcp-tool-spec.md](mcp-tool-spec.md). Co
 
 One codebase, two deployments:
 
-1. **v1 — local**: MCP server over stdio, run by Claude Desktop / Claude Code, RC token in an env var.
+1. **v1 — local**: MCP server over stdio, run by Claude Desktop / Claude Code from the Docker image, RC token in an
+   env var.
 2. **Target — hosted, stateless**: the same server over Streamable HTTP with a built-in OAuth 2.1 authorization server
    that signs users into RealtyCalendar; works with Claude and ChatGPT connectors; no database (see "Hosted").
 
@@ -79,8 +80,9 @@ write needs a confirm token from a preview the user saw.
 
 ```jsonc
 { "mcpServers": { "realtycalendar": {
-    "command": "npx", "args": ["-y", "realtycalendar-web-mcp@1.0.0"],      // pinned version
-    "env": { "RC_TOKEN": "…", "RC_TIMEZONE": "Europe/Moscow" } } } }
+    "command": "docker",
+    "args": ["run", "-i", "--rm", "-e", "RC_TOKEN", "-e", "RC_ACCESS", "<registry>/realtycalendar-web-mcp:1.0.0"],
+    "env": { "RC_TOKEN": "…", "RC_ACCESS": "edit" } } } }
 ```
 
 - **Dedicated RC user** for the MCP (Settings → Users), recommended, with only the needed objects and role: actions
@@ -95,7 +97,8 @@ write needs a confirm token from a preview the user saw.
   **and** their handlers refuse calls (second guard if a client cached the tool list).
 - `RC_SITE_BOOKINGS=protect|allow` (default `protect`, D40): writes don't change what a booking site sold. Hosted, it
   can become per connection (an OAuth scope picked on the login page), like per-user access levels.
-- Publish with npm provenance.
+- Shipped as a Docker image with a pinned tag; no npm package (D42). The same image will serve HTTP (Kubernetes,
+  docker compose) once the hosted entrypoint exists.
 
 ## Hosted: stateless OAuth
 

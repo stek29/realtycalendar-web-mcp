@@ -4,7 +4,8 @@ MCP server for [RealtyCalendar](https://realtycalendar.ru) — lets Claude, Chat
 availability and manage bookings through RealtyCalendar's web app API.
 
 Status: M1 (read tools) and M2 (write tools: create, update, cancel, delete, each with a read-only preview tool)
-done; from M3, the audit log and `login` / `logout` are in. Evals and the release are next. Not published yet.
+done; from M3, the audit log and `login` / `logout` are in. Evals and the release are next. Released as a Docker
+image only (no npm package); the image isn't built yet, so the examples below run `dist/main.js` directly.
 
 ## Run locally
 
@@ -35,7 +36,8 @@ needs the token. **Your approval of the write is the client's tool prompt**, so 
 (`create_booking`, `update_booking`, `cancel_booking`, `delete_booking`) to "always allow". The read tools and the
 `preview_*` tools are safe to always allow.
 
-Claude Desktop (`claude_desktop_config.json`), until the package is published:
+Claude Desktop (`claude_desktop_config.json`), until the Docker image exists (then `"command": "docker"`, `"args":
+["run", "-i", "--rm", "-e", "RC_TOKEN", "-e", "RC_ACCESS", "<image>"]`):
 
 ```jsonc
 { "mcpServers": { "realtycalendar": {

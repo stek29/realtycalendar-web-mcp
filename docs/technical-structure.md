@@ -36,9 +36,13 @@ platform adapters differ between deployments.
 
 Plus the **CLI** in the same package: `realtycalendar-web-mcp login | logout | check` for stdio users.
 
+Both targets ship in one Docker image (D42): stdio today, run by the client as `docker run -i`; the hosted HTTP
+entrypoint (M4) is what Kubernetes and docker compose deployments use.
+
 ## Repository
 
-One npm package, `realtycalendar-web-mcp` (`UNLICENSED`, private), in the git repo `stek29/realtycalendar-web-mcp`
+One Node package, `realtycalendar-web-mcp` (`UNLICENSED`, private, not published to npm; shipped as a Docker image,
+D42), in the git repo `stek29/realtycalendar-web-mcp`
 (local for now; a GitHub remote and CI can be added any time):
 
 ```text
@@ -179,7 +183,7 @@ The password is never stored or logged. The CLI is the only place besides the ho
   a release.
 - CI (GitHub Actions): typecheck, lint, unit tests, fixture-PII check; evals when `src/mcp/` changes. Live tests
   (`RC_LIVE=1 RC_TOKEN=… npm run test:live`) never run in CI.
-- Release: npm with provenance; config examples pin the version.
+- Release: a Docker image tagged with the version (no npm package, D42); config examples pin the tag.
 
 ## Build order
 
@@ -187,7 +191,7 @@ The password is never stored or logged. The CLI is the only place besides the ho
 |---|---|---|
 | M1 | Repo + `docs/`, config/context/cache, `upstream/` client + schemas, fixtures + fake RC, catalog + matching, the 4 read tools, stdio, `check` command | Claude Desktop answers U1–U4, U9, U10, U12, R1–R3 against the live account with `RC_ACCESS=read` |
 | M2 | `defineWriteTool`; create / update / cancel / delete (S2, S3 answered and S9 settled by the 2054-10-22 baseline, mcp-user-stories.md) | Live write tests pass and leave the calendar clean; S3 (no-op PUT keeps booking and guest) passes before update/cancel ship |
-| M3 | Evals for all spec §3 prompts, `login` / `logout`, audit log, packaging | Evals green; v1 published |
+| M3 | Evals for all spec §3 prompts, `login` / `logout`, audit log, Docker image | Evals green; v1 image built and pushed |
 | M4 | `oauth/` + `platforms/node.ts` | Connects from Claude and ChatGPT via CIMD |
 
 ## Later: Cloudflare Workers (postponed)

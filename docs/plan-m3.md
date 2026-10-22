@@ -143,13 +143,20 @@ Per confirmed write (architecture.md "Write path"), one JSON line:
 
 ## 5. Packaging and release
 
-- `package.json`: version `1.0.0`, `bin`, `files: ["dist"]`, `engines.node >= 22`; `npm pack --dry-run` checked in a
-  test (no fixtures, tokens or docs in the tarball).
-- README: install (`npx -y realtycalendar-web-mcp@1.0.0` config), `login` / `check`, access levels, the dedicated RC
-  user recommendation, a short personal-data note for hotels (architecture.md "Personal data").
-- CI (needs the GitHub remote): GitHub Actions for typecheck, lint, unit tests (includes the fixture-PII check);
-  evals optional (need an API key secret). Workflow file prepared; enabled when the remote exists.
-- Publish: npm with provenance from CI — needs the owner's npm account and the remote.
+Shipped as a **Docker image only**, no npm package (owner, D42).
+
+- `Dockerfile`, multi-stage: build with dev dependencies, then a slim Node 22 runtime image with `dist/` and production
+  dependencies only, running as a non-root user; `ENTRYPOINT ["node", "dist/main.js"]`, so `login`, `logout` and
+  `check` work as `docker run … <image> check`. Version `1.0.0` in `package.json` and as the image tag.
+- Checked by a script or CI step: the image builds, `docker run --rm <image> check` without a token prints the usage error, and the image holds no
+  fixtures, docs, tests or `.rc-*` files (`.dockerignore`).
+- Runs today over stdio: clients start it as `docker run -i --rm -e RC_TOKEN … <image>` (README). Kubernetes and
+  docker compose need the HTTP entrypoint (M4); the same image serves it then.
+- README: the Docker client config, `login` / `check`, access levels, the dedicated RC user recommendation, a short
+  personal-data note for hotels (architecture.md "Personal data").
+- CI (needs the GitHub remote): GitHub Actions for typecheck, lint, unit tests (includes the fixture-PII check) and
+  the image build; evals optional (need an API key secret). Workflow file prepared; enabled when the remote exists.
+- Registry: the owner's choice (e.g. GHCR once the remote exists); pushing needs the owner.
 
 ## Done when
 
@@ -157,7 +164,7 @@ Per confirmed write (architecture.md "Write path"), one JSON line:
 - Live read-only client check passes; Claude Desktop check done by the owner.
 - `login` / `check` / `logout` verified by the owner.
 - Audit entries written in the live write tests.
-- `npm pack` contents checked; v1.0.0 published (owner).
+- Image `1.0.0` built and its contents checked; pushed to the owner's registry (owner).
 
 ## Later (M4 candidate): MCP elicitation
 
