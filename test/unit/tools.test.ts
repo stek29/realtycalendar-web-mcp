@@ -237,6 +237,19 @@ describe('get_booking (U12a)', () => {
     expect(r.booking_site.untrusted.fields['Дата бронирования']).toBeDefined()
   })
 
+  it('adds the change history only when asked', async () => {
+    const { call } = setup()
+    expect((await call('get_booking', { booking_id: 810000162 })).history).toBeUndefined()
+    const r = await call('get_booking', { booking_id: 810000162, history: true })
+    expect(r.history).toHaveLength(6)
+    expect(r.history[0]).toMatchObject({
+      time: '2054-10-01T09:00:00+03:00',
+      action: 'Создание Брони (810000162)',
+      automatic: true,
+      untrusted: { changes: [] },
+    })
+  })
+
   it('unknown id → NOT_FOUND', async () => {
     const { call } = setup()
     expect(await call('get_booking', { booking_id: 1 })).toMatchObject({ isError: true, error: 'NOT_FOUND' })

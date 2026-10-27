@@ -364,7 +364,7 @@ amounts and source as the grid (phones only lacked the leading `+`) ✅, so it a
 
 > Intent: one booking in full, with payments and booking-site details.
 
-**Input**: `{ "booking_id": "integer" }`
+**Input**: `{ "booking_id": "integer", "history"?: "boolean" }`
 
 **Output**
 ```jsonc
@@ -377,12 +377,19 @@ amounts and source as the grid (phones only lacked the leading `+`) ✅, so it a
                   "account": "Наличные", "note": "Т-Банк", "status": "Оплачено вручную" } ],
   "created_at": "2054-09-29T15:27:56+03:00",   // first audit entry ✅
   "updated_at": "2054-10-21T20:38:35+03:00",
-  "deleted": false }
+  "deleted": false,
+  "history": [ { "time": "2054-10-15T13:25:15+03:00", "action": "Обновление Брони (810000176)",   // only with history: true
+                 "by": "Анна Петрова", "automatic": false,
+                 "untrusted": { "changes": [ { "field": "Выезд", "from": "2054-12-31", "to": "2055-01-03" } ] } } ] }
 ```
 **API**: `GET /v2/event_calendars/{id}` ✅ + `GET /v2/event_calendars/{id}/payments` ✅. `paid` = sum of payment
 amounts (refunds negative) — equal to the grid's `prepayment` in both cases checked (an Ostrovok prepayment and the
 test booking) ✅. `from_booking_site` here = `platform_name != null` (authoritative). Deleted bookings come back from
 RC with `is_delete: true` → `deleted: true`. A draft (created but never saved) is 404 → `NOT_FOUND`.
+`history` (D62) comes from the same detail's `audits` (RC has no separate history endpoint): oldest first, one entry
+per audit with `record.title`, `user.full_name`, `is_auto`, and `changes` (`[[label, [old, new]], …]` ✅ live
+2054-10-28). RC's internal keys (`agency_id`, `guest_id`, `booking_amount`, …) are dropped; `Лот` (category id) becomes
+`Категория` with the title; `""` becomes null; an entry whose changes were all internal keys is dropped. Payments and guest records of the booking appear as their own entries.
 
 ### Write tools: shared text
 
@@ -553,6 +560,7 @@ same turn; the user approves in the client's prompt (D35).
 | U10c | "Поставь бронь с Островка на 31.12 в 22-й" | `list_bookings(…)` → `preview_update_booking(id, room="22")` → `SITE_BOOKING` | 22 is in another category: refused under `protect` (D40); tell the user to do it on Ostrovok. Under `allow`: CATEGORY_CHANGE, then the write |
 | U11 | "Иван, 20–23 января, 5-й номер, 5 тысяч за ночь, предоплату 5к уже перевёл на Т-Банк" | `preview_create_booking(room="5", 2055-01-20, 2055-01-23, guest_name="Иван", price_per_night=10000)` → `create_booking(…, token)` | total 30 000; prepayment must be added in RC |
 | U12a | "Бронь 810000208 оплачена?" | `get_booking(810000208)` | total / paid / left |
+| U12d | "Кто менял бронь 810000208?" | `get_booking(810000208, history=true)` | who changed what and when (not in evals yet) |
 | U12b | "Кто нам должен за ноябрь?" | `list_bookings(2054-11-01, 2054-12-01, unpaid_only=true)` | list + totals.left |
 | U12c | "Сколько мы заработали в ноябре по броням?" | `list_bookings(2054-11-01, 2054-12-01)` or November 2053 (past tense: the last November) | totals, the year used, and that stays overlapping the month are counted in full (or that there are none) |
 | R1 | "На какой минимальный срок можно забронировать 22-й на Новый год?" | `check_availability(2054-12-31, 2055-01-01, room="22")` (any range from late December over New Year is fine) | min stay 3 nights (from stay_rules), whether 22 is free then |

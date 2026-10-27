@@ -119,7 +119,17 @@ export const BookingSchema = z.object({
         .optional(),
     })
     .nullable(),
-  audits: z.array(z.object({ version: z.number(), created_at: z.string() })),
+  audits: z.array(
+    z.object({
+      version: z.number(),
+      created_at: z.string(),
+      // For get_booking's history; loose so a change here can't break reading the booking.
+      record: z.object({ title: text }).nullish(),
+      is_auto: z.boolean().nullish(),
+      user: z.object({ full_name: text }).nullish(),
+      changes: z.array(z.unknown()).nullish(),
+    }),
+  ),
 })
 export type Booking = z.infer<typeof BookingSchema>
 

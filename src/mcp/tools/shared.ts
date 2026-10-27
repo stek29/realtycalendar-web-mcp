@@ -110,7 +110,7 @@ export const BookingViewShape = BookingSummaryShape.extend({
   departure_time: z.string().nullable().optional(),
 }).meta({ id: 'BookingView' })
 
-const FieldValue = z.union([z.string(), z.number(), z.null()])
+export const FieldValue = z.union([z.string(), z.number(), z.null()])
 
 /** What every preview_<write> tool returns. Nothing was changed. */
 export const PreviewOutput = z.object({

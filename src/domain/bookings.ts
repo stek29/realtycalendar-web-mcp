@@ -204,6 +204,53 @@ export function fromBooking(
   }
 }
 
+type HistoryValue = string | number | null
+
+export interface HistoryEntry {
+  time: string
+  action: string | null
+  by: string | null
+  automatic: boolean
+  untrusted: { changes: { field: string; from: HistoryValue; to: HistoryValue }[] }
+}
+
+/** RC's internal keys (agency_id, guest_id, booking_amount…), logged next to the labelled fields: left out. */
+const INTERNAL_FIELD = /^[a-z_]+$/
+
+const historyValue = (v: unknown): HistoryValue =>
+  v == null || v === '' ? null : typeof v === 'number' || typeof v === 'string' ? v : JSON.stringify(v)
+
+/**
+ * The booking's change history from its audits, oldest first. RC logs each change as
+ * `[label, [old, new]]`; "Лот" (the category id) becomes "Категория" with the category's title. An entry that
+ * changed only internal keys (linking the guest record) is left out.
+ */
+export function history(catalog: Catalog, b: Booking): HistoryEntry[] {
+  return [...b.audits]
+    .sort((x, y) => x.version - y.version)
+    .map((a) => ({
+      time: auditTime(a.created_at),
+      action: a.record?.title ?? null,
+      by: a.user?.full_name ?? null,
+      automatic: a.is_auto ?? false,
+      untrusted: {
+        changes: (a.changes ?? []).flatMap((c) => {
+          if (!Array.isArray(c) || typeof c[0] !== 'string' || !Array.isArray(c[1])) return []
+          const [field, [from, to]] = c as [string, unknown[]]
+          if (INTERNAL_FIELD.test(field)) return []
+          if (field === 'Лот') {
+            const title = (v: unknown) => (typeof v === 'number' ? (categoryById(catalog, v)?.title ?? v) : v)
+            return [{ field: 'Категория', from: historyValue(title(from)), to: historyValue(title(to)) }]
+          }
+          return [{ field, from: historyValue(from), to: historyValue(to) }]
+        }),
+      },
+      internalOnly: (a.changes?.length ?? 0) > 0,
+    }))
+    .filter((e) => !e.internalOnly || e.untrusted.changes.length > 0)
+    .map(({ internalOnly: _, ...e }) => e)
+}
+
 export const paidOf = (payments: Payments) => payments.data.reduce((s, p) => s + p.payment.amount, 0)
 
 export function fromDetail(catalog: Catalog, b: Booking, payments: Payments) {

@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { memoryCache } from '../../src/cache.js'
 import { parseConfig } from '../../src/config.js'
 import { makeContext } from '../../src/context.js'
-import { auditTime, filterBookings, fromDetail, fromGrid, matchesQuery, totals } from '../../src/domain/bookings.js'
+import {
+  auditTime,
+  filterBookings,
+  fromDetail,
+  fromGrid,
+  history,
+  matchesQuery,
+  totals,
+} from '../../src/domain/bookings.js'
+import { categoryById } from '../../src/domain/catalog.js'
 import type { Booking, Grid, Payments } from '../../src/upstream/schemas.js'
 import { fakeRc, fixture } from '../fake-rc.js'
 
@@ -83,6 +92,51 @@ describe('booking detail', () => {
     expect(d.booking_site!.platform).toBe('Ostrovok')
     expect(Object.keys(d.booking_site!.untrusted.fields)).toContain('Дата бронирования')
     expect(d.payments[0]).toMatchObject({ amount: 24000, type: 'income', account: 'Ostrovok' })
+  })
+
+  it('builds the change history from audits (shape seen live 2054-10-28)', async () => {
+    const { catalog } = await setup()
+    const b = fixture<Booking>('booking_810000176')
+    const user = { full_name: 'Анна Петрова' }
+    b.audits = [
+      {
+        version: 2,
+        created_at: '2054-10-15 13:25:15 MSK',
+        record: { title: 'Обновление Брони (810000176)' },
+        is_auto: false,
+        user,
+        changes: [
+          ['Выезд', ['2054-12-31', '2055-01-03']],
+          ['Сумма', [0.0, 88000.0]],
+          ['Гость', [null, 'Иван Иванов']],
+          ['booking_amount', [0, 88000]],
+          ['Лот', [810000050, 810000051]],
+          'not a change',
+        ],
+      },
+      {
+        version: 1,
+        created_at: '2054-10-15 13:21:49 MSK',
+        record: { title: 'Создание Брони (810000176)' },
+        is_auto: true,
+        user,
+        changes: [['Статус', ['', 'Бронь']]],
+      },
+      { version: 3, created_at: '2054-10-15 13:25:15 MSK', is_auto: false, user, changes: [['guest_id', [null, 1]]] },
+    ]
+    const h = history(catalog, b)
+    expect(h.map((e) => e.time)).toEqual(['2054-10-15T13:21:49+03:00', '2054-10-15T13:25:15+03:00'])
+    expect(h[0]).toMatchObject({ by: 'Анна Петрова', automatic: true, untrusted: { changes: [{ from: null }] } })
+    expect(h[1]!.untrusted.changes).toEqual([
+      { field: 'Выезд', from: '2054-12-31', to: '2055-01-03' },
+      { field: 'Сумма', from: 0, to: 88000 },
+      { field: 'Гость', from: null, to: 'Иван Иванов' },
+      {
+        field: 'Категория',
+        from: categoryById(catalog, 810000050)!.title,
+        to: categoryById(catalog, 810000051)!.title,
+      },
+    ])
   })
 
   it('converts audit times', () => {
