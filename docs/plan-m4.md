@@ -1,6 +1,6 @@
 # M4: hosted HTTP server
 
-Status: v0.2.1 released 2054-10-22 (D58, D61); the real-client check is still open. Design: [architecture.md](architecture.md) "Hosted: stateless OAuth". Layout:
+Status: v0.3.0 released 2054-10-28 (D58, D61, D64); the real-client check is still open. Design: [architecture.md](architecture.md) "Hosted: stateless OAuth". Layout:
 [technical-structure.md](technical-structure.md). Goal: deployed and in real use on Claude web and ChatGPT web.
 
 ## Modules
