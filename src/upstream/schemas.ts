@@ -1,4 +1,4 @@
-// Zod schemas of RC responses: only the fields we rely on (unknown keys are stripped). Shapes recorded 2054-10-22.
+// Zod schemas of RC responses: only the fields we rely on (unknown keys are stripped). Shapes recorded 2026-10-22.
 import { z } from 'zod'
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)

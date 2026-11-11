@@ -1,4 +1,4 @@
-// Audit log of confirmed writes (architecture.md "Write path", plan-m3.md §4). Portable: the sink is passed in.
+// Audit log of confirmed writes (architecture.md "Write path", testing.md). Portable: the sink is passed in.
 
 export interface AuditEntry {
   time: string

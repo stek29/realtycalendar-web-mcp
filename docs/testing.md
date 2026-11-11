@@ -1,10 +1,18 @@
-# M3 plan: evals, client checks, login/logout, audit log, release
+# Testing
 
-Status: plan, 2054-10-22. Builds on M2 ([plan-m2.md](plan-m2.md)). Agreed decisions: [decisions.md](decisions.md)
-(D22, D23 for testing). Acceptance prompts: [mcp-tool-spec.md](mcp-tool-spec.md) §3; machine-readable copy:
-[`test/evals/cases.json`](../test/evals/cases.json).
+Run the existing local checks from a checkout:
 
-## 1. Evals and benchmark
+```sh
+npm ci
+npm run check
+npm run build
+```
+
+Unit tests use fictional fixture identifiers, contacts, dates and financial examples. They do not need a live RC
+account. Calendar examples use 2054–2055; dates in protocol identifiers are actual protocol versions.
+No live tests or paid model evals run as part of `npm run check`.
+
+## Evals
 
 Purpose: check that real models pick the right tools with the right arguments from the descriptions and schemas, and
 answer with what the spec requires — and compare models on cost and efficiency. Run whenever tool descriptions,
@@ -22,7 +30,7 @@ schemas or instructions change, and before a release.
 - fake RC writes persisted to `EVAL_STATE` (a temp JSON file per case run), so a booking created in one turn exists in
   the next.
 
-No live data reaches a model in evals.
+The fake server uses fictional fixture data. No live data reaches a model in evals.
 
 ### Cases
 
@@ -66,8 +74,6 @@ each client: "Что свободно на выходные?" → `check_availab
 - Every client runs under `sandbox-exec` (macOS): it can't read `rc.token` / `.rc-credentials` or write in the
   repo (D49). OpenCode's free tier refuses requests without opencode's built-in tools, so those stay, denied by
   permissions and the sandbox.
-- Use during implementation (owner, D37): small checks run on `codex` only; `claude-sonnet` (and Haiku) are for the
-  full eval runs.
 - Codex refuses tools that aren't read-only ("MCP tool call requires approval, but approval policy is never") unless
   the server has `default_tools_approval_mode` = `approve` (values: `auto`, `prompt`, `writes`, `approve`); found
   2054-10-22 when the write tools were first called (D33).
@@ -95,8 +101,7 @@ each client: "Что свободно на выходные?" → `check_availab
 - Deterministic: tool calls and arguments from the event stream; answer regexes. No LLM judge in v1; failures are
   reviewed by reading the transcript.
 - Each case runs 3 times per runner (models are not deterministic). A case passes on a runner if ≥ 2 of 3 runs pass.
-- **Gate (M3 "evals green")**: every case passes on `claude-sonnet` (owner, D50: Codex was rate-limited and the
-  free models throttled; they are reported, not gating). A case that regresses on another runner is looked at.
+- **Gate (M3 "evals green")**: every case passes on `claude-sonnet` (historical baseline; other runners are reported separately). A case that regresses on another runner is looked at.
 - A failure that only one client shows is fixed in our descriptions, schemas or instructions, not with
   client-specific wording, unless the transcript shows a client bug.
 
@@ -113,88 +118,61 @@ each client: "Что свободно на выходные?" → `check_availab
 | tokens and cost | Claude: cost and tokens from the `result` event; Codex: tokens from `turn.completed` (no cost reported) |
 | latency | wall time per turn |
 
-The summary table goes into the commit message of the change that ran it.
+Record the runner, cases and repeat count when reporting a result. Never commit live transcripts.
 
-## 2. Real-client checks (D22)
 
-- **Live read-only check** (replaces the M1 Claude Desktop gate): the same harness in `--live` mode starts the real
-  server (`dist/main.js`) with `RC_TOKEN` and `RC_ACCESS=read`, runs the M1 read cases (U1–U4, U9, U10, U12, R1–R3)
-  on `claude-sonnet`, and checks tool calls and that no call errors. Transcripts are **not** written to disk (real
-  guest data); only pass/fail and counts. Claude runs with `--no-session-persistence`, Codex with `--ephemeral`;
-  `RC_TOKEN` stays in the environment (Codex: `env_vars`) instead of the client's config file; each run removes its
-  temp directory and the client's own files for it (`~/.claude/projects/<dir>`, `~/.codex/sessions/…<thread>.jsonl`).
-  Default runner: `claude-sonnet`; `--runner codex,claude-sonnet` also works. Real guest data reaches Anthropic, as in any real use.
-- ~~Claude Desktop~~: dropped (owner, D48). The real-client check moves to M4: Claude web and ChatGPT web with the
-  hosted HTTP server, the actual targets.
+## Live checks
 
-## 3. login / logout
+Live checks are manual and opt-in. Use an isolated test account and select an empty window explicitly approved for
+that account. The checked-in dates and room/category layout are examples, not authorization to test a real hotel.
+Before running, adapt `test/live/writes.live.test.ts` to that account's rooms, dates, pre-check window and category.
+Do not commit its account-specific configuration or resulting records.
 
-- `realtycalendar-web-mcp login`: asks for the RC username (e-mail or phone) and the password (hidden input,
-  `node:readline` with muted output, prompts on stderr); `POST /v2/sign_in` without a token header; prints only the
-  token on stdout, for `RC_TOKEN`. The password is never stored or logged. No keychain (owner, D31).
-- `realtycalendar-web-mcp logout`: `DELETE /v2/sign_in` with `RC_TOKEN` (ends only this session ✅).
-- Tests: unit tests with a fake `fetch` (`test/unit/login.test.ts`). Live: the owner runs `login` once (the
-  assistant doesn't handle the password), then `check` and `logout`.
+```sh
+RC_LIVE=1 RC_TOKEN=… npm run test:live
+```
 
-## 4. Audit log
+The suite preserves these safeguards and scenarios:
 
-Per confirmed write (architecture.md "Write path"), one JSON line:
-- Destination: the server's log stream (stdio: stderr, with the logs; stdout is the MCP channel). The only
-  destination for now (owner, D32); `AuditSink { write(entry) }` in `Context` keeps it portable.
-- Detail `RC_AUDIT=summary|full` (default `summary`). `summary`: `event: "audit"`, `time`, `tool`, `booking_id`
-  (null for a create that got no id), `rc_user_id`, `fields` (RC field names written), `result` (`ok`,
-  `already_existed` for a repeated create, or the error code); no guest data. `full` adds `before`, the full
-  pre-write GET body (guest names, phones, notes) for manual undo; not passed through log redaction, so only on
-  request.
-- Written by `defineWriteTool` after RC answers, for success and failure alike; previews write nothing. A failing sink
-  is logged as `audit_failed` and doesn't fail the tool (the write already happened).
-- Code: `src/audit.ts`. Tests: `test/unit/audit.test.ts`, the write-tool tests; live: L1 and L12 assert an entry each.
+Safety, enforced in code, not by convention:
+1. **Write firewall**: the live tests' `fetch` wrapper rejects any POST/PUT/DELETE that is not (a) a POST whose dates
+   lie in 2055-01-20…2055-01-23, or (b) a PUT/DELETE to a booking id created by this run; and any PUT whose guest/
+   client name doesn't start with "TEST MCP". A rejection fails the test before anything reaches RC.
+2. **Pre-check**: grid for all categories, 19–24 Jan 2055, all statuses: abort unless empty (or only "TEST MCP"
+   bookings, which are cleaned up first).
+3. **Cleanup** in `afterAll`: `DELETE` every id created by the run (drafts answer 404, expected); then assert the grid
+   for 19–24 Jan is empty again. Failures are reported with the ids.
 
-## 5. Packaging and release
+Scenarios, all through the MCP tools (`preview_*` → write tool with the token), in order:
 
-Nothing is published (owner, D42): no npm package, and no Docker image for stdio. v1 is run with Node from a checkout.
+| # | Scenario | Checks |
+|---|---|---|
+| L1 | create "TEST MCP Иван" in room 5, 20–23 Jan, no price, arrival 14:00 (for L9) | preview shows the quote; result id; `get_booking` matches; `list_bookings(query="TEST MCP")` finds it |
+| L2 | same create again | `DUPLICATE`, no token, nothing created |
+| L3 | create in room 5 overlapping L1 | preview `will_fail`, no token |
+| L4 | preview a create in room 6, then occupy room 6 with another create, then confirm the first; then cancel the occupier so room 6 is free for L7 | RC 422 → `OCCUPIED`, "nothing was saved" (leaves one invisible draft — known, D19) |
+| L5 | hold (request) in category 01 without a room | unassigned hold; `check_availability` lists it, capacity unchanged |
+| L6 | update L1: dates 20–23 → 21–23 | `PRICE_CHANGED`; amount = average × 2 |
+| L7 | assign the hold to room 6, then confirm it (request → booked) | room set; status booked |
+| L8 | move L1 to room 21 (category 02) | `CATEGORY_CHANGE`, `PRICE_KEPT`; `apartment_id` = 02 |
+| L9 | unassign L1; notes_append; clear arrival time | each a separate preview/confirm; untouched fields unchanged (S3 regression) |
+| L10 | preview an update, change the booking with another update, confirm the first token | `PREVIEW_STALE` + fresh preview |
+| L11 | single-unit: create in category 04, then an overlapping one | second preview `will_fail` |
+| L12 | cancel L1 | status canceled; `check_availability` shows the room bookable |
+| L13 | delete the hold; then update it | delete ok; update → `DELETED` |
 
-- `package.json`: version `0.1.0`, `bin`, `engines.node >= 22`; tag `v0.1.0` in git.
-- README: setup from a checkout (`npm ci && npm run build`, client config `node /path/to/dist/main.js`), `login` /
-  `check`, access levels, the dedicated RC user recommendation, a short personal-data note for hotels
-  (architecture.md "Personal data").
-- CI (needs the GitHub remote): `.github/workflows/ci.yml` runs `npm ci`, `npm run check` (typecheck, lint, unit tests with the fixture-PII check) and `npm run build` on Node 22;
-  evals optional (need an API key secret). Workflow file prepared; enabled when the remote exists.
-- The Docker image is M4 and serves only the hosted HTTP server (Kubernetes, docker compose).
 
-## Done when
+RC may retain guest records, soft-deleted bookings and invisible drafts after test cleanup. Payment writes are not
+part of the suite. Never run it on a production account merely because the visible calendar looks empty.
 
-- Evals green on Sonnet (41/41, 2 of 3 runs each). ✅ 2054-10-22 (D50). Codex, Haiku and free models: reported when
-  they run, not gating (owner).
-- Live read-only client check passes. ✅ 18/18 on Sonnet, 2054-10-22 (D50). (Claude Desktop check dropped, D48.)
-- `login` / `check` / `logout` verified by the owner. ✅ 2054-10-22, `scripts/test-session.sh` (D45)
-- Audit entries written in the live write tests. ✅ checked by L1 in test/live (D43)
-- v0.1.0 tagged; README setup from a checkout. ✅
+`scripts/test-session.sh` checks login/check/logout using ignored local credentials. It prints no password or token.
+The eval runner also supports `--live` read-only checks. Real guest data then goes to the chosen model provider;
+the runner avoids persisted transcripts and removes its temporary client sessions. The OS sandbox runner currently
+uses macOS `sandbox-exec`; that command is required for model evals.
 
-## TODO (M4): when the tools should not be called
+## Fixture maintenance
 
-The evals only check that our tools are called; nothing checks that they are left alone. Context-free prompts like
-"Что свободно на выходные?" call `check_availability`, and the descriptions push that way ("In the user's hotel",
-Russian trigger phrases). In Claude web or ChatGPT with other connectors (calendar, mail), that prompt more likely
-means the user's own weekend. Before the M4 release:
-- Re-read the descriptions for over-triggering: say what the tools are for (one hotel's rooms and bookings in
-  RealtyCalendar) rather than matching bare phrases; keep the trigger phrases tied to hotel words.
-- Prompts: give most cases the context a real hotel user has (a mention of rooms, guests, the hotel), keep a few bare
-  ones, and add negative cases where the right answer calls no tool (personal calendar, "кто свободен из
-  сотрудников", general questions); grading supports `forbid` already.
-- Status 2054-10-22 (D59): descriptions and instructions done; cases N1–N6 (no tool may be called) and C1–C3 (bare
-  prompts with hotel context) added; 11/11 on Sonnet with U1a and U4a (`--repeat 1`), only our server loaded.
-- Run some cases with a second, decoy MCP server (e.g. a fake calendar with "free/busy" tools) to measure picking
-  the right one.
-
-## Later (M4 candidate): MCP elicitation
-
-Not in v1 (D36). Elicitation lets the server ask the user directly in a client-rendered dialog the model can't answer,
-which would make the approval independent of the client's tool prompt. Claude web doesn't document support for it,
-so the token plus the client prompt must work without it anyway. Prototype findings (M1 session, 2054-10-22):
-- SDK 2.3.1: one handler that returns `inputRequired({ inputRequests: { confirm: inputRequired.elicit({ message,
-  requestedSchema }) } })` and reads `acceptedContent(ctx.mcpReq.inputResponses, 'confirm', schema)` on re-entry
-  serves both protocol eras: `claude -p` used 2026-07-28; Codex used the 2053 protocol through the SDK's legacy shim.
-- A client without the elicitation capability gets an `isError` result, so check capabilities first.
-- Headless runs answer the dialog automatically (`claude -p`: cancel, `codex exec`: decline), so evals can't exercise
-  it.
+Use fictional examples when updating fixtures. Keep linked identifiers and filenames consistent with the fake RC,
+unit tests and eval scenario. Do not add raw recordings from a live account. The legacy `scrub-fixture.ts` helper
+replaces contact fields but is not sufficient to anonymize recordings: it retains identifiers and operational data.
+Existing fixture hygiene tests cover fake contacts and allowlisted names, not complete anonymization.

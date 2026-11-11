@@ -40,7 +40,7 @@ of this data under 152-FZ and may need to mention the transfer, including abroad
 The same tools over Streamable HTTP at `<MCP_PUBLIC_URL>/mcp`, with a built-in OAuth server: each user signs in with
 their RealtyCalendar login on the server's page and picks an access level (up to `RC_ACCESS`). No database: all state
 is in tokens encrypted with `MCP_SERVER_KEY`. Clients: Claude (web, Desktop, mobile), Claude Code, ChatGPT
-([plan-m4.md](docs/plan-m4.md)).
+(see [architecture.md](docs/architecture.md)).
 
 The image `ghcr.io/stek29/realtycalendar-web-mcp` (linux/amd64, linux/arm64; private: `docker login ghcr.io` with a
 GitHub token that has `read:packages`) is built by GitHub Actions: `:main` from the main branch, `:X.Y.Z` and `:latest`
@@ -66,8 +66,8 @@ connector with the URL `https://…/mcp` (Claude: Settings → Connectors → Ad
 ```sh
 npm run check                           # typecheck, lint, unit tests
 npm run tools                           # print the instructions and tools/list for RC_ACCESS / RC_SITE_BOOKINGS
-npm run evals -- --case U5a --repeat 1  # evals on the fake RC (plan-m3.md); needs the claude / codex CLIs
-RC_LIVE=1 RC_TOKEN=… npm run test:live  # live write tests on the approved test window (plan-m2.md)
+npm run evals -- --case U5a --repeat 1  # evals on the fake RC (testing.md); needs the claude / codex CLIs
+RC_LIVE=1 RC_TOKEN=… npm run test:live  # live write tests on the approved test window (testing.md)
 ```
 
 ## Settings (env)
@@ -113,18 +113,19 @@ default_tools_approval_mode = "prompt"
 
 ## Docs
 
-| Doc | What's in it |
-|---|---|
-| [docs/mcp-tool-spec.md](docs/mcp-tool-spec.md) | The 12 tools (4 read, 4 writes with their preview tools): descriptions, inputs/outputs, errors, access levels, sample prompts (acceptance tests) |
-| [docs/architecture.md](docs/architecture.md) | Runtime behaviour: RC client, write path, privacy, local stdio, hosted stateless OAuth |
-| [docs/technical-structure.md](docs/technical-structure.md) | Stack, repository layout, interfaces, entrypoints, build order |
-| [docs/mcp-user-stories.md](docs/mcp-user-stories.md) | User stories and the live-tested API behaviour behind the design |
-| [docs/api-scope.md](docs/api-scope.md) | Reference of the web app's API (what exists) |
-| [docs/plan-m2.md](docs/plan-m2.md) | M2 (write tools): modules, confirm tokens, fake RC, unit tests, live test protocol and approved scope |
-| [docs/plan-m3.md](docs/plan-m3.md) | M3: evals and benchmark (Sonnet, Haiku, Codex), real-client checks, login/logout, audit log, release |
-| [docs/decisions.md](docs/decisions.md) | Log of decisions and agreed scope since the design, with the evidence |
-| [test/evals/cases.json](test/evals/cases.json) | Spec §3 stories as machine-readable eval cases |
-| [docs/endpoints/](docs/endpoints/) | Endpoint lists extracted from the web app bundles (`scripts/extract_endpoints.py`) |
+| Document | Purpose |
+| --- | --- |
+| [Tool specification](docs/mcp-tool-spec.md) | Inputs, outputs, errors and approval flow |
+| [Architecture](docs/architecture.md) | Code structure, upstream client, caching, OAuth and privacy |
+| [Booking workflows](docs/mcp-user-stories.md) | Upstream semantics and supported workflows |
+| [API scope](docs/api-scope.md) | Endpoint reference |
+| [Testing](docs/testing.md) | Existing unit checks, eval runners and opt-in live tests |
+| [Remaining work](docs/roadmap.md) | Unfinished client validation and known limitations |
+| [Design decisions](docs/decisions.md) | Rationale for the current implementation |
+| [Eval cases](test/evals/cases.json) | Machine-readable acceptance prompts |
+
+The fixture data and documentation examples use fictional identifiers, contacts, dates and financial values.
+Historical commits and release tags have also been sanitized. Old milestone plans remain only in that history.
 
 ## Local secrets
 

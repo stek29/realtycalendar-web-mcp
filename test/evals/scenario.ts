@@ -1,4 +1,4 @@
-// Eval scenario (plan-m3.md §1): the fixtures plus the synthetic bookings the spec §3 prompts refer to. Fake names
+// Eval scenario (testing.md): the fixtures plus the synthetic bookings the spec §3 prompts refer to. Fake names
 // only (scripts/scrub-fixture.ts FAKE_NAMES). Each case's `needs` in cases.json is met here.
 import type { GridEvent } from '../../src/upstream/schemas.js'
 import { detailOf, initialState, type Detail, type FakeState } from '../fake-rc.js'

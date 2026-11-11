@@ -7,7 +7,7 @@ export interface ClientInfo {
 }
 
 /**
- * The allowlist, with the documents as fetched 2054-10-22. The copy is used when a fetch fails (D55): claude.ai and
+ * The allowlist, with the documents as fetched 2026-10-22. The copy is used when a fetch fails (D55): claude.ai and
  * chatgpt.com sit behind Cloudflare, which may challenge requests from a datacenter IP.
  */
 export const KNOWN_CLIENTS: Readonly<Record<string, ClientInfo>> = Object.fromEntries(

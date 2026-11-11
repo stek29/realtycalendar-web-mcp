@@ -1,5 +1,5 @@
 # Typecheck, lint and unit tests (includes the fixture PII check). Evals need client CLIs and API keys: run them
-# locally (plan-m3.md §1).
+# locally (testing.md).
 name: CI
 on:
   push:

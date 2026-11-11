@@ -1,4 +1,4 @@
-// OAuth 2.1 authorization server for the hosted MCP (architecture.md "Hosted: stateless OAuth", plan-m4.md).
+// OAuth 2.1 authorization server for the hosted MCP (architecture.md "Hosted: stateless OAuth", roadmap.md).
 import { Hono, type Context as HonoContext } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Live check of login / check / logout (plan-m3.md §3), run by the owner: signs in with .rc-credentials
+# Live check of login / check / logout (testing.md), run by the owner: signs in with .rc-credentials
 # (username:password), checks the new token, signs it out, and checks that the token in rc.token (the MCP's own
 # session) still works, i.e. logout ends only its own session. Prints no token or password.
 #   scripts/test-session.sh            (builds dist/ first)

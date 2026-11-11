@@ -1,13 +1,11 @@
-# RealtyCalendar MCP v1: tool spec
+# MCP tool specification
 
-Status: final draft, 2054-10-22 (after three independent reviews). Background and test evidence:
-[mcp-user-stories.md](mcp-user-stories.md). Raw API reference: [api-scope.md](api-scope.md). Architecture:
-[architecture.md](architecture.md).
+The server exposes 12 tools: four reads and four writes, each write paired with a read-only preview. See
+[architecture.md](architecture.md) for runtime behavior and [mcp-user-stories.md](mcp-user-stories.md) for upstream
+semantics. `npm run tools` prints the current descriptions and schemas from code.
 
-v1 = **12 tools**: 4 read, 4 writes each with a read-only `preview_` tool (D33), in four access levels (§1 Access
-levels). Names are English; descriptions are English with the Russian words users actually
-say, because the model matches requests to tools by description. Marks: ✅ = verified live on 2054-10-22,
-⚠ = assumed or untested (see §5).
+All example identifiers, contacts, dates and amounts are fictional. The 2054–2055 calendar is used by the offline
+tests. A check mark records previously verified API behavior; it is not a claim of current live-account validation.
 
 ## 1. Conventions shared by all tools
 
@@ -38,7 +36,7 @@ from the environment). It covers, in this order:
 | **category** | "apartment" (`apartment_id`) | категория, тип номера, "двухместный улучшенный", "коттедж" |
 | **room** | "realty room" (`realty_room_id`) | номер, комната, "22-й", "пятый" |
 | **unassigned** | `realty_room_id: null` in a category **that has rooms** | неразобранные, без номера, не расселён |
-| **single-unit category** | category with no rooms (04, 08, 09 here); its bookings always have `realty_room_id: null` and are **not** unassigned | коттедж, семейный |
+| **single-unit category** | category with no rooms (04, 08, 09 in the fictional fixture); its bookings always have `realty_room_id: null` and are **not** unassigned | коттедж, семейный |
 | **booking** | "event_calendar", status `booked` | бронь, бронирование |
 | **hold** | status `request` | заявка, предварительная бронь, держим |
 | **source** | `source_id` → `GET info` → `agency.sources_list` ✅ | источник, канал, площадка, "с Островка" |
@@ -97,7 +95,7 @@ them once under `$defs`. Shared shapes:
   "unassigned": false,                      // true only if the category has rooms and room is null
   "check_in": "2055-01-20", "check_out": "2055-01-23", "nights": 3,
   "guest_name": "Иван Петров",              // ✅ grid client.fio
-  "guest_phone": "+79990000001",            // ✅ grid client.phone; often null (23 of 54 set)
+  "guest_phone": "+79990000001",            // ✅ grid client.phone; nullable
   "source": "Ostrovok.ru",                  // null for manual bookings without source
   "from_booking_site": true,                // see §5 S1
   "arrival_time": "15:00",                  // ✅ grid arrival_time ("HH:MM" or null)
@@ -220,7 +218,7 @@ owner `full`. The confirm-token preview applies at every write level.
 
 v1 (env): `RC_TOKEN` (required), `RC_ACCESS=read|book|edit|full` (default `read`), `RC_TIMEZONE` (default
 `Europe/Moscow`), `RC_CONFIRM_KEY` (HMAC key; random per process if unset), `RC_AUDIT=summary|full` (audit line
-detail, default `summary`; plan-m3.md §4), `RC_SITE_BOOKINGS=protect|allow` (default `protect`: bookings from booking
+detail, default `summary`; testing.md), `RC_SITE_BOOKINGS=protect|allow` (default `protect`: bookings from booking
 sites keep their dates, category, status and price and can't be cancelled or deleted here; D40). Hosted: the same `RC_ACCESS` per
 deployment; per-user levels can come later.
 
@@ -244,9 +242,9 @@ Descriptions start with the tool's "view" so the model can tell overlapping read
     "single_unit": true, "capacity": 1, "max_guests": 2, "rooms": [] } ] }
 ```
 **API**: `GET /v2/apartments?can_see=me&with_archive=0&page=1` ✅ (pseudo-room `id: 0` dropped) +
-`GET /v2/apartments/{id}/apartment_info` ✅ per category for `max_guests` (`guests`: 1–5 here). Cached 10 min; the same
+`GET /v2/apartments/{id}/apartment_info` ✅ per category for `max_guests` (`guests` gives the maximum guest count). Cached 10 min; the same
 catalog feeds every other tool.
-This account: 9 categories, 18 real rooms ✅.
+The fictional fixture has 9 categories and 18 rooms.
 
 ### 2.2 `check_availability`
 
@@ -311,7 +309,7 @@ This account: 9 categories, 18 real rooms ✅.
   inclusive, so the call covers check_in … check_out (the check-out day's `closed_on_departure`). The grid's room
   rows carry the same rules (all 243 room-nights checked matched the per-category values ✅), so they are used only
   for closures. Example: over New Year every category has min stay 3 (normally 2), from 29 Dec ✅.
-- Prices: `GET /v2/apartments/{id}/price?begin_date&end_date` ✅ per matched category, in parallel (≤ 9 calls here).
+- Prices: `GET /v2/apartments/{id}/price?begin_date&end_date` ✅ per matched category, in parallel (bounded concurrency).
 
 **API**: `GET /v2/event_calendars/?begin_date={check_in}&end_date={check_out}&statuses[]=booked&statuses[]=request
 &apartment_ids=…` ✅ — returns bookings overlapping the range, including ones that started before `begin_date` ✅
@@ -341,7 +339,7 @@ This account: 9 categories, 18 real rooms ✅.
 - Guest names: 10 of 60 live bookings store the name in Latin (booking sites). Transliteration covers the common
   cases; spelling variants (Алексей / Alexey, Евгений / Yevgeny), nicknames (Саша / Александр) and typos are left to the
   model: a name query with no match returns a `hint` to list the period without `query` and read `guest_name` itself
-  (about 60 bookings per six months here, one call). Loose matches (Марина ~ Мария) are accepted: the model sees the full
+  (a bounded date range, one call). Loose matches (Марина ~ Мария) are accepted: the model sees the full
   names, and no write tool selects a booking by guest name.
 - One night "today" = `from: today` (default `to` = from + 1), so "кто живёт сегодня" and "кто заезжает завтра"
   need only `from` and `match`.
@@ -585,16 +583,16 @@ same turn; the user approves in the client's prompt (D35).
 - Restore after delete; payments/deposits/receipts; guest cards and blacklist; messaging; editing prices/closures;
   property editing; settings; notifications (U7); bookings by date made (U8).
 
-## 5. Open questions affecting this spec
+## 5. Upstream behavior and remaining questions
 
 | # | Question | Until answered |
 |---|---|---|
 | S1 | `from_booking_site` in lists: grid has `is_external` (true for Ostrovok) but Yandex Travel / Ttravel bookings had `is_external: false` with `platform_name` set in the detail | lists: `is_external OR source ∈ booking-site sources`; writes use the detail's `platform_name` |
-| S2 | ✅ Answered 2054-10-22: **no**. The API saved a 1-night stay where min stay is 2 (20–21 Jan 2055) and a stay on closed nights (5–7 Apr 2055, all rooms closed) | warn only (`CLOSED_DATES`) |
-| S3 | ✅ Answered 2054-10-22: a PUT built from the GET with the §2.6 mapping changed nothing (field-by-field diff empty), kept the guest and client ids and added no audit entry; only `updated_at` moved. Guest contact edits still untested | update/cancel may ship; guest edits out |
-| S4 | ✅ Answered 2054-10-22: grid `client.phone` is a string when known (23 of 54), else null; `by_dates` has the same phones | `guest_phone` nullable; phone `query` searches the grid |
-| S5 | ✅ Answered 2054-10-22: in the category's `room_id: null` grid row | — |
+| S2 | ✅ Verified behavior: **no**. The API saved a 1-night stay where min stay is 2 (20–21 Jan 2055) and a stay on closed nights (5–7 Apr 2055, all rooms closed) | warn only (`CLOSED_DATES`) |
+| S3 | ✅ Verified behavior: a PUT built from the GET with the §2.6 mapping changed nothing (field-by-field diff empty), kept the guest and client ids and added no audit entry; only `updated_at` moved. Guest contact edits still untested | update/cancel may ship; guest edits out |
+| S4 | ✅ Verified behavior: grid `client.phone` is a string when known (nullable), else null; `by_dates` has the same phones | `guest_phone` nullable; phone `query` searches the grid |
+| S5 | ✅ Verified behavior: in the category's `room_id: null` grid row | — |
 | S6 | Dropped: `by_dates` is not used (see 2.3) | — |
-| S7 | ✅ Answered 2054-10-22: grid with `statuses[]=canceled` returns only canceled bookings | — |
+| S7 | ✅ Verified behavior: grid with `statuses[]=canceled` returns only canceled bookings | — |
 | S9 | Exact meaning of `min_stay_through` (min nights for a stay arriving that day, or for any stay including that night?) and of `closed_on_arrivial` / `closed_on_departure`. Not answerable through the API: RC saved both 31 Jan–2 Feb (min 2 then 4) and 28 Feb–2 Mar (min 4 then 2) without complaint (S2). Only affects our warnings; booking sites may apply it their own way | treat min stay as applying to every night of the stay (strictest wins) |
-| S8 | Draft lifetime and effect on booking sites. Known ✅ 2054-10-22: drafts are invisible, don't block rooms, can't be deleted (DELETE → 404) and can still be saved by a PUT | failed saves leave a harmless draft; expiry unknown |
+| S8 | Draft lifetime and effect on booking sites. Known behavior: drafts are invisible, don't block rooms, can't be deleted (DELETE → 404) and can still be saved by a PUT | failed saves leave a harmless draft; expiry unknown |

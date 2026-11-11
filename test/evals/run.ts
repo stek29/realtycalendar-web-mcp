@@ -1,4 +1,4 @@
-// Eval harness (plan-m3.md §1): runs the spec §3 cases on headless clients against the fake-RC server, grades the tool
+// Eval harness (testing.md): runs the spec §3 cases on headless clients against the fake-RC server, grades the tool
 // calls and answers, prints a benchmark table and writes a report.
 //   npm run evals -- [--runner claude-sonnet,codex,claude-haiku,opencode:<model>] [--case U5a,…] [--repeat 3] [--jobs 4]
 // --live: the real server (dist/main.js) with RC_TOKEN and RC_ACCESS=read, read cases only, no transcripts (§2): the

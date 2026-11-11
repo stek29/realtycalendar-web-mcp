@@ -2,7 +2,7 @@
 import { ToolError } from './errors.js'
 import type { BookingRaw } from '../upstream/schemas.js'
 
-/** The 36 keys of a live booking GET (2054-10-22). Any other key → the write is refused (fail closed). */
+/** The 36 keys of a live booking GET (2026-10-22). Any other key → the write is refused (fail closed). */
 export const KNOWN_BOOKING_KEYS: ReadonlySet<string> = new Set([
   'additional_services',
   'amount',

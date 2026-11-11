@@ -1,4 +1,4 @@
-// Hosted OAuth (plan-m4.md "Tests"): the full flow with a fake RC that signs in and checks tokens, and fake clients.
+// Hosted OAuth (roadmap.md "Tests"): the full flow with a fake RC that signs in and checks tokens, and fake clients.
 import { describe, expect, it } from 'vitest'
 import { memoryCache } from '../../src/cache.js'
 import { parseConfig, type Access } from '../../src/config.js'

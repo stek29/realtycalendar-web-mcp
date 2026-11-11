@@ -1,4 +1,4 @@
-// The real MCP server over stdio with the fake RC (plan-m3.md §1). One process per CLI turn; the fake's state lives in
+// The real MCP server over stdio with the fake RC (testing.md). One process per CLI turn; the fake's state lives in
 // EVAL_STATE between turns. Env: EVAL_CASE, EVAL_STATE, EVAL_NOW, RC_ACCESS, RC_CONFIRM_KEY.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { serveStdio } from '@modelcontextprotocol/server/stdio'

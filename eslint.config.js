@@ -11,7 +11,7 @@ export default tseslint.config(
     },
   },
   {
-    // Portability rule (technical-structure.md): only platforms/ and cli/ may use Node APIs.
+    // Portability rule (architecture.md): only platforms/ and cli/ may use Node APIs.
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     ignores: ['src/platforms/**', 'src/cli/**'],
     rules: {

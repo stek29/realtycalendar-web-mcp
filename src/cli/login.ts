@@ -1,4 +1,4 @@
-// login / logout (plan-m3.md §3): a separate RC session for the MCP. The password is never stored or logged.
+// login / logout (testing.md): a separate RC session for the MCP. The password is never stored or logged.
 import { createInterface } from 'node:readline'
 import { ToolError } from '../domain/errors.js'
 import { signIn, signOut } from '../upstream/api.js'

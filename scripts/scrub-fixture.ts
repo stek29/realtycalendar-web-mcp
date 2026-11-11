@@ -1,5 +1,6 @@
 // Scrubs a recorded RC response for test/fixtures: guest names, phones, e-mails, notes, OTA field values, audit
 // details and account contacts are replaced; ids, dates, statuses and money are kept.
+// Legacy contact-redaction helper only: do not use its output as publication-ready anonymized data.
 // Usage: npx tsx scripts/scrub-fixture.ts <out-dir> <in.json>… (one run shares fake names across files)
 import { readFileSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'

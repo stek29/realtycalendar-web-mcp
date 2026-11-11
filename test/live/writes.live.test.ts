@@ -1,4 +1,4 @@
-// Live write tests L1–L13 (plan-m2.md "Live tests") against the real account. Opt-in:
+// Live write tests L1–L13 (testing.md "Live tests") against the real account. Opt-in:
 //   RC_LIVE=1 RC_TOKEN=… npm run test:live
 // Approved scope (D24): "TEST MCP" guests, dates 2055-01-20 … 2055-01-23 only. The safety rules are enforced here in
 // code: a write firewall in the fetch wrapper, a pre-check that the window is empty, and cleanup with a final check.
@@ -18,8 +18,8 @@ const LAST = '2055-01-23'
 const PREFIX = 'TEST MCP'
 const GUEST = { guest_phone: '+79990000001', guest_email: 'test-mcp@example.com' }
 
-// Real id of category 02 (catalog of 2054-10-22).
-const CAT_02 = 810000050
+// Target category is resolved from the selected test account.
+let CAT_02 = 0
 
 /** Booking ids this run may change or delete: created by it, or "TEST MCP" leftovers found by the pre-check. */
 const owned = new Set<number>()
@@ -133,6 +133,7 @@ describe.skipIf(!LIVE)('live writes L1–L13', { timeout: 60_000 }, () => {
   }
 
   beforeAll(async () => {
+    CAT_02 = (await ctx.catalog()).categories.find((c) => c.number === '02')!.id
     const found = await windowBookings(ctx)
     const foreign = found.filter((b) => !b.fio.startsWith(PREFIX))
     if (foreign.length) throw new Error(`pre-check: non-test bookings in the window: ${foreign.map((b) => b.id)}`)

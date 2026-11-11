@@ -1,12 +1,12 @@
 # RealtyCalendar "Шахматка" (chessmate): API scope
 
-Raw reference of the web app's API (what exists). Decisions and test results live elsewhere:
+Raw reference of the web app's API. Decisions and test results live elsewhere:
 [mcp-user-stories.md](mcp-user-stories.md) (stories, tested behaviour), [mcp-tool-spec.md](mcp-tool-spec.md) (v1 tools),
 [architecture.md](architecture.md).
 
 Source: the SPA at https://realtycalendar.ru/chessmate/ (Vue 3 + Vuex, Vite bundle). Endpoints come from
 live network traffic plus static extraction of `src-*.js` and `common-*.js` (`scripts/extract_endpoints.py`,
-raw output per app in `docs/endpoints/endpoints_<app>.txt`). Bundle version inspected: `src-CvEGM1Ee.js`, `common-CFzk5Z8c.js` (2054-10-21).
+raw output per app in `docs/endpoints/endpoints_<app>.txt`). Bundle version inspected: `src-CvEGM1Ee.js`, `common-CFzk5Z8c.js`.
 The other left-nav sections are separate Vue apps on the same `/v2` API; see "Other sections" below.
 
 ## Transport and auth
@@ -23,7 +23,7 @@ The other left-nav sections are separate Vue apps on the same `/v2` API; see "Ot
   Logout `DELETE sign_in` / `users/sign_out`. v1 uses a token copied from `localStorage.token`.
 - Many endpoints have an `admin/` prefixed twin used in "manager" mode (agency staff working across agencies). Ignore them for v1.
 
-## What v1 uses (2054-10-22)
+## What the server uses
 
 The final v1 tool set is in [mcp-tool-spec.md](mcp-tool-spec.md). It uses: `apartments`, `info`, the calendar grid
 `event_calendars/`, `event_calendars/{id}` (GET/POST/PUT/DELETE), `event_calendars/{id}/payments` (read only),
@@ -169,10 +169,10 @@ Wizard pages, each with an `…/info` (read, POST despite reading) and `…/save
 
 Product changelog / news. Not relevant to an MCP.
 
-## Earlier open questions (answered 2054-10-22)
+## Verified behavior
 
 1. Create/update payloads — captured from a real save; see mcp-user-stories.md "Write API".
 2. Statuses `booked`/`request`/`canceled`/`deleted`; closed dates are `special_prices.closed`.
-3. `apartments` returns no pagination info (9 categories here); the web app splits `apartment_ids` into chunks of 10
+3. `apartments` returns no pagination info (the fixture illustrates multiple categories); the web app splits `apartment_ids` into chunks of 10
    when there are more than 50. Grid range: 6 months OK, 15 months rejected.
 4. Token from `POST sign_in` → `auth_token`. Lifetime still unknown.

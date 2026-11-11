@@ -1,19 +1,44 @@
-# RealtyCalendar MCP: architecture
+# Architecture
 
-Status: final draft, 2054-10-22. Tools: [mcp-tool-spec.md](mcp-tool-spec.md). Code: [technical-structure.md](technical-structure.md).
+The server exposes the same booking tools over local stdio and hosted Streamable HTTP. Local clients provide an RC
+session token through the environment; hosted clients sign in through OAuth. The hosted server has no database.
+See [mcp-tool-spec.md](mcp-tool-spec.md) for tool behavior and [roadmap.md](roadmap.md) for known gaps.
 
-One codebase, two deployments:
+## Stack
 
-1. **v1 — local**: MCP server over stdio, run by Claude Desktop / Claude Code with Node from a checkout, RC token in
-   an env var.
-2. **Target — hosted, stateless** (M4, shipped as a Docker image for Kubernetes / docker compose): the same server
-   over Streamable HTTP with a built-in OAuth 2.1 authorization server
-   that signs users into RealtyCalendar; works with Claude and ChatGPT connectors; no database (see "Hosted").
+| Component | Technology |
+|---|---|
+| Language | TypeScript (strict), ESM |
+| MCP | official `@modelcontextprotocol/server` v2: `createMcpHandler` (HTTP), `serveStdio` (stdio) |
+| HTTP framework | Hono |
+| Self-hosted runtime | Node.js 22+ with `@hono/node-server` |
+| Token encryption | `jose` (JWE, `A256GCM`) |
+| Schemas | Zod v4 (tool inputs/outputs and RC responses) |
+| RC HTTP client | native `fetch` |
+| Login page | `hono/html` templates |
+| CLI | plain `process.argv` parsing, no framework |
+| Build | `tsup` → `dist/` |
+| Tests | Vitest; MCP Inspector for manual checks |
+
+**Portability rule** (keeps Cloudflare Workers open, see "Later"): everything outside `src/platforms/` and
+`src/cli/` uses only Web-standard APIs — `Request`, `Response`, `fetch`, `crypto.subtle`, `TextEncoder`, `URL`. No
+`node:*` imports, no `process.env`, no file system there. Config and the cache are passed in, not read globally.
+
 
 ## Code structure
 
-Stack, repository layout, module interfaces, entrypoints and build order:
-[technical-structure.md](technical-structure.md). This document covers runtime behaviour.
+| Directory | Responsibility |
+| --- | --- |
+| `src/mcp/` | MCP instructions, tool schemas and handlers |
+| `src/domain/` | Calendar calculations, matching, booking transforms, confirm tokens and write plans |
+| `src/upstream/` | RC HTTP client, endpoint functions and response schemas |
+| `src/oauth/` | Hosted authorization, login, encrypted tokens and client metadata |
+| `src/platforms/`, `src/cli/` | Node entrypoints and local login/check/logout |
+| `test/` | Fictional fixtures, fake RC, unit tests, evals and opt-in live tests |
+| `deploy/` | Example compose and Kubernetes configuration, not a production deployment |
+
+Domain logic is pure; handlers coordinate it with the upstream client. Platform adapters supply configuration,
+logging and runtime IO. The portability rule keeps Node imports in the platform/CLI layers.
 
 ## RC client
 
@@ -28,8 +53,8 @@ Stack, repository layout, module interfaces, entrypoints and build order:
 - Response validation: every RC response goes through its zod schema; a missing/renamed field we rely on (e.g.
   `prepayment`, `amount`, `room_id`) → `RC_SCHEMA_DRIFT` instead of silently wrong money or availability.
 - GETs: 15 s timeout, one retry on network/5xx with jitter, respect `Retry-After`. Writes: no automatic retry.
-- Rate limiting: per token ≤ 4 concurrent requests (across all sessions of that token); hosted also a global token
-  bucket towards RC so one tenant can't get the shared egress IP banned.
+- Concurrency: the client bounds requests per token. A global upstream token bucket is not implemented; see
+  [roadmap.md](roadmap.md).
 
 ## Caching
 
@@ -61,7 +86,7 @@ From tested behaviour (mcp-user-stories.md) and the reviews:
 - `send_confirm_email`, `send_link_prepaid` always `false`; no payment writes in v1.
 - **Audit log** per confirmed write: one JSON line in the log stream (stderr for stdio) with time, tool, booking id,
   RC user id, written fields and result; `RC_AUDIT=full` adds the pre-write GET body (guest data) for manual undo.
-  Details: plan-m3.md §4.
+  Details: [testing.md](testing.md) and `src/audit.ts`.
 
 ## Security against prompt injection
 
@@ -78,7 +103,7 @@ write needs a confirm token from a preview the user saw.
 - Tool outputs include guest phone/e-mail only in tools whose job needs them (arrivals, booking lists, booking detail),
   not in availability results.
 
-## v1: local stdio
+## Local stdio
 
 ```jsonc
 { "mcpServers": { "realtycalendar": {
@@ -89,16 +114,16 @@ write needs a confirm token from a preview the user saw.
 - **Dedicated RC user** for the MCP (Settings → Users), recommended, with only the needed objects and role: actions
   show up under that user in RC's history, and a read-only RC role is the real guarantee for read-only use. (Sessions
   are independent ✅ A1, so a shared user would also work: the browser's logout doesn't touch the MCP's token.)
-- Token: preferably the bundled `realtycalendar-web-mcp login` CLI (`POST /v2/sign_in {username, password}` →
-  `auth_token`), which creates a **separate session** for the MCP ✅; the password is not stored; the token goes into
+- Token: preferably the bundled `node dist/main.js login` CLI (`POST /v2/sign_in {username, password}` →
+  `auth_token`), which creates a **separate session** for the MCP ✅; the local CLI does not store the password; the token goes into
   `RC_TOKEN`. Copying the browser's `localStorage.token` also works but ties the MCP to
-  that browser session (logging out there kills it ✅). Rotation/revocation: `realtycalendar-web-mcp logout` →
+  that browser session (logging out there kills it ✅). Rotation/revocation: `node dist/main.js logout` →
   `DELETE /v2/sign_in` with the MCP's token, which ends only that session ✅.
 - `RC_ACCESS=read|book|edit|full` (default `read`; levels in spec §1): tools above the level are not registered
   **and** their handlers refuse calls (second guard if a client cached the tool list).
 - `RC_SITE_BOOKINGS=protect|allow` (default `protect`, D40): writes don't change what a booking site sold. Hosted, it
-  is server-wide in v0.2; the access level is picked per connection on the login page, capped by `RC_ACCESS` (D51).
-- Not published (D42): no npm package and no stdio image; run from a checkout with Node. The Docker image (M4) is
+  is server-wide for the hosted deployment; the access level is picked per connection on the login page, capped by `RC_ACCESS` (D51).
+- No npm package or stdio image is published; run from a checkout with Node. The Docker image is
   for the hosted HTTP server only.
 
 ## Hosted: stateless OAuth
@@ -114,8 +139,8 @@ Goal: one URL that users add as a connector in Claude or ChatGPT; the server kee
   `error="invalid_token"` when a token was sent). An RC 401 during a tool call is turned into this HTTP 401 too, so the
   client refreshes/re-authenticates immediately.
 - Authorization code + PKCE (S256 only), public clients (`token_endpoint_auth_method: none`), exact `redirect_uri`
-  match, `iss` in the authorization response, `resource` parameter (RFC 8707) required and bound into tokens as `aud`.
-- **Client registration: CIMD only, no DCR.** Both Claude and ChatGPT support it (checked in their docs, 2054-10-22).
+  match, `iss` in the authorization response, `resource` parameter (RFC 8707) bound into tokens as `aud`; when omitted it defaults to this server's MCP URL.
+- **Client registration: CIMD only, no DCR.** Both Claude and ChatGPT support it.
   Authorization server metadata must advertise:
   `"client_id_metadata_document_supported": true`, `"token_endpoint_auth_methods_supported": ["none"]`,
   `"code_challenge_methods_supported": ["S256"]`, `"authorization_response_iss_parameter_supported": true`, and
@@ -174,21 +199,9 @@ hotel is the data operator and may need to cover cross-border transfer in its no
 hotel's instruction (processor). Defaults: store nothing about guests; keep PII out of logs; provide
 a short note for hotels. Legal check before a public launch.
 
-## Testing
 
-1. **Unit** (fixtures): name matching with Russian endings, capacity math (unassigned, closed rooms, single-unit
-   categories), money, GET→PUT builder (a no-op round trip must reproduce the GET), confirm tokens, error mapping,
-   redaction.
-2. **Live** (opt-in, manual flag, fixed date guard): on the agreed window (20–23 Jan 2055) with "TEST MCP" guests.
-   Pre-check aborts if any non-test booking is in the window; cleanup in `finally`; asserts the calendar is clean.
-   Never in CI. Known leftovers: test guest records and soft-deleted bookings (can't be removed via the API). A
-   separate RC trial account would be better if RC offers one.
-3. **Evals**: spec §3 prompts against a fake RC built from fixtures; run when descriptions or schemas change.
-4. **Fixture hygiene**: a scrub script replaces names/phones/e-mails/notes when recording; a CI check rejects RU phone
-   numbers, e-mails and non-allowlisted Cyrillic full names in `test/`.
+## Development
 
-## Maintenance
-
-RC's API is private and can change without notice. Runtime schema validation catches drift on use; re-run
-`scripts/extract_endpoints.py` when the web app's bundle hash changes (manual until the hosted release; later a CI job
-using the read-only dedicated user, structure checks only, no output of data).
+See [testing.md](testing.md) for local checks, model evals and live-test precautions. Setup and hosted deployment
+settings are in [README.md](../README.md). RC's private web API can change without notice; response schema validation
+fails closed when required fields change. [api-scope.md](api-scope.md) documents the known endpoint surface.
