@@ -3,6 +3,12 @@
 An MCP server for [RealtyCalendar](https://realtycalendar.ru) that lets AI assistants check room availability,
 find reservations, and create, update, cancel or delete bookings.
 
+**Independent, unofficial project:** this software is not affiliated with, endorsed by, sponsored by or supported
+by RealtyCalendar.
+
+**Provided “as is”, without warranty of any kind, to the extent permitted by applicable law.** See sections 6 and 7
+of the [MPL-2.0 license](LICENSE) for the warranty disclaimer and limitation of liability.
+
 Run it locally over stdio or self-host it over HTTP for connector clients. Access defaults to read-only.
 Every write uses a separate preview step and requires approval through the client's write-tool prompt.
 
