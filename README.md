@@ -14,7 +14,7 @@ Every write uses a separate preview step and requires approval through the clien
 This uses RealtyCalendar's unofficial web app API, which can change without notice. Payment writes, guest-contact
 editing and searches by booking creation date are outside the current tool set.
 
-Current release: **v0.3.0**. There is no npm package. Local stdio runs from a checkout; Docker serves hosted HTTP.
+Current release: **v0.4.0**. There is no npm package. Local stdio runs from a checkout; Docker serves hosted HTTP.
 
 ## Choose a setup
 
@@ -33,7 +33,7 @@ git clone https://github.com/stek29/realtycalendar-web-mcp.git
 cd realtycalendar-web-mcp
 ```
 
-To build a specific release locally, run `git checkout v0.3.0` before building.
+To build a specific release locally, run `git checkout v0.4.0` before building.
 
 ## Hosted HTTP
 
@@ -47,7 +47,7 @@ Claude web and ChatGPT web is still pending; see [remaining work](docs/roadmap.m
 
 The image `ghcr.io/stek29/realtycalendar-web-mcp` supports linux/amd64 and linux/arm64. The package is currently
 private: pulling it requires `docker login ghcr.io` with a GitHub token that has `read:packages` and access to the
-package. Release images use version tags such as `0.3.0`; `main` tracks the main branch.
+package. Release images use version tags such as `0.4.0`; `main` tracks the main branch.
 
 Use the [compose example](deploy/docker-compose.yml) behind your own HTTPS reverse proxy:
 
@@ -168,8 +168,7 @@ remain available.
 
 ### Hide guest names and phone numbers
 
-This option is available on `main`; the `v0.3.0` release predates it. For Docker, select `MCP_IMAGE_TAG=main` in
-`deploy/.env` or build the current checkout locally.
+Guest-name and phone masking is available starting with **v0.4.0**.
 
 Set `RC_HIDE_GUEST_PII=true` in the server environment (or `deploy/.env` for the compose example) and restart the
 server. This is a server-wide option for both hosted HTTP and local stdio; it also applies to existing hosted

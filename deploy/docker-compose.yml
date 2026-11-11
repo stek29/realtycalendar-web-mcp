@@ -11,7 +11,7 @@
 # number of such proxies, so logs show the real client IP and a client can't fake it with its own header.
 services:
   mcp:
-    image: ghcr.io/stek29/realtycalendar-web-mcp:${MCP_IMAGE_TAG:-0.3.0}
+    image: ghcr.io/stek29/realtycalendar-web-mcp:${MCP_IMAGE_TAG:-0.4.0}
     environment:
       MCP_PUBLIC_URL: ${MCP_PUBLIC_URL:?set MCP_PUBLIC_URL in .env}
       MCP_SERVER_KEY: ${MCP_SERVER_KEY:?set MCP_SERVER_KEY in .env}

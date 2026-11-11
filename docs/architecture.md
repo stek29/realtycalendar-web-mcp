@@ -113,7 +113,7 @@ server-side setting and retains the original booking body. This setting is serve
 
 ```jsonc
 { "mcpServers": { "realtycalendar": {
-    "command": "node", "args": ["/path/to/realtycalendar-web-mcp/dist/main.js"],   // checkout at a release tag, e.g. v0.3.0
+    "command": "node", "args": ["/path/to/realtycalendar-web-mcp/dist/main.js"],   // checkout at a release tag, e.g. v0.4.0
     "env": { "RC_TOKEN": "…", "RC_ACCESS": "edit" } } } }
 ```
 
