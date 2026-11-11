@@ -15,6 +15,7 @@ LABEL org.opencontainers.image.source=https://github.com/stek29/realtycalendar-w
       org.opencontainers.image.version=$VERSION
 ENV NODE_ENV=production PORT=8080
 WORKDIR /app
+COPY LICENSE ./
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist

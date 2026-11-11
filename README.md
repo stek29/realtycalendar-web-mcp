@@ -234,3 +234,7 @@ fixture maintenance and opt-in live testing are covered in the [testing guide](d
 | [Testing](docs/testing.md) | Unit checks, eval runners and opt-in live tests |
 | [Remaining work](docs/roadmap.md) | Unfinished client validation and known limitations |
 | [Design decisions](docs/decisions.md) | Rationale for the current implementation |
+
+## License
+
+This project's source code is licensed under the [Mozilla Public License 2.0](LICENSE).
