@@ -33,7 +33,7 @@ export const cancelBookingTools = defineWriteTool({
     return {
       plan: { booking_id: raw.id, state, set: { status: 'canceled' } },
       view: {
-        summary: `Отменить бронь ${raw.id}: ${bookingLine(before, catalog.currency, t)}`,
+        summary: `Отменить бронь ${raw.id}: ${bookingLine(before, catalog.currency, t, ctx.config.hideGuestPii)}`,
         currency: catalog.currency,
         before,
         after: fromBooking(catalog, { ...raw, status: 'canceled' }, paid),
@@ -53,7 +53,7 @@ export const cancelBookingTools = defineWriteTool({
   async commit(ctx, args, p) {
     const booking = fromBooking(p.catalog, await putBooking(ctx.rc, args.booking_id, p.body), p.paid)
     return {
-      summary: `Бронь ${booking.id} отменена: ${bookingLine(booking, p.catalog.currency, p.today)}`,
+      summary: `Бронь ${booking.id} отменена: ${bookingLine(booking, p.catalog.currency, p.today, ctx.config.hideGuestPii)}`,
       currency: p.catalog.currency,
       booking,
     }

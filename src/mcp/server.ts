@@ -4,6 +4,7 @@ import { accessAllows } from '../config.js'
 import { VERSION, type Context } from '../context.js'
 import { todayIn } from '../domain/dates.js'
 import { ToolError } from '../domain/errors.js'
+import { hideGuestPii } from '../domain/guest-pii.js'
 import { instructions } from './instructions.js'
 import type { ToolDef } from './tools/define.js'
 import { cancelBookingTools } from './tools/cancel-booking.js'
@@ -62,7 +63,8 @@ export async function runTool(ctx: Context, tool: ToolDef, args: unknown): Promi
         "Tell the user this connection can't do it; they can do it in RealtyCalendar",
       )
     }
-    const output = await tool.handler(ctx, tool.input.parse(args ?? {}))
+    const raw = await tool.handler(ctx, tool.input.parse(args ?? {}))
+    const output = ctx.config.hideGuestPii ? (hideGuestPii(raw) as Record<string, unknown>) : raw
     ctx.log.log('info', 'tool', { tool: tool.name, duration_ms: Date.now() - started })
     return { content: [{ type: 'text', text: JSON.stringify(output) }], structuredContent: output }
   } catch (e) {
@@ -81,6 +83,7 @@ export async function runTool(ctx: Context, tool: ToolDef, args: unknown): Promi
       code: error.code,
       ...(unexpected ? { error: String(e) } : {}),
     })
-    return { isError: true, content: [{ type: 'text', text: JSON.stringify(error.toJSON()) }] }
+    const output = ctx.config.hideGuestPii ? hideGuestPii(error.toJSON()) : error.toJSON()
+    return { isError: true, content: [{ type: 'text', text: JSON.stringify(output) }] }
   }
 }

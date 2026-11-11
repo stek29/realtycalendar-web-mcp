@@ -139,13 +139,19 @@ export const listBookings = defineTool({
       returned: bookings.length,
       totals: totals(matched),
       bookings,
-      ...(args.query && matched.length === 0 ? { hint: noMatchHint(args.query) } : {}),
+      ...(args.query && matched.length === 0 ? { hint: noMatchHint(args.query, ctx.config.hideGuestPii) } : {}),
     }
   },
 })
 
 /** A guest query found nothing: names may be spelled differently and phones are often missing. */
-function noMatchHint(query: string): string {
+function noMatchHint(query: string, hideGuestPii: boolean): string {
+  if (hideGuestPii) {
+    return (
+      'No matching booking in this period. Guest names and phones are hidden by the server; ' +
+      'ask for a booking id, room or dates to narrow the search.'
+    )
+  }
   return isPhoneQuery(query)
     ? 'No booking in this period has this phone. Many bookings have no phone stored: ask the user for the guest name, or call again ' +
         'without query and look through the returned bookings.'

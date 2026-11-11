@@ -96,6 +96,12 @@ write needs a confirm token from a preview the user saw.
 
 ## Logging and privacy
 
+`RC_HIDE_GUEST_PII=true` masks known structured guest names and phone numbers at the MCP response boundary,
+including nested error previews, history changes and booking-site fields. Generated booking summaries respect the
+same setting. Both text and structured MCP results use the masked output. RC responses, matching, confirmation
+plans and write bodies remain intact; notes and other free text are not scanned. Full audit logging is a separate
+server-side setting and retains the original booking body. This setting is server-wide and is not an OAuth claim.
+
 - Structured JSON logs: tool, duration, RC endpoint + status, error code, booking ids. Never request/response bodies,
   never guest names, phones, e-mails, notes or tokens. One redaction layer (`redact.ts`) used by the logger and by
   `VALIDATION` error details (RC 422 bodies can echo field values). A test pushes a seeded PII string and a fake token

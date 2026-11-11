@@ -28,7 +28,7 @@ export const deleteBookingTools = defineWriteTool({
     return {
       plan: { booking_id: raw.id, state, delete: true },
       view: {
-        summary: `Удалить бронь ${raw.id}: ${bookingLine(before, catalog.currency, t)}`,
+        summary: `Удалить бронь ${raw.id}: ${bookingLine(before, catalog.currency, t, ctx.config.hideGuestPii)}`,
         currency: catalog.currency,
         before,
         warnings,
@@ -46,7 +46,7 @@ export const deleteBookingTools = defineWriteTool({
     const deleted = await rcDelete(ctx.rc, args.booking_id)
     const booking = fromBooking(p.catalog, deleted, p.paid)
     return {
-      summary: `Бронь ${booking.id} удалена: ${bookingLine(booking, p.catalog.currency, p.today)}`,
+      summary: `Бронь ${booking.id} удалена: ${bookingLine(booking, p.catalog.currency, p.today, ctx.config.hideGuestPii)}`,
       currency: p.catalog.currency,
       booking,
       deleted: deleted.is_delete,

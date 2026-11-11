@@ -52,6 +52,69 @@ const ANNA = {
   guest_phone: '+7 900 123-45-67',
 }
 
+describe('RC_HIDE_GUEST_PII writes', () => {
+  const env = { RC_HIDE_GUEST_PII: 'true' }
+
+  it('masks previews, conflicts and stale errors without changing duplicate detection or stored guest data', async () => {
+    const { call, rc } = setup('full', {}, env)
+    const preview = await call('preview_create_booking', ANNA)
+    expect(preview.after).toMatchObject({ guest_name: null, guest_phone: null })
+    expect(preview.summary).not.toContain(ANNA.guest_name)
+    const created = await call('create_booking', { ...ANNA, confirm_token: preview.confirm_token })
+    const id = created.booking.id
+    expect(created.booking).toMatchObject({ guest_name: null, guest_phone: null })
+    expect(created.summary).not.toContain(ANNA.guest_name)
+
+    const duplicate = await call('preview_create_booking', ANNA)
+    expect(codes(duplicate)).toContain('DUPLICATE')
+    expect(duplicate.summary).not.toContain(ANNA.guest_name)
+    const occupied = await call('preview_create_booking', { ...ANNA, guest_name: 'Игорь Петров' })
+    expect(occupied.will_fail).toBe(true)
+    expect(occupied.conflicts[0]).toMatchObject({ id, guest_name: null, guest_phone: null })
+
+    const updateArgs = { booking_id: id, check_out: '2054-11-11' }
+    const update = await call('preview_update_booking', updateArgs)
+    expect(update.before).toMatchObject({ guest_name: null, guest_phone: null })
+    expect(update.summary).not.toContain(ANNA.guest_name)
+    const stale = await call('update_booking', {
+      ...updateArgs,
+      check_out: '2054-11-12',
+      confirm_token: update.confirm_token,
+    })
+    expect(stale).toMatchObject({
+      error: 'PREVIEW_STALE',
+      preview: {
+        before: { guest_name: null, guest_phone: null },
+        after: { guest_name: null, guest_phone: null },
+      },
+    })
+    expect(stale.preview.summary).not.toContain(ANNA.guest_name)
+
+    for (const [tool, args] of [
+      ['update_booking', updateArgs],
+      ['cancel_booking', { booking_id: id }],
+      ['delete_booking', { booking_id: id }],
+    ] as const) {
+      const p = await call(`preview_${tool}`, args)
+      expect(p.summary).not.toContain(ANNA.guest_name)
+      const saved = await call(tool, { ...args, confirm_token: p.confirm_token })
+      expect(saved.isError).toBeUndefined()
+      expect(saved.summary).not.toContain(ANNA.guest_name)
+      expect(saved.booking).toMatchObject({ guest_name: null, guest_phone: null })
+      expect(rc.state.details[id]!.client).toMatchObject({ fio: ANNA.guest_name, phone: ANNA.guest_phone })
+      expect(rc.state.details[id]!.guest).toMatchObject({ fio: ANNA.guest_name, phone: ANNA.guest_phone })
+    }
+  })
+
+  it('masks structured guest fields in hold warnings and leaves free-text notes untouched', async () => {
+    const { call, write } = setup('full', {}, env)
+    await write('create_booking', { ...ANNA, status: 'request', guest_name: 'Игорь Петров' })
+    const output = await call('preview_create_booking', { ...ANNA, notes: ANNA.guest_name })
+    expect(output.warnings.find((w: { code: string }) => w.code === 'HOLD_OVERLAP').holds[0].guest_name).toBeNull()
+    expect(output.after.untrusted.notes).toBe(ANNA.guest_name)
+  })
+})
+
 describe('access levels (X5, X7)', () => {
   it.each([
     ['read', ['check_availability', 'get_booking', 'list_bookings', 'list_rooms']],

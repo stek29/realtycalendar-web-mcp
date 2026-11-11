@@ -18,6 +18,7 @@ services:
       MCP_TRUST_PROXY_HOPS: ${MCP_TRUST_PROXY_HOPS:-1}
       RC_ACCESS: ${RC_ACCESS:-read}
       RC_SITE_BOOKINGS: ${RC_SITE_BOOKINGS:-protect}
+      RC_HIDE_GUEST_PII: ${RC_HIDE_GUEST_PII:-false}
       RC_AUDIT: summary # full would put guest data into the logs
     ports:
       - '127.0.0.1:8080:8080' # only the local proxy reaches it

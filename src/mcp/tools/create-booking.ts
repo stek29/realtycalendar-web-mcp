@@ -198,7 +198,7 @@ export const createBookingTools = defineWriteTool({
     return {
       plan: { set: fields },
       view: {
-        summary: `${kind}: ${bookingLine(after, catalog.currency, t)}`,
+        summary: `${kind}: ${bookingLine(after, catalog.currency, t, ctx.config.hideGuestPii)}`,
         currency: catalog.currency,
         before: null,
         after,
@@ -222,7 +222,7 @@ export const createBookingTools = defineWriteTool({
     if (p.duplicate) {
       // A repeated confirm (e.g. after a timeout): the booking was saved the first time.
       return {
-        summary: `Бронь уже есть (${p.duplicate.id}): ${bookingLine(p.duplicate, catalog.currency, p.today)}`,
+        summary: `Бронь уже есть (${p.duplicate.id}): ${bookingLine(p.duplicate, catalog.currency, p.today, ctx.config.hideGuestPii)}`,
         currency: catalog.currency,
         booking: p.duplicate,
         note: 'This booking already existed; nothing new was created.',
@@ -255,7 +255,7 @@ export const createBookingTools = defineWriteTool({
     }
     const booking = fromBooking(catalog, saved, 0)
     return {
-      summary: `Создана ${fields.status === 'request' ? 'заявка' : 'бронь'} ${booking.id}: ${bookingLine(booking, catalog.currency, p.today)}`,
+      summary: `Создана ${fields.status === 'request' ? 'заявка' : 'бронь'} ${booking.id}: ${bookingLine(booking, catalog.currency, p.today, ctx.config.hideGuestPii)}`,
       currency: catalog.currency,
       booking,
     }

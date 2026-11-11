@@ -65,6 +65,7 @@ export async function runHttp(env: NodeJS.ProcessEnv = process.env): Promise<voi
       max_access: config.access,
       trust_proxy_hops: hops,
       site_bookings: config.siteBookings,
+      hide_guest_pii: config.hideGuestPii,
     }),
   )
   const stop = () => server.close(() => process.exit(0))

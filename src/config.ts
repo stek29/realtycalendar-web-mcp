@@ -14,11 +14,13 @@ export interface Config {
   audit: AuditDetail
   /** RC_SITE_BOOKINGS: whether writes may change what a booking site sold (dates, category, status, price). */
   siteBookings: SiteBookings
+  /** Hide known guest-name and phone fields in MCP responses, without changing upstream data. */
+  hideGuestPii: boolean
 }
 
 export const RC_BASE_URL = 'https://realtycalendar.ru/v2/'
 
-/** Reads RC_ACCESS, RC_TIMEZONE, RC_CONFIRM_KEY, RC_AUDIT, RC_SITE_BOOKINGS from an env-like record. Throws on invalid values. */
+/** Reads server settings from an env-like record. Throws on invalid values. */
 export function parseConfig(env: Record<string, string | undefined>): Config {
   const access = (env.RC_ACCESS?.trim() || 'read') as Access
   if (!ACCESS_LEVELS.includes(access)) {
@@ -40,7 +42,12 @@ export function parseConfig(env: Record<string, string | undefined>): Config {
   if (!SITE_BOOKINGS.includes(siteBookings)) {
     throw new Error(`RC_SITE_BOOKINGS must be one of ${SITE_BOOKINGS.join(', ')}; got "${env.RC_SITE_BOOKINGS}"`)
   }
-  return { access, timezone, confirmKey, rcBaseUrl: RC_BASE_URL, audit, siteBookings }
+  const hideGuestPiiValue = env.RC_HIDE_GUEST_PII?.trim().toLowerCase() || 'false'
+  if (!['true', 'false', '1', '0'].includes(hideGuestPiiValue)) {
+    throw new Error('RC_HIDE_GUEST_PII must be true, false, 1 or 0')
+  }
+  const hideGuestPii = hideGuestPiiValue === 'true' || hideGuestPiiValue === '1'
+  return { access, timezone, confirmKey, rcBaseUrl: RC_BASE_URL, audit, siteBookings, hideGuestPii }
 }
 
 /** True when a tool of `level` is allowed under `access`. */

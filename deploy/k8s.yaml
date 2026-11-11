@@ -27,6 +27,7 @@ spec:
             - { name: MCP_TRUST_PROXY_HOPS, value: '1' } # the Ingress controller
             - { name: RC_ACCESS, value: edit }
             - { name: RC_SITE_BOOKINGS, value: protect }
+            - { name: RC_HIDE_GUEST_PII, value: 'false' }
           envFrom:
             - secretRef: { name: realtycalendar-mcp }
           readinessProbe:

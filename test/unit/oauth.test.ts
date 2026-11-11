@@ -49,10 +49,11 @@ async function setup(opts: { maxAccess?: Access; now?: () => Date; previousKey?:
     const doc = DOCS[String(input)]
     return doc ? Response.json(doc) : new Response('nope', { status: 404 })
   }
+  const config = { ...parseConfig({ RC_ACCESS: opts.maxAccess ?? 'full' }), confirmKey: keys.confirmKey }
   const app = hostedApp({
     publicUrl: PUBLIC,
     keys,
-    config: { ...parseConfig({ RC_ACCESS: opts.maxAccess ?? 'full' }), confirmKey: keys.confirmKey },
+    config,
     cache: memoryCache(),
     clients: cimdRegistry({ fetch: cimdFetch }),
     fetch: rc.fetch,
@@ -130,7 +131,7 @@ async function setup(opts: { maxAccess?: Access; now?: () => Date; previousKey?:
     })
   }
 
-  return { app, req, rc, lines, clock, keys, authorize, login, token, connect, mcp }
+  return { app, req, rc, lines, clock, keys, config, authorize, login, token, connect, mcp }
 }
 
 async function rpcResult(res: Response) {
@@ -145,6 +146,25 @@ async function rpcResult(res: Response) {
       )
   return json.result
 }
+
+it('applies server-wide guest masking to an existing access token and after refresh', async () => {
+  const s = await setup()
+  const tokens = await s.connect()
+  const args = { name: 'get_booking', arguments: { booking_id: 810000162 } }
+  const before = await rpcResult(await s.mcp(tokens.access_token, 'tools/call', args))
+  expect(before.structuredContent.guest_name).toBe('Иван Иванов')
+  s.config.hideGuestPii = true
+  const masked = await rpcResult(await s.mcp(tokens.access_token, 'tools/call', args))
+  expect(masked.structuredContent).toMatchObject({ guest_name: null, guest_phone: null })
+  expect(JSON.parse(masked.content[0].text)).toEqual(masked.structuredContent)
+  const refreshed = await s.token({ grant_type: 'refresh_token', refresh_token: tokens.refresh_token })
+  expect(refreshed.status).toBe(200)
+  const after = await rpcResult(await s.mcp(refreshed.body.access_token, 'tools/call', args))
+  expect(after.structuredContent).toMatchObject({ guest_name: null, guest_phone: null })
+  s.config.hideGuestPii = false
+  const visible = await rpcResult(await s.mcp(refreshed.body.access_token, 'tools/call', args))
+  expect(visible.structuredContent.guest_name).toBe('Иван Иванов')
+})
 
 describe('metadata', () => {
   it('serves protected resource and authorization server metadata as Claude and ChatGPT need them', async () => {

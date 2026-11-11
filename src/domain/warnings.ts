@@ -97,11 +97,16 @@ export const money = (n: number, currency: string) =>
   `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} ${currency}`
 
 /** "22, 7–9 ноября, Анна Петрова, 8 600 ₽" — room, else category. */
-export function bookingLine(b: Omit<BookingSummary, 'id'>, currency: string, today: string): string {
+export function bookingLine(
+  b: Omit<BookingSummary, 'id'>,
+  currency: string,
+  today: string,
+  hideGuestPii = false,
+): string {
   return [
     b.room ?? b.category,
     dateRange(b.check_in, b.check_out, today),
-    b.guest_name ?? '—',
+    hideGuestPii ? '—' : (b.guest_name ?? '—'),
     money(b.total, currency),
   ].join(', ')
 }

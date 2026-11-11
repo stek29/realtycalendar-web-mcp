@@ -160,10 +160,29 @@ End the MCP's RC session with `RC_TOKEN=YOUR_SESSION_TOKEN node dist/main.js log
 | `RC_SITE_BOOKINGS` | `protect` | Protect booking-site reservations from changes RC does not send back to the site. `allow` permits those changes with a warning |
 | `RC_TIMEZONE` | `Europe/Moscow` | Hotel time zone, using an IANA identifier |
 | `RC_AUDIT` | `summary` | One audit entry per write; `full` includes the pre-write booking body and guest data |
+| `RC_HIDE_GUEST_PII` | `false` | Hide known structured guest-name and phone fields in MCP responses; accepts `true`/`false` or `1`/`0` |
 
 With `RC_SITE_BOOKINGS=protect`, booking-site reservations cannot receive new dates, category, status or price, or
 be canceled/deleted. Assigning a room within the same category, changing arrival/departure times and adding notes
 remain available.
+
+### Hide guest names and phone numbers
+
+This option is available on `main`; the `v0.3.0` release predates it. For Docker, select `MCP_IMAGE_TAG=main` in
+`deploy/.env` or build the current checkout locally.
+
+Set `RC_HIDE_GUEST_PII=true` in the server environment (or `deploy/.env` for the compose example) and restart the
+server. This is a server-wide option for both hosted HTTP and local stdio; it also applies to existing hosted
+connections, with no OAuth or token changes.
+
+When enabled, structured guest names and phone numbers become `null`, including nested previews, conflicts and
+warnings. Generated write summaries omit the guest name. Recognized guest-name and phone changes in history have
+their old/new values hidden; recognized booking-site contact fields contain `[hidden]`.
+
+Booking IDs, rooms, dates and financial data remain available. Names and phones remain intact inside RC: searches,
+duplicate detection and writes still use the original values. Notes, other free text, guest emails and staff names
+are untouched. This masks the specified response fields; it is not complete anonymization. `RC_AUDIT=full` still
+writes the original booking body to server logs.
 
 ## Write approval
 

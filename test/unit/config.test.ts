@@ -25,6 +25,13 @@ describe('parseConfig', () => {
     expect(accessAllows('read', 'book')).toBe(false)
     expect(accessAllows('full', 'edit')).toBe(true)
   })
+  it('hides guest PII only when explicitly enabled and rejects invalid values', () => {
+    expect(parseConfig({}).hideGuestPii).toBe(false)
+    for (const value of ['true', '1', ' TRUE '])
+      expect(parseConfig({ RC_HIDE_GUEST_PII: value }).hideGuestPii).toBe(true)
+    for (const value of ['false', '0', '']) expect(parseConfig({ RC_HIDE_GUEST_PII: value }).hideGuestPii).toBe(false)
+    expect(() => parseConfig({ RC_HIDE_GUEST_PII: 'maybe' })).toThrow(/RC_HIDE_GUEST_PII/)
+  })
 })
 
 describe('memoryCache', () => {

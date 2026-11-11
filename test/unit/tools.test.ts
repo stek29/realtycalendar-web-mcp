@@ -4,14 +4,14 @@ import { memoryCache } from '../../src/cache.js'
 import { parseConfig, type Access } from '../../src/config.js'
 import { makeContext } from '../../src/context.js'
 import { createMcpServer, runTool, TOOLS } from '../../src/mcp/server.js'
-import { fakeRc, type ExtraEvent } from '../fake-rc.js'
+import { detailOf, fakeRc, type ExtraEvent } from '../fake-rc.js'
 
 const NOW = new Date('2054-10-22T09:00:00+03:00')
 
-function setup(access: Access = 'read', extraEvents: ExtraEvent[] = []) {
+function setup(access: Access = 'read', extraEvents: ExtraEvent[] = [], env: Record<string, string> = {}) {
   const rc = fakeRc({ extraEvents })
   const lines: string[] = []
-  const ctx = makeContext('test-token', parseConfig({ RC_ACCESS: access }), memoryCache(), {
+  const ctx = makeContext('test-token', parseConfig({ RC_ACCESS: access, ...env }), memoryCache(), {
     fetch: rc.fetch,
     now: () => NOW,
     log: { log: (level, event, fields) => lines.push(JSON.stringify({ level, event, ...fields })) },
@@ -34,6 +34,102 @@ describe('server', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const registered = Object.keys((server as any)._registeredTools)
     expect(registered.sort()).toEqual(['check_availability', 'get_booking', 'list_bookings', 'list_rooms'])
+  })
+})
+
+describe('RC_HIDE_GUEST_PII', () => {
+  const env = { RC_HIDE_GUEST_PII: 'true' }
+  const id = 810000162
+
+  it('keeps name/phone search working while hiding both response representations', async () => {
+    const { call, ctx } = setup(
+      'read',
+      [
+        {
+          apartment_id: 810000052,
+          room_id: 810000029,
+          begin_date: '2055-01-20',
+          end_date: '2055-01-23',
+          client: { fio: 'Игорь Петров', phone: '+79990009999' },
+        },
+      ],
+      env,
+    )
+    for (const query of ['Игорь', '9990009999']) {
+      const output = await call('list_bookings', { from: '2055-01-20', to: '2055-01-23', query })
+      expect(output.matched).toBe(1)
+      expect(output.bookings[0]).toMatchObject({ guest_name: null, guest_phone: null })
+    }
+    const tool = TOOLS.find((t) => t.name === 'get_booking')!
+    const result = await runTool(ctx, tool, { booking_id: id })
+    const text = JSON.parse((result.content[0] as { text: string }).text)
+    expect(text).toEqual(result.structuredContent)
+    expect(text).toMatchObject({ guest_name: null, guest_phone: null })
+    const missing = await call('list_bookings', { from: '2055-01-20', to: '2055-01-23', query: 'НетТакогоГостя' })
+    expect(missing.hint).toContain('hidden by the server')
+  })
+
+  it('masks known history and booking-site fields while preserving notes, email and staff identity', async () => {
+    const { call, rc } = setup('read', [], env)
+    const raw = detailOf(rc.state, id)!
+    raw.notes = 'Иван Иванов: +79990001234'
+    ;(raw.client as { email: string }).email = 'guest@example.com'
+    raw.external = {
+      fields: [
+        { title: 'Полное имя гостя', value: 'Иван Иванов' },
+        { title: 'Телефон гостя', value: '+79990001234' },
+        { title: 'Примечания', value: 'Иван Иванов: +79990001234' },
+      ],
+    }
+    raw.audits = [
+      {
+        version: 1,
+        created_at: '2054-10-01 09:00:00 MSK',
+        is_auto: false,
+        user: { full_name: 'Ольга Новикова' },
+        changes: [
+          ['Гость', ['Иван Иванов', 'Игорь Петров']],
+          ['Телефон', ['+79990001234', '+79990004321']],
+          ['Примечания', [null, raw.notes]],
+          ['Выезд', ['2054-12-22', '2054-12-23']],
+        ],
+      },
+    ]
+    const output = await call('get_booking', { booking_id: id, history: true })
+    expect(output.guest_email).toBe('guest@example.com')
+    expect(output.untrusted.notes).toBe(raw.notes)
+    expect(output.booking_site.untrusted.fields).toEqual({
+      'Полное имя гостя': '[hidden]',
+      'Телефон гостя': '[hidden]',
+      Примечания: raw.notes,
+    })
+    expect(output.history[0]).toMatchObject({
+      by: 'Ольга Новикова',
+      untrusted: {
+        changes: [
+          { field: 'Гость', from: null, to: null },
+          { field: 'Телефон', from: null, to: null },
+          { field: 'Примечания', from: null, to: raw.notes },
+          { field: 'Выезд', from: '2054-12-22', to: '2054-12-23' },
+        ],
+      },
+    })
+    expect((raw.client as { fio: string }).fio).toBe('Иван Иванов')
+  })
+
+  it('hides names in availability runs and keeps the output schema valid', async () => {
+    const { call } = setup('read', [], env)
+    const output = await call('check_availability', {
+      check_in: '2054-12-20',
+      check_out: '2054-12-23',
+      room: '25',
+    })
+    expect(output.categories[0].rooms[0].runs).toContainEqual(
+      expect.objectContaining({
+        state: 'booked',
+        guest_name: null,
+      }),
+    )
   })
 })
 

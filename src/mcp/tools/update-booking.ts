@@ -240,7 +240,7 @@ export const updateBookingTools = defineWriteTool({
     return {
       plan: { booking_id: raw.id, state, set: setChanged },
       view: {
-        summary: `Изменить бронь ${raw.id} (${bookingLine(before, catalog.currency, t)}): ${changed
+        summary: `Изменить бронь ${raw.id} (${bookingLine(before, catalog.currency, t, ctx.config.hideGuestPii)}): ${changed
           .map((k) =>
             k === 'notes'
               ? 'заметка изменена'
@@ -269,7 +269,7 @@ export const updateBookingTools = defineWriteTool({
     const saved = await putBooking(ctx.rc, args.booking_id, p.body)
     const booking = fromBooking(p.catalog, saved, p.paid)
     return {
-      summary: `Бронь ${booking.id} изменена: ${bookingLine(booking, p.catalog.currency, p.today)}`,
+      summary: `Бронь ${booking.id} изменена: ${bookingLine(booking, p.catalog.currency, p.today, ctx.config.hideGuestPii)}`,
       currency: p.catalog.currency,
       booking,
     }
