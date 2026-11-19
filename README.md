@@ -51,9 +51,8 @@ Claude web and ChatGPT web is still pending; see [remaining work](docs/roadmap.m
 
 ### Deploy
 
-The image `ghcr.io/stek29/realtycalendar-web-mcp` supports linux/amd64 and linux/arm64. The package is currently
-private: pulling it requires `docker login ghcr.io` with a GitHub token that has `read:packages` and access to the
-package. Release images use version tags such as `0.4.0`; `main` and `latest` track the main branch, and only the three
+The image `ghcr.io/stek29/realtycalendar-web-mcp` supports linux/amd64 and linux/arm64. The package is public.
+Release images use version tags such as `0.4.0`; `main` and `latest` track the main branch, and only the three
 newest `sha-` builds are kept.
 
 Use the [compose example](deploy/docker-compose.yml) behind your own HTTPS reverse proxy:
